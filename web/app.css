@@ -106,10 +106,15 @@ body {
   align-items: start;
 }
 
+/* `minmax(0, 1fr)` 이지 `1fr` 이 아니다. 그냥 두면 칸의 최소 폭이 **내용의 최소 폭**이
+   되는데, 아래 견주기 표가 `white-space: nowrap` 이라 그 값이 352px 이다. 그래서 폰에서
+   판이 388px 로 부풀어 페이지가 33px 만큼 옆으로 굴렀다(2026-09-05). 칸을 0 까지 줄 수
+   있게 해 두면 표는 제 `.table-wrap` 안에서 옆으로 구른다 — 원래 그러라고 만든 것이다. */
 .right {
   display: grid;
   gap: 18px;
   min-width: 0;
+  grid-template-columns: minmax(0, 1fr);
 }
 
 .panel {
@@ -128,10 +133,62 @@ body {
   margin-bottom: 10px;
 }
 
+/* ── 접히는 판 ────────────────────────────────────────────────────────────
+   좁은 화면에서만 접는다 (index.html 맨 아래의 한 줄이 정한다). 넓은 화면에서는
+   `open` 인 채라 지금까지 보던 것과 똑같다. */
+
+.fold > summary {
+  cursor: pointer;
+  list-style: none;
+}
+
+.fold > summary::-webkit-details-marker {
+  display: none;
+}
+
+.fold > summary::after {
+  color: var(--muted);
+  content: "▾";
+  font-size: 11px;
+  margin-left: auto;
+  transition: transform 0.15s ease;
+}
+
+.fold:not([open]) > summary::after {
+  transform: rotate(-90deg);
+}
+
+/* 접혀 있을 때 제목 아래 빈 10px 이 남지 않게 */
+.fold:not([open]) > .panel-head {
+  margin-bottom: 0;
+}
+
+/* 판 하나를 통째로 접는 게 아니라 판 안의 몇 줄만 접는 자리 */
+.fold-inline {
+  margin-top: 10px;
+}
+
+.fold-inline > summary {
+  display: flex;
+  color: var(--muted);
+  font-size: 11.5px;
+  font-weight: 600;
+}
+
 .panel-head h2 {
   margin: 0;
   font-size: 15px;
   letter-spacing: -0.01em;
+}
+
+/* 한국어는 낱말 안에서 끊어도 브라우저가 뭐라 하지 않는다 — 좁은 칸에서 "드라이버" 가
+   "드라이 / 버" 로 잘려 나왔다. 낱말 경계에서만 끊게 한다 */
+.hint,
+.note,
+.engine-why,
+.flow-desc,
+.hint-inline {
+  word-break: keep-all;
 }
 
 .hint {
@@ -362,6 +419,13 @@ body {
 .flow-copy {
   flex: 1 1 auto;
   min-width: 0;
+}
+
+/* 단추는 줄어들지 않는다. 폭이 모자라면 글자가 세로로 접혀서, 폰에서 [실행] 이
+   "실 / 행" 으로 서 있었다 */
+.flow .btn {
+  flex: 0 0 auto;
+  white-space: nowrap;
 }
 
 .flow-name {
@@ -698,5 +762,125 @@ body {
     max-width: 420px;
     margin: 0 auto;
     width: 100%;
+  }
+}
+
+/* ── 폰 (2026-09-05 사용자 지시: "모바일에서 세로가 너무 길다") ──────────────
+   375px 에서 문서 길이가 3,950px 이었다. 화면 열 개를 넘겨야 끝이 나는데, 그 중
+   시나리오 목록·증적 목록·편집기가 2,000px 을 먹고 있었다.
+
+   **폰 화면은 줄이지 않는다** — 이 데모가 보여 주려는 게 그것이다. 대신 그 둘레를
+   줄인다: 머리를 낮추고, 갈래 셋을 나란히 놓고, 목록 줄을 얇게 하고, 한 번 읽으면
+   되는 설명과 편집기는 접는다(펼치면 그대로 다 있다 — 지운 것은 없다). */
+@media (max-width: 620px) {
+  .top {
+    width: calc(100% - 28px);
+    gap: 8px;
+    padding: 12px 0 10px;
+  }
+
+  .top h1 {
+    font-size: 20px;
+  }
+
+  .top p {
+    margin-top: 4px;
+    font-size: 12.5px;
+    line-height: 1.5;
+  }
+
+  .grid {
+    width: calc(100% - 28px);
+    gap: 12px;
+    /* 로그인 칩이 오른쪽 아래에 떠 있다(/sso/widget.js) — 마지막 판을 덮지 않게 비운다 */
+    padding-bottom: 56px;
+  }
+
+  .right {
+    gap: 12px;
+  }
+
+  .panel {
+    padding: 14px;
+  }
+
+  /* 폰이 화면보다 길어서(664px) 조작 단추가 늘 화면 밖에 있었다 — 눌러 보려면 매번
+     아래로 굴려야 했다. 단추까지 한 화면에 들어오게 묶는다.
+     묶는 것은 **폭**이다: 블록 상자는 폭이 먼저 정해지고 높이가 비율(720/1600 = 0.45)로
+     따라 나오는 순서라, 높이를 묶어 봐야 폭은 그대로 남는다.
+     dvh 가 아니라 svh 인 이유는, 주소창이 접혔다 펴질 때마다 폰이 커졌다 작아지면
+     조작 중에 좌표가 흔들리기 때문이다. */
+  .phone {
+    max-width: calc((100svh - 230px) * 0.45);
+    margin-inline: auto;
+    border-width: 6px;
+  }
+
+  /* 갈래 셋은 견주라고 있는 것이다. 나란히 놓으면 세로 187px 이 90px 이 되고,
+     셋을 한눈에 견주기까지 한다 — 설명은 한 자도 줄이지 않았다 */
+  .engines {
+    gap: 6px;
+    margin-bottom: 10px;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .engine {
+    padding: 8px 9px;
+    border-radius: 10px;
+  }
+
+  .engine-name {
+    font-size: 12.5px;
+  }
+
+  .engine-why {
+    font-size: 10.5px;
+    line-height: 1.35;
+  }
+
+  /* 시나리오 여덟 줄이 651px 이었다. 단추를 작게 해서 설명이 들어갈 폭을 돌려주면
+     두 줄로 접히던 설명이 한 줄로 서고, 줄 높이가 그만큼 낮아진다 */
+  .flow {
+    gap: 6px;
+    padding: 8px 10px;
+    border-radius: 10px;
+  }
+
+  .flow .btn {
+    padding: 6px 9px;
+    font-size: 12px;
+  }
+
+  .flow-name {
+    font-size: 12.5px;
+  }
+
+  .flow-desc {
+    font-size: 11px;
+  }
+
+  .run {
+    padding: 7px 10px;
+  }
+
+  .hint {
+    margin-bottom: 8px;
+    font-size: 12px;
+  }
+
+  .note {
+    font-size: 11px;
+  }
+
+  .log {
+    max-height: 200px;
+  }
+
+  .yaml-edit {
+    min-height: 160px;
+  }
+
+  .elements {
+    max-height: 150px;
   }
 }

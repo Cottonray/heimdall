@@ -75,8 +75,12 @@
           <button class="btn" id="type-send">입력</button>
         </div>
 
-        <p class="note" id="one-device-note"></p>
-        <p class="note" id="public-note"></p>
+        <!-- 규칙 두 줄. 한 번 읽으면 되는 것이라 폰에서는 접어 둔다 -->
+        <details class="fold fold-inline" data-narrow-fold open>
+          <summary>쓰는 규칙</summary>
+          <p class="note" id="one-device-note"></p>
+          <p class="note" id="public-note"></p>
+        </details>
       </section>
 
       <!-- ── 오른쪽: 시나리오·로그 ─────────────────────────────────────── -->
@@ -125,16 +129,17 @@
           </p>
         </div>
 
-        <!-- 증적 — 실행이 끝날 때마다 한 줄씩 쌓인다 -->
-        <div class="panel">
-          <div class="panel-head">
+        <!-- 증적 — 실행이 끝날 때마다 한 줄씩 쌓인다. 쌓일수록 길어지는 목록이라
+             폰에서는 접어 둔다 (넓은 화면에서는 열린 채라 지금까지와 같다) -->
+        <details class="panel fold" data-narrow-fold open>
+          <summary class="panel-head">
             <h2>증적 자료</h2>
             <span class="hint-inline">단계별 화면이 들어간 엑셀과 녹화 파일이에요</span>
-          </div>
+          </summary>
           <ul class="runs" id="runs">
             <li class="elements-note">아직 남은 증적이 없어요. 시나리오를 한 번 돌려보세요.</li>
           </ul>
-        </div>
+        </details>
 
         <div class="panel">
           <div class="panel-head">
@@ -169,11 +174,11 @@
 
         <!-- 시나리오 편집기 — 말로 만들거나, 명령 단추로 쌓거나, 화면 요소를 집어 온다.
              셋이 한 판에 있는 이유는 결과가 전부 아래 yaml 한 칸으로 모이기 때문이다. -->
-        <div class="panel" id="editor-panel">
-          <div class="panel-head">
+        <details class="panel fold" id="editor-panel" data-narrow-fold open>
+          <summary class="panel-head">
             <h2 id="editor-title">시나리오 편집기</h2>
             <span class="hint-inline" id="ai-state"></span>
-          </div>
+          </summary>
           <p class="hint" id="editor-hint"></p>
 
           <div class="row">
@@ -204,7 +209,7 @@
             <button class="btn" id="editor-clear">비우기</button>
           </div>
           <p class="note" id="saved-note"></p>
-        </div>
+        </details>
 
         <div class="panel" id="diagnose-panel" hidden>
           <div class="panel-head">
@@ -216,6 +221,15 @@
       </section>
     </main>
 
+    <!-- `<details>` 는 열림 여부를 CSS 로 정할 수 없다(속성이지 스타일이 아니다).
+         그래서 폭 판정만 여기서 한 줄로 한다 — **좁은 화면에서만** 접고, 넓은 화면은
+         지금까지와 똑같이 전부 펼친 채로 둔다. 접었다 편 뒤 창을 넓히는 경우까지
+         쫓아다니지는 않는다(사람이 직접 연 것을 도로 닫는 편이 더 이상하다). -->
+    <script>
+      if (matchMedia('(max-width: 620px)').matches) {
+        for (const d of document.querySelectorAll('[data-narrow-fold]')) d.open = false
+      }
+    </script>
     <script src="app.js"></script>
   </body>
 </html>
