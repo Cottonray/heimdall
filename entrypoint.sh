@@ -161,6 +161,24 @@ install_ime() {
     log "!! QA 키보드를 기본으로 세우지 못했어요 — 한글 입력이 빈칸으로 들어갑니다"
 }
 
+# **옛 이름으로 깔려 있던 것을 지운다.** 샘플 앱·QA 키보드는 처음에 회사 네임스페이스
+# (`com.example.demo.*`)로 지었다가 2026-09-04 에 `com.aidemo.*` 로 갈아엎었다. 그런데
+# AVD 는 볼륨(`aiqa-avd`)에 있어 **컨테이너를 새로 만들어도 설치된 앱이 따라온다** — 이미지를
+# 다시 구워 배포한 직후에도 옛 패키지 둘이 그대로 남아 있었다. 남아 있으면 앱 서랍과 키보드
+# 목록에 같은 앱이 두 개씩 보이고, 그 이름이 사명을 그대로 드러낸다
+# (docs/rules.md §데모 사이트에는 `example` 라는 낱말을 쓰지 않는다).
+# 이미 없으면 uninstall 이 조용히 실패할 뿐이라 그냥 매번 건다.
+drop_legacy_packages() {
+    for pkg in com.example.demo.golmok com.example.demo.qaime; do
+        case "$(adb -s "$SERIAL" shell pm list packages "$pkg" 2>/dev/null | tr -d '\r')" in
+            *"$pkg"*)
+                log "옛 이름 패키지 제거 ($pkg)"
+                adb -s "$SERIAL" uninstall "$pkg" >/dev/null 2>&1
+                ;;
+        esac
+    done
+}
+
 install_app() {
     if [ ! -f "$APK" ]; then
         log "!! 샘플 앱 apk 가 없어요: $APK"
@@ -188,6 +206,7 @@ supervise() {
             start_emulator
             if wait_for_boot; then
                 prepare_device
+                drop_legacy_packages
                 install_app
                 install_ime
             fi
@@ -199,6 +218,7 @@ supervise() {
 start_emulator
 if wait_for_boot; then
     prepare_device
+    drop_legacy_packages
     # **앱을 먼저, 키보드를 나중에.** 앱을 지웠다 다시 깔면 시스템이 IME 목록을 다시
     # 훑으면서 방금 세운 기본 키보드를 되돌리는 판이 있다
     install_app
