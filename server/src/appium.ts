@@ -9,8 +9,9 @@
 // Appium 은 세션 하나를 여는 데만 기기에 서버 apk 를 올리고 붙는 시간이 든다. 대신
 // 한 번 열면 요소 찾기가 빠르다(우리 adb 갈래의 `uiautomator dump` 2.1초와 견줘 볼 것).
 
+import * as device from './device.ts'
+
 const BASE = process.env.AIQA_APPIUM_URL ?? 'http://127.0.0.1:4723'
-const SERIAL = process.env.AIQA_SERIAL ?? 'emulator-5554'
 
 export class AppiumError extends Error {}
 
@@ -66,7 +67,8 @@ export async function open(): Promise<string> {
                 alwaysMatch: {
                     platformName: 'Android',
                     'appium:automationName': 'UiAutomator2',
-                    'appium:udid': SERIAL,
+                    // 지금 화면이 보여 주는 기기에 붙는다 (device.ts 의 target)
+                    'appium:udid': device.target(),
                     // 기기 상태를 건드리지 않는다. 지우는 것은 시나리오의 clearState 몫이다
                     'appium:noReset': true,
                     // 사람이 화면을 보다가 세션이 살아 있는 채로 끊기는 일이 없게 넉넉히

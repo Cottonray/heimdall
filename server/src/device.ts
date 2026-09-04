@@ -1,14 +1,49 @@
-// 에뮬레이터를 만지는 유일한 자리 — adb 한 겹 위의 얇은 껍데기.
+// 기기를 만지는 유일한 자리 — adb 한 겹 위의 얇은 껍데기.
 //
-// **기기는 한 대뿐이다** (AIQA_SERIAL, 기본 emulator-5554). 늘리지 않는다:
-// 집 회선의 한 대짜리 홈서버에서 에뮬레이터는 코어와 메모리를 통째로 먹고, 두 대가
-// 뜨는 순간 화면 프레임도 Maestro 실행도 같이 느려진다. 그래서 이 모듈은 serial 을
-// 인자로 받지 않는다 — 부를 자리가 하나뿐이어야 한 대라는 게 지켜진다.
+// **한 번에 한 대를 본다.** 화면 스트림도, 조작 권한도, 시나리오 실행기도 하나뿐이라
+// 대상도 하나여야 한다. 그래서 이 모듈은 함수마다 serial 을 받지 않고 **지금 보는 기기**
+// 하나를 들고 있고, `setTarget()` 으로 그걸 바꾼다.
+//
+// **에뮬레이터는 여전히 한 대만 띄운다** — 집 회선의 홈서버에서 두 대가 뜨면 화면 프레임도
+// 실행도 같이 느려진다. 하지만 **실기기는 우리 CPU 를 쓰지 않으므로** 그 제한과 무관하다.
+// 붙는 기기 수에는 제한을 두지 않고, 보는 대상만 하나로 묶는다 (docs/aiqa.md §실기기).
+//
+// 캐시(화면 크기·원본 프레임 머리말·마지막 덤프)는 **기기마다 따로 둔다.** 하나로 두면
+// 대상을 바꾸는 순간 옛 기기의 해상도로 좌표를 계산해 엉뚱한 데를 누른다.
 
 import { spawn } from 'node:child_process'
 
-const SERIAL = process.env.AIQA_SERIAL ?? 'emulator-5554'
+/** 지금 보는 기기. 시작값은 늘 에뮬레이터다 — 그게 상시로 떠 있는 쪽이다 */
+let SERIAL = process.env.AIQA_SERIAL ?? 'emulator-5554'
 const ADB = process.env.AIQA_ADB ?? 'adb'
+
+export function target(): string {
+    return SERIAL
+}
+
+/** 보는 기기를 바꾼다. 캐시가 기기별이라 여기서 지울 것이 없다 */
+export function setTarget(serial: string) {
+    SERIAL = serial
+}
+
+/** 기기마다 따로 두는 것들 */
+type DeviceCache = {
+    size: { width: number; height: number } | null
+    raw: { offset: number; width: number; height: number } | null
+    rawProbed: boolean
+    lastDump: { nodes: UiNode[]; at: number } | null
+}
+
+const caches = new Map<string, DeviceCache>()
+
+function cache(): DeviceCache {
+    let c = caches.get(SERIAL)
+    if (!c) {
+        c = { size: null, raw: null, rawProbed: false, lastDump: null }
+        caches.set(SERIAL, c)
+    }
+    return c
+}
 
 /** 샘플 앱. 설치·재실행이 이 값 하나를 본다 */
 export const APP_ID = process.env.AIQA_APP_ID ?? 'com.example.demo.golmok'
@@ -80,9 +115,14 @@ function run(cmd: string, args: string[], timeoutMs: number, shell = false): Pro
     })
 }
 
-/** adb 한 번. 실패는 예외가 아니라 결과로 돌려준다 — 부르는 쪽이 대개 그냥 넘어간다 */
-export async function adb(args: string[], timeoutMs = 10_000): Promise<RunResult> {
-    return run(ADB, ['-s', SERIAL, ...args], timeoutMs)
+/**
+ * adb 한 번. 실패는 예외가 아니라 결과로 돌려준다 — 부르는 쪽이 대개 그냥 넘어간다.
+ *
+ * `global` 은 기기를 고르지 않는 명령(`devices`·`connect`)을 위한 것이다. 그런 명령에
+ * `-s` 를 붙이면 adb 가 통째로 거절한다.
+ */
+export async function adb(args: string[], timeoutMs = 10_000, global = false): Promise<RunResult> {
+    return run(ADB, global ? args : ['-s', SERIAL, ...args], timeoutMs)
 }
 
 /** 기기 안에서 셸 한 줄. 결과 문자열만 필요할 때 */
@@ -104,8 +144,6 @@ export type DeviceState = {
     height: number
 }
 
-let cachedSize: { width: number; height: number } | null = null
-
 /**
  * 화면 크기. 브라우저의 클릭 좌표를 기기 좌표로 되돌리는 데 쓴다.
  *
@@ -113,14 +151,15 @@ let cachedSize: { width: number; height: number } | null = null
  * 매 프레임 `wm size` 를 부르면 그 왕복이 그대로 지연이 된다.
  */
 export async function screenSize(): Promise<{ width: number; height: number }> {
-    if (cachedSize) return cachedSize
+    const c = cache()
+    if (c.size) return c.size
     const out = await shell('wm size')
     // "Physical size: 720x1600" · override 가 있으면 "Override size: …" 가 뒤에 붙는다
     const all = [...out.matchAll(/(\d+)x(\d+)/g)]
     const last = all.at(-1)
     if (!last) return { width: 720, height: 1600 }
-    cachedSize = { width: Number(last[1]), height: Number(last[2]) }
-    return cachedSize
+    c.size = { width: Number(last[1]), height: Number(last[2]) }
+    return c.size
 }
 
 export async function state(): Promise<DeviceState> {
@@ -147,9 +186,6 @@ export async function state(): Promise<DeviceState> {
  * 내놓지만 adb 는 로컬 소켓이라 그 전송이 PNG 압축보다 싸다.
  * 홈서버 실측: PNG 길 860ms · 원본 길 **512ms** (같은 화면·같은 결과 22KB).
  */
-let rawFrame: { offset: number; width: number; height: number } | null = null
-let rawProbed = false
-
 /**
  * 원본 프레임의 머리말 길이를 잰다.
  *
@@ -158,22 +194,23 @@ let rawProbed = false
  * 픽셀이 차지하는 만큼을 빼면 머리말 길이가 정확히 나온다. 어긋난 값을 쓰면 화면이
  * 몇 픽셀 밀린 채로 나오는데, 그건 크기도 그대로라 눈으로 보기 전에는 모른다.
  */
-async function probeRawFrame(): Promise<typeof rawFrame> {
-    if (rawProbed) return rawFrame
-    rawProbed = true
+async function probeRawFrame(): Promise<DeviceCache['raw']> {
+    const c = cache()
+    if (c.rawProbed) return c.raw
+    c.rawProbed = true
     const r = await adb(['exec-out', 'screencap'], 25_000)
     const buf = r.stdout
-    if (buf.length < 32) return (rawFrame = null)
+    if (buf.length < 32) return (c.raw = null)
     const width = buf.readUInt32LE(0)
     const height = buf.readUInt32LE(4)
     const offset = buf.length - width * height * 4
-    rawFrame = width > 0 && height > 0 && (offset === 12 || offset === 16) ? { offset, width, height } : null
+    c.raw = width > 0 && height > 0 && (offset === 12 || offset === 16) ? { offset, width, height } : null
     console.log(
-        rawFrame
-            ? `[aiqa] 원본 프레임 ${width}x${height} 머리말 ${offset}B — 빠른 길로 갑니다`
-            : '[aiqa] 원본 프레임 머리말을 못 읽었어요 — PNG 길로 갑니다',
+        c.raw
+            ? `[aiqa] ${SERIAL} 원본 프레임 ${width}x${height} 머리말 ${offset}B — 빠른 길로 갑니다`
+            : `[aiqa] ${SERIAL} 원본 프레임 머리말을 못 읽었어요 — PNG 길로 갑니다`,
     )
-    return rawFrame
+    return c.raw
 }
 
 /**
@@ -375,11 +412,9 @@ export type UiNode = {
  * **안전한 이유는 무효화가 행동 쪽에 붙어 있어서다** — tap·swipe·글자·키·앱 재실행이
  * 전부 버린다. 화면을 바꿀 수 있는 자리가 그것뿐이다.
  */
-let lastDump: { nodes: UiNode[]; at: number } | null = null
-
 /** 화면을 바꿀 만한 일을 했다. 다음 읽기는 기기에서 새로 가져온다 */
 export function invalidateDump() {
-    lastDump = null
+    cache().lastDump = null
 }
 
 /**
@@ -398,7 +433,8 @@ export function invalidateDump() {
  * 정규식으로 충분하고, 이 스택은 의존성이 0이다.
  */
 export async function dump(maxAgeMs = 0): Promise<UiNode[]> {
-    if (maxAgeMs > 0 && lastDump && Date.now() - lastDump.at <= maxAgeMs) return lastDump.nodes
+    const c = cache()
+    if (maxAgeMs > 0 && c.lastDump && Date.now() - c.lastDump.at <= maxAgeMs) return c.lastDump.nodes
     const r = await adb(['exec-out', 'uiautomator', 'dump', '/dev/tty'], 20_000)
     const xml = r.stdout.toString('utf8')
     const nodes: UiNode[] = []
@@ -416,7 +452,7 @@ export async function dump(maxAgeMs = 0): Promise<UiNode[]> {
             bounds: { left: Number(b[1]), top: Number(b[2]), right: Number(b[3]), bottom: Number(b[4]) },
         })
     }
-    lastDump = { nodes, at: Date.now() }
+    c.lastDump = { nodes, at: Date.now() }
     return nodes
 }
 

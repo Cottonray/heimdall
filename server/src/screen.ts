@@ -65,6 +65,17 @@ export function isDeviceOnline() {
     return deviceOnline
 }
 
+/**
+ * 보는 기기가 바뀌었다. **지난 프레임을 버린다** — 안 버리면 새 기기의 첫 장이 옛 기기의
+ * 장과 우연히 같은 해시일 때 화면이 안 바뀌고, 무엇보다 붙는 사람에게 옛 기기 화면을
+ * 한 장 보여 주게 된다.
+ */
+export function retarget() {
+    lastFrame = null
+    lastFrameHash = ''
+    kick(0)
+}
+
 /** 누가 방금 만졌다. 다음 몇 초는 빠른 박자로 돈다 */
 export function poke() {
     lastActivity = Date.now()

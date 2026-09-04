@@ -24,6 +24,10 @@ const state = {
   timings: [],
   lastEngine: null,
   appId: '',
+  /** 지금 보는 기기의 화면 크기. **기기마다 다르다** — 좌표 환산과 폰 틀 비율이 이걸 본다 */
+  size: { width: 720, height: 1600 },
+  devices: [],
+  serial: '',
 }
 
 // ── 문구 ──────────────────────────────────────────────────────────────────
@@ -82,6 +86,10 @@ async function loadConfig() {
   state.timings = cfg.timings ?? []
   state.running = cfg.running
   state.appId = cfg.appId
+  state.devices = cfg.devices ?? []
+  state.serial = cfg.serial ?? ''
+  if (cfg.device && cfg.device.width) applySize({ width: cfg.device.width, height: cfg.device.height })
+  renderDevices()
   renderFlows()
   renderTimings()
   renderLoadOptions()
@@ -100,6 +108,48 @@ async function loadConfig() {
     $('ai-state').textContent = 'OpenRouter 키가 없어 말로 만들기만 꺼져 있어요'
     $('ai-make').disabled = true
     $('ai-input').disabled = true
+  }
+}
+
+/**
+ * 붙어 있는 기기 목록.
+ *
+ * **고를 수 있는 것만 고르게 둔다.** 공개 화면이라 아무나 열 수 있고, 목록에 실기기가
+ * 있다고 해서 모르는 사람이 그 폰을 조작할 수 있으면 안 된다 — 서버가 허용 목록으로
+ * 막고(devices.ts), 화면은 그 사실을 잠긴 모양으로 보여 준다.
+ */
+async function loadDevices() {
+  const res = await fetch(`${BASE}/api/devices`, { cache: 'no-store' })
+  const data = await res.json().catch(() => null)
+  if (!data) return
+  state.devices = data.devices ?? []
+  state.serial = data.serial ?? ''
+  renderDevices()
+}
+
+function renderDevices() {
+  const box = $('devices')
+  box.replaceChildren()
+  if (state.devices.length <= 1 && state.devices.every((d) => d.kind === 'emulator')) {
+    // 에뮬레이터 하나뿐이면 고를 것이 없다. 줄만 차지한다
+    box.hidden = true
+    return
+  }
+  box.hidden = false
+
+  for (const d of state.devices) {
+    const b = document.createElement('button')
+    b.className = 'btn btn-key device'
+    b.textContent = `${d.kind === 'emulator' ? '에뮬레이터' : d.model || d.serial}`
+    b.title = `${d.serial} · ${d.state}`
+    if (d.serial === state.serial) b.classList.add('device--on')
+    if (!d.selectable) {
+      b.disabled = true
+      b.classList.add('device--locked')
+      b.title += ' · 공개 화면에서는 고를 수 없어요'
+    }
+    b.onclick = () => post('/api/devices/select', { serial: d.serial })
+    box.append(b)
   }
 }
 
@@ -255,6 +305,7 @@ function handle(msg) {
       state.viewerId = msg.viewerId
       state.control = msg.control
       state.running = msg.running
+      applySize(msg.size)
       setDevice(msg.deviceOnline)
       setViewers(msg.viewers)
       syncControl()
@@ -266,6 +317,12 @@ function handle(msg) {
       break
     case 'device':
       setDevice(msg.online)
+      break
+    case 'device-changed':
+      state.serial = msg.serial
+      applySize(msg.size)
+      appendLog(`기기를 ${msg.serial} 로 바꿨어요`, 'ok')
+      void loadDevices()
       break
     case 'viewers':
       setViewers(msg.viewers)
@@ -325,6 +382,19 @@ const ENGINE_LABELS = { maestro: 'Maestro CLI', appium: 'Appium', adb: 'adb 직�
 const engineLabel = (e) => ENGINE_LABELS[e] ?? e
 
 // ── 상태 그리기 ───────────────────────────────────────────────────────────
+
+/**
+ * 폰 틀과 좌표 환산의 기준을 지금 기기 크기로 맞춘다.
+ *
+ * **기기마다 화면 비율이 다르다.** 에뮬레이터(720x1600)로 굳혀 두면 실기기를 볼 때
+ * 그림이 늘어나고, 더 나쁜 것은 누른 자리가 어긋난다는 것이다 — 좌표를 0~1 로 보내는데
+ * 그 0~1 을 재는 틀이 실제 그림과 다르기 때문이다.
+ */
+function applySize(size) {
+  if (!size || !size.width || !size.height) return
+  state.size = size
+  $('phone').style.aspectRatio = `${size.width} / ${size.height}`
+}
 
 function setDevice(online) {
   state.deviceOnline = online
@@ -429,7 +499,7 @@ function pointOf(ev) {
   const img = $('screen')
   const box = img.getBoundingClientRect()
   // object-fit: contain 이라 실제 그림은 상자보다 작을 수 있다. 그 여백을 빼고 잰다
-  const ratio = 720 / 1600
+  const ratio = state.size.width / state.size.height
   let w = box.width
   let h = box.width / ratio
   if (h > box.height) {
@@ -704,4 +774,6 @@ void (async () => {
   syncControl()
   connect()
   void loadElements()
+  // 기기가 붙거나 빠지는 것은 화면이 알 길이 없다. 가끔 되물어 본다
+  setInterval(() => void loadDevices(), 15_000)
 })()

@@ -256,7 +256,9 @@ async function runMaestro(flow: Flow, runId: string, finish: (passed: boolean) =
         await writeFile(file, flow.yaml, 'utf8')
     }
 
-    const child = spawn(MAESTRO, ['test', file], {
+    // **어느 기기에서 돌지 못박는다.** 안 주면 Maestro 가 붙어 있는 것 중에서 알아서
+    // 고르는데, 실기기가 붙어 있는 동안에는 그게 화면이 보여 주는 기기와 다를 수 있다
+    const child = spawn(MAESTRO, ['--device', device.target(), 'test', file], {
         env: {
             ...process.env,
             // 실행할 때마다 밖으로 통계를 보내지 않는다. 이 컨테이너는 데모 하나만 한다

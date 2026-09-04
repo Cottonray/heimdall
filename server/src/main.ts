@@ -15,6 +15,7 @@ import { readFile } from 'node:fs/promises'
 import path from 'node:path'
 import { randomUUID } from 'node:crypto'
 import * as device from './device.ts'
+import * as devices from './devices.ts'
 import * as screen from './screen.ts'
 import * as control from './control.ts'
 import * as appium from './appium.ts'
@@ -178,6 +179,8 @@ const server = http.createServer(async (req, res) => {
                 viewers: screen.count(),
                 llm: llm.enabled(),
                 appium: await appium.ready(),
+                serial: device.target(),
+                devices: await devices.list(),
                 engines: runner.ENGINES,
                 timings: runner.timings(),
                 flows: list.map((f) => ({ id: f.id, name: f.name, desc: f.desc, yaml: f.yaml })),
@@ -223,6 +226,29 @@ const server = http.createServer(async (req, res) => {
 
         if (req.method === 'POST' && route === '/api/stop') {
             json(res, 200, { ok: runner.cancel() })
+            return
+        }
+
+        if (req.method === 'GET' && route === '/api/devices') {
+            json(res, 200, { serial: device.target(), devices: await devices.list() })
+            return
+        }
+
+        // 보는 기기를 바꾼다. **허용 목록 밖은 devices.select 가 거절한다** — 공개 화면이라
+        // 모르는 사람이 주인의 개인 폰을 고를 수 있으면 안 된다 (devices.ts 첫 주석)
+        if (req.method === 'POST' && route === '/api/devices/select') {
+            if (runner.busy()) {
+                json(res, 409, { ok: false, error: '시나리오가 도는 중이에요' })
+                return
+            }
+            const body = JSON.parse((await readBody(req)) || '{}') as { serial?: string }
+            const r = await devices.select(String(body.serial ?? ''))
+            if (r.ok) {
+                screen.retarget()
+                const size = await device.screenSize()
+                screen.broadcast({ type: 'device-changed', serial: device.target(), size })
+            }
+            json(res, r.ok ? 200 : 400, r)
             return
         }
 
@@ -379,6 +405,22 @@ setInterval(() => {
     control.sweep()
     if (runner.busy()) screen.poke()
 }, 1_000)
+
+/**
+ * 보고 있던 기기가 사라졌으면 에뮬레이터로 되돌린다.
+ *
+ * 실기기는 들고 나가면 그대로 없어진다(Wi-Fi 디버깅은 화면이 꺼져도 끊긴다). 그 상태로
+ * 두면 화면이 영영 검고 시나리오는 전부 "기기 없음"으로 떨어지는데, 원인은 화면에 안 보인다.
+ */
+setInterval(() => {
+    if (runner.busy()) return
+    void devices.healthcheck().then(async (moved) => {
+        if (!moved) return
+        console.log(`[aiqa] 보던 기기가 사라져 ${moved} 로 되돌립니다`)
+        screen.retarget()
+        screen.broadcast({ type: 'device-changed', serial: moved, size: await device.screenSize() })
+    })
+}, 10_000)
 
 // nginx 의 proxy_read_timeout 을 3600s 로 열어 두었지만, 그 사이 아무 말도 없으면
 // 중간의 다른 상자가 끊는다. 25초마다 ping 하나면 그 판을 막을 수 있다

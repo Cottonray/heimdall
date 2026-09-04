@@ -511,6 +511,23 @@ body {
   color: var(--blue);
 }
 
+/* ── 기기 고르기 ──────────────────────────────────────────────────────── */
+
+.devices {
+  margin-bottom: 10px;
+}
+
+.device--on {
+  border-color: var(--ink);
+  background: var(--acid);
+  font-weight: 600;
+}
+
+/* 붙어 있지만 공개 화면에서는 못 고르는 기기 (주인의 개인 폰 같은 것) */
+.device--locked {
+  border-style: dashed;
+}
+
 /* ── 시나리오 편집기 ──────────────────────────────────────────────────── */
 
 .sub-head {
