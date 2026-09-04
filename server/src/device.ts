@@ -233,6 +233,7 @@ export async function longPress(x: number, y: number) {
 /** QA 전용 키보드(별도 apk). 한글을 넣는 유일한 길이다 — 아래 typeText 주석 참고 */
 const IME_ACTION_TEXT = 'com.example.demo.qaime.TEXT'
 const IME_ACTION_CLEAR = 'com.example.demo.qaime.CLEAR'
+const IME_ID = process.env.AIQA_IME_ID ?? 'com.example.demo.qaime/.QaKeyboard'
 
 /**
  * 글자 넣기.
@@ -263,11 +264,28 @@ export async function typeText(text: string) {
     // 아직 안 붙었으면(탭과 입력 사이가 수십 ms 다) 글자가 조용히 사라진다 — 실제로
     // 검색 시나리오가 그렇게 빈칸으로 떨어졌다.
     // 신호는 키보드가 세우는 결과 코드다: `am broadcast` 가 "result=1" 로 찍어 준다.
-    for (let attempt = 0; attempt < 4; attempt += 1) {
+    if (await pushText(b64, 4)) return
+
+    // 그래도 안 들어갔으면 **기본 키보드가 우리 것이 아닐 가능성이 크다.** 앱을 다시
+    // 깔면 시스템이 IME 목록을 훑으면서 되돌려 놓는 판이 있고, 그때 붙는 것은 Gboard 다 —
+    // Gboard 는 우리 방송을 모른다. 다시 세우고 한 번 더 해 본다.
+    await adb(['shell', 'ime', 'enable', IME_ID], 10_000)
+    await adb(['shell', 'ime', 'set', IME_ID], 10_000)
+    if (await pushText(b64, 4)) return
+
+    // **조용히 넘어가지 않는다.** 여기서 삼키면 두 화면 뒤의 assertVisible 이 "화면에
+    // 없어요"로 떨어지고, 진짜 원인(글자가 안 들어갔다)은 아무 데도 안 남는다.
+    throw new AdbError('한글을 넣지 못했어요 — QA 키보드가 기본이 아닌 것 같아요', null)
+}
+
+/** 방송을 몇 번 보내 보고, 키보드가 세운 결과 코드로 성공을 판정한다 */
+async function pushText(b64: string, attempts: number): Promise<boolean> {
+    for (let i = 0; i < attempts; i += 1) {
         const r = await adb(['shell', 'am', 'broadcast', '-a', IME_ACTION_TEXT, '--es', 'b64', b64], 12_000)
-        if (/result=1\b/.test(r.stdout.toString('utf8'))) return
-        await new Promise((done) => setTimeout(done, 200))
+        if (/result=1\b/.test(r.stdout.toString('utf8'))) return true
+        await new Promise((done) => setTimeout(done, 250))
     }
+    return false
 }
 
 /** 입력칸 비우기. QA 키보드가 붙어 있으면 한 번에, 아니면 지우기 키를 반복한다 */

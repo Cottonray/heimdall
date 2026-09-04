@@ -73,16 +73,58 @@ prepare_device() {
     adb -s "$SERIAL" shell wm dismiss-keyguard >/dev/null 2>&1 || true
 }
 
+# apk 하나를 얹는다. **서명이 다르면 지우고 다시 넣는다.**
+#
+# 이미지를 다시 구우면 gradle 이 디버그 서명 키를 새로 만든다. 그러면 기기에 이미 깔린
+# 같은 패키지와 서명이 어긋나서 재설치가 이렇게 막힌다:
+#   INSTALL_FAILED_UPDATE_INCOMPATIBLE: ... signatures do not match newer version
+# 그런데 `adb install` 은 그래도 **0으로 끝난다** — 조용히 옛 버전이 남는다. 실제로
+# 결과 코드를 새로 넣은 키보드가 안 올라가서 한글 입력이 계속 샜다.
+install_apk() {
+    apk=$1
+    pkg=$2
+    out=$(adb -s "$SERIAL" install -r -g "$apk" 2>&1)
+    case "$out" in
+        *Success*) return 0 ;;
+    esac
+    case "$out" in
+        *INSTALL_FAILED_UPDATE_INCOMPATIBLE* | *INSTALL_FAILED_VERSION_DOWNGRADE*)
+            log "  서명이 달라 지우고 다시 넣습니다 ($pkg)"
+            adb -s "$SERIAL" uninstall "$pkg" >/dev/null 2>&1
+            out=$(adb -s "$SERIAL" install -r -g "$apk" 2>&1)
+            ;;
+    esac
+    case "$out" in
+        *Success*) return 0 ;;
+        *) log "  !! 설치 실패 ($pkg): $out"; return 1 ;;
+    esac
+}
+
 install_ime() {
     # **한글 때문에 있다.** `adb shell input text` 는 아스키만 넣고 한글은 조용히
     # 사라진다 — adb 갈래로 "자전거"를 검색하려면 글자를 넣어 줄 자리가 필요하다.
     # 기본 키보드로 세워 두면 자판이 화면을 가리지도 않는다(1px 짜리다).
     [ -f "$IME_APK" ] || { log "!! QA 키보드 apk 가 없어요: $IME_APK"; return 0; }
     log "QA 키보드 설치"
-    adb -s "$SERIAL" install -r "$IME_APK" || return 0
-    adb -s "$SERIAL" shell ime enable "$IME_ID" >/dev/null 2>&1 || true
-    adb -s "$SERIAL" shell ime set "$IME_ID" >/dev/null 2>&1 || true
-    log "기본 키보드: $(adb -s "$SERIAL" shell settings get secure default_input_method | tr -d "\r")"
+    install_apk "$IME_APK" "com.example.demo.qaime" || return 0
+
+    # **한 번 세우고 마는 것으로는 안 된다.** 방금 깔린 패키지를 시스템의 IME 관리자가
+    # 아직 훑기 전이면 `ime set` 이 성공했다고 말해 놓고 곧 되돌아간다 — 실제로 로그에는
+    # "기본 키보드: …qaime" 라고 찍혔는데 정작 입력칸에 붙은 것은 Gboard 였고, 한글이
+    # 전부 빈칸으로 들어갔다. 그래서 **목록에 들었고 기본값이 우리 것인지**를 보고 다시 건다.
+    for _ in $(seq 1 10); do
+        adb -s "$SERIAL" shell ime enable "$IME_ID" >/dev/null 2>&1
+        adb -s "$SERIAL" shell ime set "$IME_ID" >/dev/null 2>&1
+        sleep 1
+        enabled=$(adb -s "$SERIAL" shell settings get secure enabled_input_methods 2>/dev/null | tr -d "\r")
+        current=$(adb -s "$SERIAL" shell settings get secure default_input_method 2>/dev/null | tr -d "\r")
+        case "$enabled" in *"$IME_ID"*) ;; *) continue ;; esac
+        if [ "$current" = "$IME_ID" ]; then
+            log "기본 키보드: $current"
+            return 0
+        fi
+    done
+    log "!! QA 키보드를 기본으로 세우지 못했어요 — 한글 입력이 빈칸으로 들어갑니다"
 }
 
 install_app() {
@@ -91,8 +133,7 @@ install_app() {
         return 1
     fi
     log "샘플 앱 설치"
-    # -r 재설치 · -g 런타임 권한 미리 허용(이 앱은 권한을 안 쓰지만 습관을 맞춘다)
-    adb -s "$SERIAL" install -r -g "$APK" || return 1
+    install_apk "$APK" "$APP_ID" || return 1
     adb -s "$SERIAL" shell monkey -p "$APP_ID" -c android.intent.category.LAUNCHER 1 >/dev/null 2>&1
     log "샘플 앱 실행 ($APP_ID)"
 }
@@ -108,8 +149,8 @@ supervise() {
             start_emulator
             if wait_for_boot; then
                 prepare_device
-                install_ime
                 install_app
+                install_ime
             fi
         fi
         sleep 15
@@ -119,8 +160,10 @@ supervise() {
 start_emulator
 if wait_for_boot; then
     prepare_device
-    install_ime
+    # **앱을 먼저, 키보드를 나중에.** 앱을 지웠다 다시 깔면 시스템이 IME 목록을 다시
+    # 훑으면서 방금 세운 기본 키보드를 되돌리는 판이 있다
     install_app
+    install_ime
 else
     log "기기 없이 서버만 띄웁니다 — 화면이 그 사실을 알려 줍니다"
 fi
