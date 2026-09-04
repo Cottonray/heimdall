@@ -1,0 +1,263 @@
+/* 「골목」 앱 안에 웹뷰로 뜨는 화면. **앱과 같은 색을 쓴다** — 경계가 보이면
+   사용자는 그 순간 "다른 데로 나갔다"고 느낀다 (sample-app 의 Theme.kt 와 같은 값). */
+:root {
+  color-scheme: light;
+  --brand: #ff6f3c;
+  --brand-dim: #ffe9e0;
+  --ink: #1b1b1b;
+  --sub: #8a8a8e;
+  --line: #efefef;
+}
+
+* {
+  box-sizing: border-box;
+  -webkit-tap-highlight-color: transparent;
+}
+
+body {
+  margin: 0;
+  padding: 0 0 32px;
+  color: var(--ink);
+  background: #fff;
+  font-family: -apple-system, BlinkMacSystemFont, "Noto Sans KR", "Segoe UI", sans-serif;
+  font-size: 15px;
+  line-height: 1.5;
+}
+
+.head {
+  padding: 18px 16px 12px;
+  border-bottom: 1px solid var(--line);
+}
+
+.head h1 {
+  margin: 0;
+  font-size: 21px;
+  font-weight: 700;
+}
+
+.head p {
+  margin: 4px 0 0;
+  color: var(--sub);
+  font-size: 13px;
+}
+
+/* 이 화면이 웹이라는 걸 눈으로도 알려 준다 — 데모에서 어디까지가 앱인지 보여야 한다 */
+.web-badge {
+  display: inline-block;
+  margin-top: 8px;
+  padding: 3px 8px;
+  border-radius: 999px;
+  background: var(--brand-dim);
+  color: var(--brand);
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.tabs {
+  display: flex;
+  border-bottom: 1px solid var(--line);
+}
+
+.tabs button {
+  flex: 1;
+  padding: 12px 0;
+  border: 0;
+  border-bottom: 2px solid transparent;
+  background: none;
+  color: var(--sub);
+  font: inherit;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.tabs button[aria-selected='true'] {
+  border-bottom-color: var(--ink);
+  color: var(--ink);
+  font-weight: 700;
+}
+
+.pane {
+  padding: 16px;
+}
+
+.pane h2 {
+  margin: 0 0 4px;
+  font-size: 17px;
+}
+
+.hint,
+.empty {
+  margin: 0 0 14px;
+  color: var(--sub);
+  font-size: 13px;
+}
+
+/* ── 쿠폰 ─────────────────────────────────────────────────────────── */
+
+.coupons {
+  display: grid;
+  gap: 10px;
+  margin: 0 0 14px;
+  padding: 0;
+  list-style: none;
+}
+
+.coupon {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  padding: 14px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+}
+
+.coupon-amount {
+  min-width: 74px;
+  color: var(--brand);
+  font-size: 17px;
+  font-weight: 800;
+  text-align: center;
+}
+
+.coupon-copy {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.coupon-name {
+  font-weight: 700;
+}
+
+.coupon-desc,
+.coupon-expire {
+  color: var(--sub);
+  font-size: 12px;
+}
+
+.coupon.taken {
+  background: #fafafa;
+}
+
+.coupon.taken .coupon-amount {
+  color: var(--sub);
+}
+
+/* ── 폼 ───────────────────────────────────────────────────────────── */
+
+.field {
+  display: block;
+  margin-bottom: 12px;
+}
+
+.field span {
+  display: block;
+  margin-bottom: 5px;
+  color: var(--sub);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.field input {
+  width: 100%;
+  padding: 12px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  font: inherit;
+}
+
+.field input:focus {
+  border-color: var(--brand);
+  outline: none;
+}
+
+.check {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  margin: 4px 0 16px;
+  font-size: 13px;
+}
+
+.check input {
+  width: 18px;
+  height: 18px;
+  accent-color: var(--brand);
+}
+
+.blocked {
+  margin: 10px 0 0;
+  color: var(--brand);
+  font-size: 12.5px;
+}
+
+.done {
+  margin-top: 18px;
+  padding: 16px;
+  border: 1px solid var(--brand-dim);
+  border-radius: 12px;
+  background: var(--brand-dim);
+}
+
+.done h3 {
+  margin: 0 0 6px;
+  font-size: 16px;
+}
+
+.done p {
+  margin: 0 0 12px;
+  font-size: 13.5px;
+  white-space: pre-line;
+}
+
+/* ── 내역 ─────────────────────────────────────────────────────────── */
+
+.history {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.history li {
+  padding: 12px 14px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  font-size: 14px;
+}
+
+.history li small {
+  display: block;
+  color: var(--sub);
+  font-size: 12px;
+}
+
+/* ── 버튼 ─────────────────────────────────────────────────────────── */
+
+.btn {
+  padding: 10px 16px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: #fff;
+  color: var(--ink);
+  font: inherit;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.btn-primary {
+  width: 100%;
+  border-color: transparent;
+  background: var(--brand);
+  color: #fff;
+  font-weight: 700;
+}
+
+.btn-primary:disabled {
+  background: #e6e6e6;
+  color: #a0a0a0;
+}
+
+.btn-ghost {
+  width: 100%;
+}

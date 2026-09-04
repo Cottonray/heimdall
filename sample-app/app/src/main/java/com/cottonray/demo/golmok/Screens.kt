@@ -71,10 +71,13 @@ fun TabsScreen(
     onTab: (Int) -> Unit,
     items: List<Copy.Item>,
     liked: Set<Int>,
+    coupons: Int,
+    entryWish: String?,
     onOpenItem: (Int) -> Unit,
     onSearch: () -> Unit,
     onSell: () -> Unit,
     onOpenChat: (String, String) -> Unit,
+    onOpenEvent: () -> Unit,
 ) {
     val icons = listOf(
         Icons.Filled.Home,
@@ -119,18 +122,23 @@ fun TabsScreen(
     ) { pad ->
         Box(Modifier.padding(pad)) {
             when (tab) {
-                0 -> HomeTab(items, onOpenItem, onSearch)
+                0 -> HomeTab(items, onOpenItem, onSearch, onOpenEvent)
                 1 -> CommunityTab()
                 2 -> NearbyTab()
                 3 -> ChatTab(onOpenChat)
-                else -> ProfileTab(liked)
+                else -> ProfileTab(liked, coupons, entryWish, onOpenEvent)
             }
         }
     }
 }
 
 @Composable
-private fun HomeTab(items: List<Copy.Item>, onOpenItem: (Int) -> Unit, onSearch: () -> Unit) {
+private fun HomeTab(
+    items: List<Copy.Item>,
+    onOpenItem: (Int) -> Unit,
+    onSearch: () -> Unit,
+    onOpenEvent: () -> Unit,
+) {
     var chip by remember { mutableStateOf(Copy.home.filterChips.first()) }
     val shown = remember(chip, items) {
         when {
@@ -162,6 +170,12 @@ private fun HomeTab(items: List<Copy.Item>, onOpenItem: (Int) -> Unit, onSearch:
         Spacer(Modifier.height(4.dp))
         HorizontalDivider(color = Line)
         LazyColumn(state = rememberLazyListState(), modifier = Modifier.testTag("home_list")) {
+            // **웹 화면으로 들어가는 입구.** 목록 맨 위에 둔 것은 시나리오가 스크롤 없이
+            // 닿게 하려는 것이다 — 섞인 흐름을 보여 주는 게 이 배너의 몫이다
+            item {
+                EventBanner(onOpenEvent)
+                HorizontalDivider(color = Line)
+            }
             items(shown, key = { it.id }) { ItemRow(it) { onOpenItem(it.id) } }
         }
     }
@@ -279,7 +293,7 @@ private fun ChatTab(onOpenChat: (String, String) -> Unit) {
 }
 
 @Composable
-private fun ProfileTab(liked: Set<Int>) {
+private fun ProfileTab(liked: Set<Int>, coupons: Int, entryWish: String?, onOpenEvent: () -> Unit) {
     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).testTag("profile")) {
         Text(Copy.app.myTabLabel, style = MaterialTheme.typography.titleLarge, modifier = Modifier.padding(16.dp))
         HorizontalDivider(color = Line)
@@ -313,6 +327,39 @@ private fun ProfileTab(liked: Set<Int>) {
             }
         }
         HorizontalDivider(color = Line)
+
+        // **여기가 웹에서 넘어온 값이 보이는 자리다.** 쿠폰은 웹 화면에서 받았고, 그 수를
+        // 자바스크립트 다리가 앱에 넘겨 줬다 (WebScreen.kt 의 Bridge)
+        Row(
+            Modifier.fillMaxWidth().clickable(onClick = onOpenEvent).padding(16.dp).testTag("coupon_row"),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Text(Copy.event.couponTitle, style = MaterialTheme.typography.bodyLarge, modifier = Modifier.weight(1f))
+            Text(
+                if (coupons > 0) Copy.event.couponCount.replace("{n}", "$coupons") else Copy.event.couponEmpty,
+                style = MaterialTheme.typography.bodyMedium,
+                color = if (coupons > 0) Brand else Sub,
+                fontWeight = if (coupons > 0) FontWeight.Bold else FontWeight.Normal,
+                modifier = Modifier.testTag("coupon_count"),
+            )
+        }
+        HorizontalDivider(color = Line)
+
+        if (entryWish != null) {
+            Row(Modifier.fillMaxWidth().padding(16.dp).testTag("entry_row")) {
+                Text(Copy.event.entryDone, style = MaterialTheme.typography.bodyLarge, modifier = Modifier.weight(1f))
+                Text(entryWish, style = MaterialTheme.typography.bodyMedium, color = Brand)
+            }
+            HorizontalDivider(color = Line)
+        }
+
+        Text(
+            Copy.event.menuLabel,
+            style = MaterialTheme.typography.bodyLarge,
+            modifier = Modifier.fillMaxWidth().clickable(onClick = onOpenEvent).padding(16.dp).testTag("menu_event"),
+        )
+        HorizontalDivider(color = Line)
+
         Copy.profile.menu.forEachIndexed { i, label ->
             Text(
                 label,

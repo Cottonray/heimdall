@@ -1,0 +1,22 @@
+# 앱→웹→앱 쿠폰 — 홈 배너에서 쿠폰을 받고 나의 골목에서 개수를 확인해요.
+#
+# **이 시나리오는 경계를 두 번 넘는다.** 배너까지는 네이티브(그래서 id: 로 집는다),
+# 그다음은 웹이라 id 가 없어 글자로 집고, 뒤로 나오면 다시 네이티브다.
+appId: com.example.demo.golmok
+---
+- launchApp:
+    clearState: true
+# ── 네이티브 ──
+- tapOn:
+    id: "event_open"
+# ── 여기부터 웹 ──
+- assertVisible: "망원동 골목 혜택"
+- assertVisible: "이 화면은 웹으로 보여 드려요"
+- tapOn: "전체받기"
+- assertVisible: "받음"
+# ── 다시 네이티브 ──
+- back
+- tapOn:
+    id: "tab_4"
+- assertVisible: "받은 쿠폰"
+- assertVisible: "3장"

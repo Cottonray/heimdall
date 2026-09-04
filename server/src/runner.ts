@@ -98,7 +98,9 @@ export type Timing = {
 }
 const history: Timing[] = []
 export function timings() {
-    return history.slice(-40)
+    // 시나리오 여덟 × 갈래 셋이면 한 바퀴가 24건이다. 40 으로 잘라 두면 한 바퀴를
+    // 다 돌린 직후에도 맨 앞 몇 건이 이미 잘려 나가 표에 빈칸이 생긴다
+    return history.slice(-120)
 }
 
 export function lastRun() {
@@ -259,6 +261,9 @@ async function runMaestro(flow: Flow, runId: string, finish: (passed: boolean) =
             ...process.env,
             // 실행할 때마다 밖으로 통계를 보내지 않는다. 이 컨테이너는 데모 하나만 한다
             MAESTRO_CLI_NO_ANALYTICS: 'true',
+            // 실행이 끝날 때마다 "--analyze 를 써 보라"는 열 줄짜리 안내를 띄운다.
+            // 화면 로그가 그것으로 덮여서 정작 단계가 안 보인다
+            MAESTRO_CLI_ANALYSIS_NOTIFICATION_DISABLED: 'true',
             // 첫 실행은 기기에 드라이버 apk 를 올리느라 오래 걸린다. 기본값으로는 자주 놓친다
             MAESTRO_DRIVER_STARTUP_TIMEOUT: process.env.MAESTRO_DRIVER_STARTUP_TIMEOUT ?? '120000',
             // 색 코드가 섞이면 화면 로그가 깨진다. TTY 가 아니면 대개 안 붙지만 못박아 둔다

@@ -1,0 +1,49 @@
+{
+  "web": {
+    "title": "망원동 골목 혜택",
+    "sub": "이웃 거래에 쓸 쿠폰을 챙겨요",
+    "tabs": [
+      "쿠폰",
+      "응모",
+      "내역"
+    ],
+    "coupons": [
+      {
+        "name": "안심결제 할인",
+        "desc": "1만 원 이상 거래할 때",
+        "amount": "2,000원",
+        "expire": "9월 30일까지"
+      },
+      {
+        "name": "동네배달 할인",
+        "desc": "망원동 배달 거래할 때",
+        "amount": "3,000원",
+        "expire": "10월 31일까지"
+      },
+      {
+        "name": "택배비 할인",
+        "desc": "택배 거래를 예약할 때",
+        "amount": "2,500원",
+        "expire": "11월 30일까지"
+      }
+    ],
+    "claim": "받기",
+    "claimed": "받음",
+    "claimAll": "전체받기",
+    "formTitle": "망원동 소원 응모",
+    "formHint": "닉네임과 받고 싶은 물건을 적어 주세요",
+    "nickLabel": "닉네임",
+    "nickPlaceholder": "예: 동네산책가",
+    "wishLabel": "원하는 물건",
+    "wishPlaceholder": "예: 산책용 작은 가방",
+    "agree": "이벤트 안내에 동의해요",
+    "submit": "응모",
+    "submitBlocked": "빈칸을 모두 채워 주세요",
+    "doneTitle": "응모가 끝났어요",
+    "doneBody": "동네산책가님, 응모됐어요\n결과는 나의 골목에서 확인해요",
+    "backToApp": "돌아가기",
+    "historyTitle": "받은 혜택",
+    "historyEmpty": "아직 받은 혜택이 없어요",
+    "note": "이 화면은 웹으로 보여 드려요"
+  }
+}

@@ -67,6 +67,14 @@ prepare_device() {
     # 화면이 꺼지면 screencap 이 검은 장면만 준다. 늘 켜 둔다
     adb -s "$SERIAL" shell settings put system screen_off_timeout 2147483647
     adb -s "$SERIAL" shell svc power stayon true >/dev/null 2>&1 || true
+    # **웹뷰 안을 보이게 한다.** 이게 없으면 웹 화면이 접근성 트리에 `android.webkit.WebView`
+    # 빈 상자 하나로만 올라온다 — 눈에는 페이지가 멀쩡히 보이는데 어떤 도구도 그 안의
+    # 글자를 못 집는다(세 갈래 전부). Chromium 은 화면낭독기 같은 클라이언트를 감지해야
+    # 접근성 트리를 만드는데, uiautomator 는 그 조건을 만족시키지 못한다.
+    #
+    # 이 플래그 파일은 **디버그 빌드 앱에만** 먹는다. 그래서 진짜 서비스를 테스트할 때는
+    # 앱을 디버그로 받아 오거나, Appium 의 웹뷰 컨텍스트 전환을 써야 한다 (docs/aiqa.md).
+    adb -s "$SERIAL" shell 'echo "_ --force-renderer-accessibility" > /data/local/tmp/webview-command-line'
     # 잠금화면을 걷어낸다. 데모를 여는 사람이 매번 쓸어 올릴 이유가 없다
     adb -s "$SERIAL" shell locksettings set-disabled true >/dev/null 2>&1 || true
     adb -s "$SERIAL" shell input keyevent KEYCODE_WAKEUP >/dev/null 2>&1 || true

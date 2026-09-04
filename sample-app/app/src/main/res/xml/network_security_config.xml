@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 평문(http)을 **한 주소에만** 연다.
+     `usesCleartextTraffic="true"` 로 통째로 열면 이 앱이 아무 http 주소나 부를 수 있게 된다.
+     우리가 부르는 곳은 에뮬레이터에서 본 호스트(10.0.2.2)의 웹앱 하나뿐이다. -->
+<network-security-config>
+    <domain-config cleartextTrafficPermitted="true">
+        <domain includeSubdomains="false">10.0.2.2</domain>
+    </domain-config>
+</network-security-config>

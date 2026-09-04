@@ -33,6 +33,9 @@ sealed interface Route {
     data class Detail(val itemId: Int) : Route
     data class Chat(val peer: String, val itemTitle: String) : Route
     data object Sell : Route
+
+    /** **여기서부터 웹이다.** 껍데기만 네이티브이고 안은 웹뷰다 (WebScreen.kt) */
+    data object Web : Route
 }
 
 class MainActivity : ComponentActivity() {
@@ -54,6 +57,10 @@ class MainActivity : ComponentActivity() {
                 // 저장하지 않는 것이 시나리오를 반복해서 돌리기에 낫다
                 val added = remember { mutableStateListOf<Copy.Item>() }
                 var liked by remember { mutableStateOf(setOf<Int>()) }
+                // **웹에서 넘어온 값들.** 이벤트 화면(웹)이 자바스크립트 다리로 알려 주고,
+                // 네이티브 화면(나의 골목)이 그걸 보여 준다 — 섞인 흐름의 이음매다
+                var coupons by remember { mutableIntStateOf(0) }
+                var entryWish by remember { mutableStateOf<String?>(null) }
 
                 val route = stack.last()
                 BackHandler(enabled = stack.size > 1) { stack.removeAt(stack.lastIndex) }
@@ -72,10 +79,13 @@ class MainActivity : ComponentActivity() {
                             onTab = { tab = it },
                             items = added + Copy.items,
                             liked = liked,
+                            coupons = coupons,
+                            entryWish = entryWish,
                             onOpenItem = { stack.add(Route.Detail(it)) },
                             onSearch = { stack.add(Route.Search) },
                             onSell = { stack.add(Route.Sell) },
                             onOpenChat = { peer, title -> stack.add(Route.Chat(peer, title)) },
+                            onOpenEvent = { stack.add(Route.Web) },
                         )
 
                         is Route.Search -> SearchScreen(
@@ -106,6 +116,17 @@ class MainActivity : ComponentActivity() {
                             peer = route.peer,
                             itemTitle = route.itemTitle,
                             onBack = { stack.removeAt(stack.lastIndex) },
+                        )
+
+                        is Route.Web -> WebScreen(
+                            modifier = inner,
+                            url = EVENT_URL,
+                            onBack = { stack.removeAt(stack.lastIndex) },
+                            onCoupon = { coupons = it },
+                            onEntry = { _, wish ->
+                                entryWish = wish
+                                scope.launch { snackbar.showSnackbar(Copy.event.entryDone) }
+                            },
                         )
 
                         is Route.Sell -> SellScreen(

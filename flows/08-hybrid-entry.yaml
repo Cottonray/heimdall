@@ -1,0 +1,26 @@
+# 웹→앱 응모 — 한글로 응모한 뒤 앱에 전달된 결과를 확인해요.
+#
+# 웹 폼에 한글을 넣고, 그 결과가 자바스크립트 다리를 타고 네이티브 화면에 나타나는지 본다.
+appId: com.example.demo.golmok
+---
+- launchApp:
+    clearState: true
+- tapOn:
+    id: "event_open"
+- assertVisible: "망원동 골목 혜택"
+# ── 웹 ──
+- tapOn: "응모 탭"
+- assertVisible: "망원동 소원 응모"
+# 입력칸은 웹이라 id 도 글자도 없다. 라벨을 누르면 <label> 이 그 칸에 포커스를 준다
+- tapOn: "닉네임"
+- inputText: "동네산책가"
+- tapOn: "원하는 물건"
+- inputText: "산책용 작은 가방"
+- tapOn: "이벤트 안내에 동의해요"
+- tapOn: "응모"
+- assertVisible: "응모가 끝났어요"
+# ── 다시 네이티브 ── 웹에서 넘어온 값이 앱 화면에 있나
+- back
+- tapOn:
+    id: "tab_4"
+- assertVisible: "산책용 작은 가방"

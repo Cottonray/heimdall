@@ -1,7 +1,7 @@
 {
   "ui": {
     "title": "AI QA",
-    "subtitle": "안드로이드 앱을 직접 조작하고 Maestro 테스트를 실시간으로 확인해요.",
+    "subtitle": "네이티브와 웹이 섞인 앱을 직접 조작하고, 세 가지 방식으로 테스트해요.",
     "deviceTitle": "안드로이드 에뮬레이터",
     "deviceHint": "폰 화면을 누르면 같은 위치에 터치가 입력돼요.",
     "claimButton": "조작",

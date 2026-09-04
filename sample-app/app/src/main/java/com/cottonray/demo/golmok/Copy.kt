@@ -26,6 +26,7 @@ object Copy {
     lateinit var sell: Sell private set
     lateinit var profile: Profile private set
     lateinit var misc: Misc private set
+    lateinit var event: Event private set
 
     data class App(
         val name: String,
@@ -130,6 +131,29 @@ object Copy {
         val emptyChat: String,
         val emptyLikes: String,
         val searchEmpty: String,
+    )
+
+    /**
+     * 이벤트 화면 — **이 화면만 앱이 아니라 웹이다.**
+     *
+     * 여기 있는 것은 웹뷰를 감싼 네이티브 껍데기의 문구뿐이고, 웹 안의 글자는 서버가
+     * 내주는 `web/webapp/copy.json` 에 따로 있다. 그게 이 구조의 목적이다 — 웹 쪽 문구를
+     * 고치는 데 앱을 다시 배포하지 않는다 (저장소의 문의·내 계정 화면과 같은 판단).
+     */
+    data class Event(
+        val bannerTitle: String,
+        val bannerSub: String,
+        val bannerCta: String,
+        val menuLabel: String,
+        val screenTitle: String,
+        val loading: String,
+        val loadError: String,
+        val retry: String,
+        val couponTitle: String,
+        /** 숫자 자리가 {n} 이다 */
+        val couponCount: String,
+        val couponEmpty: String,
+        val entryDone: String,
     )
 
     fun load(context: Context) {
@@ -252,6 +276,22 @@ object Copy {
             sales = p.getString("sales"),
             purchases = p.getString("purchases"),
             likes = p.getString("likes"),
+        )
+
+        val e = root.getJSONObject("event")
+        event = Event(
+            bannerTitle = e.getString("bannerTitle"),
+            bannerSub = e.getString("bannerSub"),
+            bannerCta = e.getString("bannerCta"),
+            menuLabel = e.getString("menuLabel"),
+            screenTitle = e.getString("screenTitle"),
+            loading = e.getString("loading"),
+            loadError = e.getString("loadError"),
+            retry = e.getString("retry"),
+            couponTitle = e.getString("couponTitle"),
+            couponCount = e.getString("couponCount"),
+            couponEmpty = e.getString("couponEmpty"),
+            entryDone = e.getString("entryDone"),
         )
 
         val m = root.getJSONObject("misc")

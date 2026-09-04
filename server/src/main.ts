@@ -60,7 +60,10 @@ const MIME: Record<string, string> = {
 async function serveStatic(res: http.ServerResponse, rel: string) {
     // `..` 로 컨테이너 파일시스템을 훑지 못하게 한다. 내주는 것은 web/ 안뿐이다
     const safe = path.normalize(rel).replace(/^(\.\.[/\\])+/, '')
-    const file = path.join(WEB_DIR, safe === '' || safe === '/' ? 'index.html' : safe)
+    // 폴더로 끝나면 index.html 을 내준다. 웹앱이 /aiqa/webapp/ 로 열리기 때문이다 —
+    // 이게 없으면 웹뷰가 404 를 받고 앱 안에 빈 화면만 뜬다
+    const rooted = safe === '' || safe === '/' ? 'index.html' : safe.endsWith('/') ? `${safe}index.html` : safe
+    const file = path.join(WEB_DIR, rooted)
     if (!file.startsWith(WEB_DIR)) {
         json(res, 403, { error: 'forbidden' })
         return

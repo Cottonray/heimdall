@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8" />
+    <!-- 앱 안 웹뷰로 뜬다. 브라우저 확대를 막아야 손가락질 좌표가 시나리오와 어긋나지 않는다 -->
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
+    <title>골목 이벤트</title>
+    <link rel="stylesheet" href="app.css" />
+  </head>
+  <body>
+    <!-- 「골목」의 이벤트 화면 — **앱이 아니라 웹이다.**
+         앱은 이 주소를 웹뷰로 띄우기만 하고, 결과만 자바스크립트 다리로 돌려받는다.
+         문구·레이아웃을 고치는 데 앱 배포가 끼지 않게 하려는 구조다
+         (저장소의 문의·내 계정 화면과 같은 판단 — docs/support.md·docs/account.md). -->
+    <header class="head">
+      <h1 id="title">이벤트</h1>
+      <p id="sub"></p>
+      <span class="web-badge" id="note"></span>
+    </header>
+
+    <nav class="tabs" id="tabs" role="tablist"></nav>
+
+    <!-- 쿠폰 -->
+    <section class="pane" id="pane-0">
+      <ul class="coupons" id="coupons"></ul>
+      <button class="btn btn-ghost" id="claim-all"></button>
+    </section>
+
+    <!-- 응모 -->
+    <section class="pane" id="pane-1" hidden>
+      <h2 id="form-title"></h2>
+      <p class="hint" id="form-hint"></p>
+
+      <label class="field">
+        <span id="nick-label"></span>
+        <input id="nick" type="text" autocomplete="off" />
+      </label>
+
+      <label class="field">
+        <span id="wish-label"></span>
+        <input id="wish" type="text" autocomplete="off" />
+      </label>
+
+      <label class="check">
+        <input id="agree" type="checkbox" />
+        <span id="agree-text"></span>
+      </label>
+
+      <button class="btn btn-primary" id="submit"></button>
+      <p class="blocked" id="blocked" hidden></p>
+
+      <div class="done" id="done" hidden>
+        <h3 id="done-title"></h3>
+        <p id="done-body"></p>
+        <button class="btn" id="back-to-app"></button>
+      </div>
+    </section>
+
+    <!-- 내역 -->
+    <section class="pane" id="pane-2" hidden>
+      <h2 id="history-title"></h2>
+      <ul class="history" id="history"></ul>
+      <p class="empty" id="history-empty"></p>
+    </section>
+
+    <script src="app.js"></script>
+  </body>
+</html>
