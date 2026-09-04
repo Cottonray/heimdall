@@ -94,9 +94,10 @@ type Incoming =
     | { t: 'text'; value: string }
     | { t: 'key'; name: string }
 
-/** 화면이 보내온 갈래 이름. 모르는 값은 maestro 로 본다 — 기본은 늘 진짜 도구 쪽이다 */
+/** 화면이 보내온 갈래 이름. 모르는 값은 Appium 으로 본다 (2026-09-05 사용자 지시) */
 function engineOf(value: unknown): runner.Engine {
-    return value === 'adb' || value === 'appium' ? value : 'maestro'
+    // 기본은 Appium 이다 (2026-09-05 사용자 지시) — 화면의 기본 선택과 같은 값이어야 한다
+    return value === 'adb' || value === 'maestro' ? value : 'appium'
 }
 
 /** 0~1 로 온 좌표를 기기 픽셀로 되돌린다. 브라우저 쪽 확대·축소를 서버가 알 필요가 없다 */

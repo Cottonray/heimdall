@@ -102,6 +102,9 @@ async function loadConfig() {
     appiumRadio.disabled = true
     appiumRadio.closest('.engine').title = 'Appium 서버가 아직 준비 중이에요'
     appiumRadio.closest('.engine').classList.add('engine--off')
+    // **Appium 이 기본으로 골라져 있다.** 그 칸을 잠그기만 하면 아무것도 안 골라진 상태가
+    // 되고, 실행을 누르는 순간 engine() 이 null 을 읽어 화면이 통째로 멈춘다
+    document.querySelector('input[name="engine"][value="maestro"]').checked = true
   }
   if (!cfg.llm) {
     // 편집기의 나머지(명령 단추·화면 요소·직접 쓰기)는 그대로 돈다 — 꺼지는 건 이 칸뿐이다
@@ -258,7 +261,7 @@ function renderFlows() {
 }
 
 /** 표의 열 순서. 서버의 ENGINES 와 뜻은 같지만 여기는 **보여 주는 순서**다 */
-const COLUMNS = ['maestro', 'appium', 'adb']
+const COLUMNS = ['appium', 'maestro', 'adb']
 
 function renderTimings() {
   const body = $('timings-body')

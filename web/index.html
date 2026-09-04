@@ -6,7 +6,7 @@
     <meta name="theme-color" content="#f2efe5" />
     <meta
       name="description"
-      content="브라우저에서 안드로이드 앱을 직접 조작하고, 같은 시나리오를 Maestro CLI 와 adb 두 갈래로 돌려 견주는 QA 데모예요."
+      content="브라우저에서 안드로이드 앱을 직접 조작하고, 같은 시나리오를 Appium·Maestro CLI·adb 세 갈래로 돌려 견주는 QA 데모예요."
     />
     <link
       rel="icon"
@@ -14,6 +14,9 @@
     />
     <title>AI QA</title>
     <link rel="stylesheet" href="app.css" />
+  <!-- 데모 사이트 통합 로그인 칩. 이 한 줄이 이 화면의 로그인 UI 전부다
+       (infra/homeserver/demo-sso/web/widget.js) -->
+  <script src="/sso/widget.js" defer></script>
   </head>
   <body>
     <header class="top">
@@ -87,15 +90,18 @@
 
           <!-- 세 갈래. 이 데모가 보여 주려는 것이 여기다 -->
           <div class="engines" role="radiogroup" aria-label="실행 방식">
+            <!-- **Appium 이 기본이다** (2026-09-05 사용자 지시). 셋 중 실측이 제일 빠르고
+                 (여덟 시나리오 60.5초 · Maestro 147.2 · adb 91.4) 업계에서 제일 많이 쓰는
+                 드라이버라, 처음 열어 본 사람이 만나는 값으로 이쪽이 맞다. -->
             <label class="engine">
-              <input type="radio" name="engine" value="maestro" checked />
-              <span class="engine-name">Maestro CLI</span>
-              <span class="engine-why">진짜 도구 그대로. 기다림·재시도를 알아서 해요</span>
+              <input type="radio" name="engine" value="appium" checked />
+              <span class="engine-name">Appium</span>
+              <span class="engine-why">업계 표준 드라이버. 셋 중 제일 빨라요</span>
             </label>
             <label class="engine">
-              <input type="radio" name="engine" value="appium" />
-              <span class="engine-name">Appium</span>
-              <span class="engine-why">업계 표준 드라이버. 세션 여는 값이 앞에 붙어요</span>
+              <input type="radio" name="engine" value="maestro" />
+              <span class="engine-name">Maestro CLI</span>
+              <span class="engine-why">진짜 도구 그대로. 기다림·재시도를 알아서 해요</span>
             </label>
             <label class="engine">
               <input type="radio" name="engine" value="adb" />
@@ -140,8 +146,8 @@
               <thead>
                 <tr>
                   <th>시나리오</th>
-                  <th>Maestro CLI</th>
                   <th>Appium</th>
+                  <th>Maestro CLI</th>
                   <th>adb 직접</th>
                   <th>가장 빠른 쪽</th>
                 </tr>
