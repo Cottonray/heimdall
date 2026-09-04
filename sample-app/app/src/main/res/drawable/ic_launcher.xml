@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 런처 아이콘. 벡터 한 장이라 밀도별 png 를 만들지 않는다 (minSdk 26 이라 가능하다).
+     좁은 골목 사이로 난 길 — 앱 이름을 그대로 그린 것이다. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <path
+        android:fillColor="#FF6F3C"
+        android:pathData="M0,0h108v108h-108z" />
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M24,84L24,40l16,-10l0,54z" />
+    <path
+        android:fillColor="#FFD9C6"
+        android:pathData="M68,84L68,30l16,10l0,44z" />
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M46,84l0,-26l16,0l0,26z" />
+</vector>

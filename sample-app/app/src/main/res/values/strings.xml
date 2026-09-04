@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- 화면에 뜨는 말은 전부 assets/copy.json 에 있다. 여기 있는 것은 런처 이름 하나뿐이고,
+         그 값도 copy.json 의 app.name 과 같아야 한다 (바꿀 때 둘 다 바꾼다). -->
+    <string name="app_name">골목</string>
+</resources>

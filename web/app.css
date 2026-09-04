@@ -1,0 +1,521 @@
+/* 데모 갤러리와 같은 색을 쓴다 — 같은 사이트의 다음 장으로 읽히게 하려는 것이다.
+   (infra/homeserver/edge/gallery/index.html 의 :root 값과 같은 팔레트) */
+:root {
+  color-scheme: light;
+  --ink: #10120f;
+  --paper: #f2efe5;
+  --card: #fffdf6;
+  --line: rgba(16, 18, 15, 0.16);
+  --muted: #696b64;
+  --acid: #c7ff4a;
+  --blue: #5164ff;
+  --coral: #ff7455;
+  --ok: #1f8a53;
+  --shadow: 0 18px 48px rgba(26, 27, 22, 0.1);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+/* `hidden` 을 display 로 이기지 못하게 한다. .row 가 display:flex 라서, 그냥 두면
+   숨겨 둔 줄이 그대로 보인다 — 실제로 [실행] 단추가 만들기 전에도 떠 있었다 */
+[hidden] {
+  display: none !important;
+}
+
+body {
+  margin: 0;
+  min-width: 320px;
+  color: var(--ink);
+  background:
+    radial-gradient(circle at 12% 0%, rgba(199, 255, 74, 0.18), transparent 22rem),
+    radial-gradient(circle at 92% 18%, rgba(81, 100, 255, 0.12), transparent 26rem),
+    var(--paper);
+  font-family: Pretendard, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ── 머리 ─────────────────────────────────────────────────────────────── */
+
+.top {
+  display: flex;
+  gap: 16px;
+  align-items: flex-start;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  width: min(1240px, calc(100% - 40px));
+  margin: 0 auto;
+  padding: 28px 0 18px;
+}
+
+.top h1 {
+  margin: 0;
+  font-size: 30px;
+  letter-spacing: -0.02em;
+}
+
+.top p {
+  margin: 6px 0 0;
+  max-width: 46ch;
+  color: var(--muted);
+  font-size: 14px;
+}
+
+.top-right {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.pill {
+  padding: 6px 12px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--card);
+  font-size: 12px;
+  white-space: nowrap;
+}
+
+.pill-link {
+  color: inherit;
+  text-decoration: none;
+}
+
+.pill.on {
+  border-color: rgba(31, 138, 83, 0.4);
+  background: rgba(31, 138, 83, 0.1);
+  color: var(--ok);
+}
+
+.pill.off {
+  border-color: rgba(255, 116, 85, 0.4);
+  background: rgba(255, 116, 85, 0.12);
+  color: #b8402a;
+}
+
+/* ── 판 ───────────────────────────────────────────────────────────────── */
+
+.grid {
+  display: grid;
+  grid-template-columns: minmax(300px, 380px) minmax(0, 1fr);
+  gap: 18px;
+  width: min(1240px, calc(100% - 40px));
+  margin: 0 auto;
+  padding-bottom: 48px;
+  align-items: start;
+}
+
+.right {
+  display: grid;
+  gap: 18px;
+  min-width: 0;
+}
+
+.panel {
+  padding: 18px;
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  background: var(--card);
+  box-shadow: var(--shadow);
+}
+
+.panel-head {
+  display: flex;
+  gap: 10px;
+  align-items: baseline;
+  justify-content: space-between;
+  margin-bottom: 10px;
+}
+
+.panel-head h2 {
+  margin: 0;
+  font-size: 15px;
+  letter-spacing: -0.01em;
+}
+
+.hint {
+  margin: 0 0 12px;
+  color: var(--muted);
+  font-size: 12.5px;
+  line-height: 1.55;
+}
+
+.hint-inline {
+  color: var(--muted);
+  font-size: 11.5px;
+}
+
+.note {
+  margin: 10px 0 0;
+  padding-left: 10px;
+  border-left: 2px solid var(--line);
+  color: var(--muted);
+  font-size: 11.5px;
+  line-height: 1.5;
+}
+
+/* ── 폰 ───────────────────────────────────────────────────────────────── */
+
+.phone {
+  position: relative;
+  overflow: hidden;
+  aspect-ratio: 720 / 1600;
+  border: 8px solid #14161a;
+  border-radius: 26px;
+  background: #14161a;
+  /* 손가락질을 우리가 다 처리한다 — 브라우저가 스크롤·확대로 먼저 먹지 않게 */
+  touch-action: none;
+  user-select: none;
+  cursor: crosshair;
+}
+
+.phone img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  /* 프레임이 오기 전에는 아무것도 없다. 검은 배경이 그대로 보인다 */
+  background: #14161a;
+  pointer-events: none;
+}
+
+.phone-off,
+.phone-lock {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  background: rgba(20, 22, 26, 0.86);
+  color: #f4f4f0;
+  font-size: 13px;
+  line-height: 1.6;
+  text-align: center;
+  white-space: pre-line;
+}
+
+.phone-lock {
+  background: rgba(20, 22, 26, 0.55);
+}
+
+.phone.live .phone-off {
+  display: none;
+}
+
+.badge {
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: rgba(16, 18, 15, 0.06);
+  color: var(--muted);
+  font-size: 11.5px;
+  white-space: nowrap;
+}
+
+.badge.mine {
+  background: var(--acid);
+  color: var(--ink);
+}
+
+.badge.locked {
+  background: rgba(81, 100, 255, 0.14);
+  color: var(--blue);
+}
+
+/* ── 조작 ─────────────────────────────────────────────────────────────── */
+
+.row {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  margin-top: 10px;
+  flex-wrap: wrap;
+}
+
+.keys {
+  gap: 6px;
+}
+
+.btn {
+  padding: 8px 14px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: #fff;
+  color: var(--ink);
+  font: inherit;
+  font-size: 13px;
+  cursor: pointer;
+  transition: transform 0.08s ease, background 0.15s ease;
+}
+
+.btn:hover:not(:disabled) {
+  background: #fbfbf6;
+}
+
+.btn:active:not(:disabled) {
+  transform: translateY(1px);
+}
+
+.btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.btn-primary {
+  border-color: transparent;
+  background: var(--ink);
+  color: #fff;
+}
+
+.btn-primary:hover:not(:disabled) {
+  background: #26291f;
+}
+
+.btn-key {
+  padding: 7px 10px;
+  font-size: 12px;
+}
+
+.text-input {
+  flex: 1 1 160px;
+  min-width: 0;
+  padding: 9px 12px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: #fff;
+  font: inherit;
+  font-size: 13px;
+}
+
+.text-input:focus {
+  outline: 2px solid rgba(81, 100, 255, 0.35);
+  outline-offset: 1px;
+}
+
+/* ── 갈래 고르기 ──────────────────────────────────────────────────────── */
+
+.engines {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 8px;
+  margin-bottom: 14px;
+}
+
+.engine {
+  display: grid;
+  gap: 2px;
+  padding: 10px 12px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: #fff;
+  cursor: pointer;
+}
+
+.engine:has(input:checked) {
+  border-color: var(--ink);
+  background: #fbfbf3;
+  box-shadow: inset 0 0 0 1px var(--ink);
+}
+
+.engine input {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.engine-name {
+  font-size: 13.5px;
+  font-weight: 600;
+}
+
+.engine-why {
+  color: var(--muted);
+  font-size: 11.5px;
+  line-height: 1.45;
+}
+
+/* ── 시나리오 ─────────────────────────────────────────────────────────── */
+
+.flows {
+  display: grid;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.flow {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  padding: 10px 12px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: #fff;
+}
+
+.flow-copy {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.flow-name {
+  font-size: 13.5px;
+  font-weight: 600;
+}
+
+.flow-desc {
+  color: var(--muted);
+  font-size: 11.5px;
+  line-height: 1.45;
+}
+
+.flow.running {
+  border-color: var(--blue);
+  box-shadow: inset 0 0 0 1px var(--blue);
+}
+
+.flow.passed .flow-name::after {
+  content: " 통과";
+  color: var(--ok);
+  font-size: 11px;
+  font-weight: 500;
+}
+
+.flow.failed .flow-name::after {
+  content: " 실패";
+  color: #b8402a;
+  font-size: 11px;
+  font-weight: 500;
+}
+
+.status {
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: rgba(16, 18, 15, 0.06);
+  color: var(--muted);
+  font-size: 11.5px;
+}
+
+.status.running {
+  background: rgba(81, 100, 255, 0.14);
+  color: var(--blue);
+}
+
+.status.passed {
+  background: rgba(31, 138, 83, 0.14);
+  color: var(--ok);
+}
+
+.status.failed {
+  background: rgba(255, 116, 85, 0.16);
+  color: #b8402a;
+}
+
+/* ── 견주기 표 ────────────────────────────────────────────────────────── */
+
+.table-wrap {
+  overflow-x: auto;
+}
+
+.timings {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12.5px;
+}
+
+.timings th,
+.timings td {
+  padding: 8px 10px;
+  border-bottom: 1px solid var(--line);
+  text-align: left;
+  white-space: nowrap;
+}
+
+.timings th {
+  color: var(--muted);
+  font-size: 11.5px;
+  font-weight: 500;
+}
+
+.timings td:first-child {
+  white-space: normal;
+}
+
+.timings .empty td {
+  color: var(--muted);
+  text-align: center;
+}
+
+.timings .win {
+  color: var(--ok);
+  font-weight: 600;
+}
+
+/* ── 로그 ─────────────────────────────────────────────────────────────── */
+
+.log,
+.yaml {
+  max-height: 320px;
+  margin: 0;
+  padding: 12px;
+  overflow: auto;
+  border-radius: 12px;
+  background: #14161a;
+  color: #e6e6df;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 11.5px;
+  line-height: 1.6;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.yaml {
+  max-height: 240px;
+  margin-top: 10px;
+}
+
+.log:empty::before {
+  content: attr(data-empty);
+  color: #7d7f77;
+}
+
+.log .ok {
+  color: #9ee6b8;
+}
+
+.log .err {
+  color: #ff9f86;
+}
+
+.log .step {
+  color: #cfe0ff;
+}
+
+.diagnose {
+  padding: 12px 14px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: #fff;
+  font-size: 13px;
+  line-height: 1.7;
+  white-space: pre-wrap;
+}
+
+.diagnose strong {
+  color: var(--blue);
+}
+
+/* ── 좁은 화면 ────────────────────────────────────────────────────────── */
+
+@media (max-width: 900px) {
+  .grid {
+    grid-template-columns: 1fr;
+  }
+
+  .phone-panel {
+    max-width: 420px;
+    margin: 0 auto;
+    width: 100%;
+  }
+}

@@ -1,0 +1,8 @@
+# 홈 화면 확인 — 앱이 실행되고 홈에 상품 목록이 보이는지 확인해요.
+appId: com.example.demo.golmok
+---
+- launchApp:
+    clearState: true
+- assertVisible: "망원동"
+- assertVisible: "원목 접이식 테이블"
+- assertVisible: "글쓰기"

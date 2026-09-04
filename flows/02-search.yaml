@@ -1,0 +1,12 @@
+# 상품 검색 — 상품을 검색했을 때 결과 목록이 나오는지 확인해요.
+appId: com.example.demo.golmok
+---
+- launchApp:
+    clearState: true
+- tapOn:
+    id: "search_open"
+- assertVisible: "동네 물건을 찾아보세요"
+- tapOn:
+    id: "search_input"
+- inputText: "자전거"
+- assertVisible: "생활 자전거 24인치"

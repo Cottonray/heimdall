@@ -1,0 +1,17 @@
+# 새 물건 등록 — 글쓰기에서 새 물건을 등록할 수 있는지 확인해요.
+appId: com.example.demo.golmok
+---
+- launchApp:
+    clearState: true
+- tapOn:
+    id: "sell_fab"
+- assertVisible: "중고거래 글쓰기"
+- tapOn:
+    id: "sell_title"
+- inputText: "접이식 캠핑 의자"
+- tapOn:
+    id: "sell_price"
+- inputText: "15000"
+- tapOn:
+    id: "sell_submit"
+- assertVisible: "접이식 캠핑 의자"

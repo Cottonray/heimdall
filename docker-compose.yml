@@ -1,0 +1,70 @@
+name: aiqa
+
+# **홈서버에서 돈다** (`ssh heimdall-host`). 메인서버 compose 와 아무것도 공유하지 않는다.
+#
+# 반영:  ./deploy/aiqa/deploy.sh   (로컬 맥에서 실행)
+# 주소:  https://qa.example/aiqa/  (edge nginx 가 넘긴다)
+
+services:
+  aiqa:
+    image: aiqa:${IMAGE_TAG:-latest}
+    container_name: aiqa
+    restart: unless-stopped
+    # **에뮬레이터 한 대가 이 상자 안에 있다.** 안드로이드에 2GB, 나머지가 Maestro 의
+    # JVM·Node·ffmpeg 몫이다. 이보다 조이면 Maestro 가 도는 동안 OOM 으로 기기가 죽는다.
+    mem_limit: 6g
+    # 하드웨어 가속이 없으면 에뮬레이터가 부팅에만 십 분씩 걸린다. `-accel on` 이라
+    # 이 장치가 없으면 아예 뜨지 않는다 — 조용히 느려지는 것보다 낫다.
+    devices:
+      - /dev/kvm:/dev/kvm
+    environment:
+      # nginx 는 접두사를 떼지 않는다 — 앱이 자기 경로를 안다 (홈서버 규약)
+      AIQA_BASE_PATH: /aiqa
+      AIQA_PORT: 8080
+      AIQA_WEB_DIR: /opt/aiqa/web
+      AIQA_FLOW_DIR: /opt/aiqa/flows
+      # **기기는 한 대다.** 늘리려면 여기가 아니라 docs/aiqa.md 부터 읽는다
+      AIQA_SERIAL: emulator-5554
+      AIQA_APP_ID: com.example.demo.golmok
+      AIQA_APP_ACTIVITY: .MainActivity
+      # 화면 프레임 — 폭·품질·박자. 집 업로드 회선이 정하는 값이다
+      AIQA_FRAME_WIDTH: ${AIQA_FRAME_WIDTH:-360}
+      AIQA_FRAME_QUALITY: ${AIQA_FRAME_QUALITY:-7}
+      AIQA_FRAME_FAST_MS: ${AIQA_FRAME_FAST_MS:-220}
+      AIQA_FRAME_SLOW_MS: ${AIQA_FRAME_SLOW_MS:-900}
+      # 조작 권한을 놀렸을 때 스스로 놓는 시간
+      AIQA_CONTROL_IDLE_MS: ${AIQA_CONTROL_IDLE_MS:-90000}
+      # 시나리오 하나에 주는 시간 · adb 갈래가 요소를 기다리는 시간
+      AIQA_RUN_TIMEOUT_MS: ${AIQA_RUN_TIMEOUT_MS:-240000}
+      AIQA_FIND_TIMEOUT_MS: ${AIQA_FIND_TIMEOUT_MS:-8000}
+      # 말로 시나리오 만들기·실패 원인 요약. 키가 없으면 그 둘만 꺼지고 나머지는 돈다
+      AIQA_OPENROUTER_API_KEY: ${AIQA_OPENROUTER_API_KEY:-}
+      AIQA_OPENROUTER_BASE_URL: ${AIQA_OPENROUTER_BASE_URL:-https://openrouter.ai/api/v1}
+      AIQA_LLM_MODEL: ${AIQA_LLM_MODEL:-deepseek/deepseek-v4-flash}
+    volumes:
+      # **자주 바뀌는 것은 굽지 않는다.** 서버 소스·화면·시나리오를 마운트해 두면
+      # 문구 하나 고치자고 3GB 이미지를 다시 만들 일이 없다 (AICC 의 web/ 과 같은 판단)
+      - ./server:/opt/aiqa/server:ro
+      - ./web:/opt/aiqa/web:ro
+      - ./flows:/opt/aiqa/flows:ro
+      # AVD 의 상태(설치된 앱·설정). 배포로 컨테이너가 새로 떠도 부팅이 조금 빠르다
+      - aiqa-avd:/home/aiqa/.android/avd
+    networks:
+      # edge nginx 가 http://aiqa:8080 으로 붙는다
+      - edge
+    healthcheck:
+      # **기기가 아니라 서버를 본다.** 부팅에 1~2분이 걸리는데 그동안 unhealthy 로
+      # 재시작하면 영원히 못 뜬다 — 기기 상태는 화면이 알려 준다
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:8080/healthz"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 180s
+
+volumes:
+  aiqa-avd:
+
+networks:
+  edge:
+    external: true
+    name: edge

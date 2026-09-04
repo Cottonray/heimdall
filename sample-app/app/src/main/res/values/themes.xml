@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- 실제 색은 Compose 쪽(Theme.kt)에서 정한다. 여기는 액티비티가 뜨는 순간의 배경만
+         맞춰 둔다 — 안 맞추면 앱을 열 때 흰 화면이 한 번 번쩍인다. -->
+    <style name="Theme.Golmok" parent="android:Theme.Material.Light.NoActionBar">
+        <item name="android:windowBackground">#FFFFFF</item>
+        <item name="android:statusBarColor">#FFFFFF</item>
+        <item name="android:windowLightStatusBar">true</item>
+    </style>
+</resources>

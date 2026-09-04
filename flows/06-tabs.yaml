@@ -1,0 +1,20 @@
+# 전체 탭 확인 — 다섯 개 탭을 차례로 열어 각 화면이 표시되는지 확인해요.
+appId: com.example.demo.golmok
+---
+- launchApp:
+    clearState: true
+- tapOn:
+    id: "tab_1"
+- assertVisible: "자전거 바람 넣을 곳 있나요?"
+- tapOn:
+    id: "tab_2"
+- assertVisible: "이웃들이 자주 찾는 동네 가게예요"
+- tapOn:
+    id: "tab_3"
+- assertVisible: "모퉁이햇살"
+- tapOn:
+    id: "tab_4"
+- assertVisible: "동네산책가"
+- tapOn:
+    id: "tab_0"
+- assertVisible: "원목 접이식 테이블"

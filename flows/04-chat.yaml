@@ -1,0 +1,15 @@
+# 채팅 메시지 — 상품 채팅으로 들어가 메시지를 보낼 수 있는지 확인해요.
+appId: com.example.demo.golmok
+---
+- launchApp:
+    clearState: true
+- tapOn: "원목 접이식 테이블"
+- tapOn:
+    id: "chat_button"
+- assertVisible: "메시지를 입력해 주세요"
+- tapOn:
+    id: "chat_input"
+- inputText: "네, 가능해요"
+- tapOn:
+    id: "chat_send"
+- assertVisible: "네, 가능해요"

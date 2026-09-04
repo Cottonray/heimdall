@@ -1,0 +1,164 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#f2efe5" />
+    <meta
+      name="description"
+      content="브라우저에서 안드로이드 앱을 직접 조작하고, 같은 시나리오를 Maestro CLI 와 adb 두 갈래로 돌려 견주는 QA 데모예요."
+    />
+    <link
+      rel="icon"
+      href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='18' fill='%2310120f'/%3E%3Crect x='22' y='14' width='20' height='36' rx='4' fill='%23c7ff4a'/%3E%3Ccircle cx='32' cy='44' r='2.5' fill='%2310120f'/%3E%3C/svg%3E"
+    />
+    <title>AI QA</title>
+    <link rel="stylesheet" href="app.css" />
+  </head>
+  <body>
+    <header class="top">
+      <div class="top-left">
+        <h1 id="title">AI QA</h1>
+        <p id="subtitle"></p>
+      </div>
+      <div class="top-right">
+        <span class="pill" id="viewers">보는 사람 —</span>
+        <span class="pill" id="device-pill">기기 확인 중</span>
+        <a class="pill pill-link" href="/">데모 갤러리</a>
+      </div>
+    </header>
+
+    <main class="grid">
+      <!-- ── 왼쪽: 폰 ─────────────────────────────────────────────────── -->
+      <section class="panel phone-panel">
+        <div class="panel-head">
+          <h2 id="device-title">안드로이드 에뮬레이터</h2>
+          <span class="badge" id="control-badge">보기 전용</span>
+        </div>
+
+        <div class="phone" id="phone">
+          <img id="screen" alt="에뮬레이터 화면" draggable="false" />
+          <div class="phone-off" id="phone-off"><span></span></div>
+          <div class="phone-lock" id="phone-lock" hidden><span></span></div>
+        </div>
+
+        <p class="hint" id="device-hint"></p>
+
+        <div class="row">
+          <button class="btn btn-primary" id="claim">조작</button>
+          <button class="btn" id="release" hidden>반납</button>
+          <button class="btn" id="restart-app">앱 재시작</button>
+        </div>
+
+        <div class="row keys">
+          <button class="btn btn-key" data-key="back">뒤로</button>
+          <button class="btn btn-key" data-key="home">홈</button>
+          <button class="btn btn-key" data-key="recent">최근 앱</button>
+          <button class="btn btn-key" data-key="enter">엔터</button>
+          <button class="btn btn-key" data-key="del">지우기</button>
+        </div>
+
+        <div class="row">
+          <input
+            id="type-input"
+            class="text-input"
+            type="text"
+            placeholder="글자를 적고 엔터를 누르면 폰에 들어가요"
+            autocomplete="off"
+          />
+          <button class="btn" id="type-send">입력</button>
+        </div>
+
+        <p class="note" id="one-device-note"></p>
+        <p class="note" id="public-note"></p>
+      </section>
+
+      <!-- ── 오른쪽: 시나리오·로그 ─────────────────────────────────────── -->
+      <section class="right">
+        <div class="panel">
+          <div class="panel-head">
+            <h2 id="scenario-title">테스트 시나리오</h2>
+            <span class="status" id="run-status">대기</span>
+          </div>
+          <p class="hint" id="scenario-hint"></p>
+
+          <!-- 두 갈래. 이 데모가 보여 주려는 것이 여기다 -->
+          <div class="engines" role="radiogroup" aria-label="실행 갈래">
+            <label class="engine">
+              <input type="radio" name="engine" value="maestro" checked />
+              <span class="engine-name">Maestro CLI</span>
+              <span class="engine-why">진짜 도구 그대로. 기다림·재시도를 알아서 해요</span>
+            </label>
+            <label class="engine">
+              <input type="radio" name="engine" value="adb" />
+              <span class="engine-name">adb 직접</span>
+              <span class="engine-why">JVM·드라이버 준비가 없어요. 대신 문법이 좁아요</span>
+            </label>
+          </div>
+
+          <ul class="flows" id="flows"></ul>
+
+          <div class="row">
+            <button class="btn" id="stop" disabled>중지</button>
+          </div>
+        </div>
+
+        <div class="panel">
+          <div class="panel-head">
+            <h2>갈래별 걸린 시간</h2>
+            <span class="hint-inline">같은 시나리오를 두 갈래로 돌린 결과예요</span>
+          </div>
+          <div class="table-wrap">
+            <table class="timings" id="timings">
+              <thead>
+                <tr>
+                  <th>시나리오</th>
+                  <th>Maestro CLI</th>
+                  <th>adb 직접</th>
+                  <th>차이</th>
+                </tr>
+              </thead>
+              <tbody id="timings-body">
+                <tr class="empty"><td colspan="4">아직 잰 게 없어요. [견주기] 를 눌러보세요.</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="panel">
+          <div class="panel-head">
+            <h2 id="log-title">실행 로그</h2>
+            <span class="hint-inline" id="log-engine"></span>
+          </div>
+          <pre class="log" id="log"></pre>
+        </div>
+
+        <div class="panel" id="ai-panel">
+          <div class="panel-head">
+            <h2 id="ai-title">말로 시나리오 만들기</h2>
+            <span class="hint-inline" id="ai-state"></span>
+          </div>
+          <p class="hint" id="ai-hint"></p>
+          <div class="row">
+            <input id="ai-input" class="text-input" type="text" autocomplete="off" />
+            <button class="btn btn-primary" id="ai-make">생성</button>
+          </div>
+          <pre class="yaml" id="ai-yaml" hidden></pre>
+          <div class="row" id="ai-run-row" hidden>
+            <button class="btn btn-primary" id="ai-run">실행</button>
+          </div>
+        </div>
+
+        <div class="panel" id="diagnose-panel" hidden>
+          <div class="panel-head">
+            <h2 id="diagnose-title">실패 원인 요약</h2>
+            <span class="hint-inline" id="diagnose-state"></span>
+          </div>
+          <div class="diagnose" id="diagnose"></div>
+        </div>
+      </section>
+    </main>
+
+    <script src="app.js"></script>
+  </body>
+</html>
