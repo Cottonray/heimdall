@@ -11,8 +11,9 @@ services:
     container_name: aiqa
     restart: unless-stopped
     # **에뮬레이터 한 대가 이 상자 안에 있다.** 안드로이드에 2GB, 나머지가 Maestro 의
-    # JVM·Node·ffmpeg 몫이다. 이보다 조이면 Maestro 가 도는 동안 OOM 으로 기기가 죽는다.
-    mem_limit: 6g
+    # JVM · Appium(Node) · ffmpeg · 우리 서버 몫이다. 이보다 조이면 시나리오가 도는 동안
+    # OOM 으로 기기가 죽는다.
+    mem_limit: 8g
     # 하드웨어 가속이 없으면 에뮬레이터가 부팅에만 십 분씩 걸린다. `-accel on` 이라
     # 이 장치가 없으면 아예 뜨지 않는다 — 조용히 느려지는 것보다 낫다.
     devices:
@@ -34,6 +35,8 @@ services:
       AIQA_FRAME_SLOW_MS: ${AIQA_FRAME_SLOW_MS:-900}
       # 조작 권한을 놀렸을 때 스스로 놓는 시간
       AIQA_CONTROL_IDLE_MS: ${AIQA_CONTROL_IDLE_MS:-90000}
+      # 세 번째 갈래(Appium). 같은 컨테이너 안이라 loopback 이다 — 밖으로 열지 않는다
+      AIQA_APPIUM_URL: ${AIQA_APPIUM_URL:-http://127.0.0.1:4723}
       # 시나리오 하나에 주는 시간 · adb 갈래가 요소를 기다리는 시간
       AIQA_RUN_TIMEOUT_MS: ${AIQA_RUN_TIMEOUT_MS:-240000}
       AIQA_FIND_TIMEOUT_MS: ${AIQA_FIND_TIMEOUT_MS:-8000}

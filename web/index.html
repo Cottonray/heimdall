@@ -82,17 +82,22 @@
           </div>
           <p class="hint" id="scenario-hint"></p>
 
-          <!-- 두 갈래. 이 데모가 보여 주려는 것이 여기다 -->
-          <div class="engines" role="radiogroup" aria-label="실행 갈래">
+          <!-- 세 갈래. 이 데모가 보여 주려는 것이 여기다 -->
+          <div class="engines" role="radiogroup" aria-label="실행 방식">
             <label class="engine">
               <input type="radio" name="engine" value="maestro" checked />
               <span class="engine-name">Maestro CLI</span>
               <span class="engine-why">진짜 도구 그대로. 기다림·재시도를 알아서 해요</span>
             </label>
             <label class="engine">
+              <input type="radio" name="engine" value="appium" />
+              <span class="engine-name">Appium</span>
+              <span class="engine-why">업계 표준 드라이버. 세션 여는 값이 앞에 붙어요</span>
+            </label>
+            <label class="engine">
               <input type="radio" name="engine" value="adb" />
               <span class="engine-name">adb 직접</span>
-              <span class="engine-why">JVM·드라이버 준비가 없어요. 대신 문법이 좁아요</span>
+              <span class="engine-why">준비가 없어요. 대신 요소 찾기가 비싸요</span>
             </label>
           </div>
 
@@ -114,12 +119,13 @@
                 <tr>
                   <th>시나리오</th>
                   <th>Maestro CLI</th>
+                  <th>Appium</th>
                   <th>adb 직접</th>
-                  <th>차이</th>
+                  <th>가장 빠른 쪽</th>
                 </tr>
               </thead>
               <tbody id="timings-body">
-                <tr class="empty"><td colspan="4">아직 잰 게 없어요. [견주기] 를 눌러보세요.</td></tr>
+                <tr class="empty"><td colspan="5">아직 잰 게 없어요. [견주기] 를 눌러보세요.</td></tr>
               </tbody>
             </table>
           </div>

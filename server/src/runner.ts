@@ -1,14 +1,15 @@
-// 시나리오를 돌리는 자리 — **갈래가 둘이고, 둘이 같은 파일을 본다.**
+// 시나리오를 돌리는 자리 — **갈래가 셋이고, 셋이 같은 파일을 본다.**
 //
 // | 갈래 | 무엇 | 왜 견주나 |
 // |---|---|---|
 // | `maestro` | Maestro CLI 에 yaml 파일을 그대로 넘긴다 | 사람이 터미널에서 하는 것과 같은 실행. 재시도·대기·요소 찾기를 다 해 준다 |
+// | `appium` | Appium(UiAutomator2) 서버에 WebDriver 로 말한다 | 업계에서 제일 많이 쓰는 드라이버. 세션 하나를 여는 값이 앞에 붙는다 |
 // | `adb` | 우리가 단계를 읽어 adb 로 직접 친다 | JVM 도, 기기에 드라이버 apk 를 올리는 과정도 없다 |
 //
-// **이 데모가 보여 주려는 것이 그 차이다.** Maestro 는 한 번 도는 데 JVM 기동 + 기기
-// 드라이버 설치가 앞에 붙어 십수 초가 그냥 나간다. 대신 요소를 못 찾으면 스스로 기다리고
-// 다시 본다. adb 갈래는 그 앞자리가 통째로 없어서 눈에 띄게 빠르지만, 기다림·재시도를
-// 우리가 직접 적어야 하고 Maestro 문법의 대부분을 모른다.
+// **이 데모가 보여 주려는 것이 그 차이다.** Maestro 와 Appium 은 한 번 도는 데 준비가
+// 앞에 붙는다(JVM 기동 · 기기에 드라이버 apk 설치 · 세션 열기). 대신 요소를 못 찾으면
+// 스스로 기다리고 다시 본다. adb 갈래는 그 앞자리가 통째로 없지만, 기다림·재시도를 우리가
+// 직접 적어야 하고 요소 하나 찾는 데 `uiautomator dump` 2.1초를 낸다.
 //
 // **한 번에 하나만 돈다.** 기기가 한 대라 두 실행이 겹치면 서로의 화면을 밟는다 —
 // 그러면 실패가 앱 탓인지 겹친 탓인지 구분할 수 없는 로그만 남는다.
@@ -17,11 +18,12 @@ import { spawn, type ChildProcess } from 'node:child_process'
 import { mkdtemp, writeFile, rm } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import path from 'node:path'
+import * as appium from './appium.ts'
 import * as device from './device.ts'
 import * as flows from './flows.ts'
 import type { Flow, Selector, Step } from './flows.ts'
 
-export type Engine = 'maestro' | 'adb'
+export type Engine = 'maestro' | 'adb' | 'appium'
 
 const MAESTRO = process.env.AIQA_MAESTRO ?? 'maestro'
 /** 시나리오 하나에 주는 시간. 넘으면 죽인다 — 매달린 실행이 기기를 잡고 있으면 데모가 멈춘다 */
@@ -49,8 +51,14 @@ export type RunEvent =
           ms: number
           canceled: boolean
       }
-    /** 두 갈래를 잇달아 돌렸을 때의 요약. 화면의 견주기 표가 이걸 본다 */
-    | { type: 'compare'; flowId: string; name: string; maestroMs: number | null; adbMs: number | null; at: number }
+    /** 세 갈래를 잇달아 돌렸을 때의 요약. 화면의 견주기 표가 이걸 본다 */
+    | {
+          type: 'compare'
+          flowId: string
+          name: string
+          results: { engine: Engine; ms: number | null }[]
+          at: number
+      }
 
 type Listener = (e: RunEvent) => void
 let listener: Listener = () => {}
@@ -123,9 +131,12 @@ export async function runAdhoc(
     return begin({ id: 'adhoc', name, desc: '화면에서 만든 시나리오', yaml, file: '' }, engine)
 }
 
+/** 견주기 순서. **맨손이 먼저다** — 다른 갈래가 기기에 드라이버를 올려 둔 상태에서
+ * adb 를 재면 그 준비 시간이 adb 쪽 공짜가 되어 불공평하다 */
+export const ENGINES: Engine[] = ['adb', 'appium', 'maestro']
+
 /**
- * 같은 시나리오를 두 갈래로 잇달아 돌린다. **순서는 adb 가 먼저다** — Maestro 가 기기에
- * 드라이버를 올려 둔 상태에서 adb 를 재면 그 준비 시간이 adb 쪽 공짜가 되어 불공평하다.
+ * 같은 시나리오를 세 갈래로 잇달아 돌린다.
  */
 export async function compare(flowId: string): Promise<{ ok: boolean; error?: string }> {
     const flow = await flows.get(flowId)
@@ -133,18 +144,15 @@ export async function compare(flowId: string): Promise<{ ok: boolean; error?: st
     if (busy()) return { ok: false, error: '이미 다른 시나리오가 도는 중이에요' }
 
     void (async () => {
-        const adb = await runToEnd(flow, 'adb')
-        // 사람이 중지했으면 두 번째는 돌리지 않는다. 멈추라고 눌렀는데 다른 갈래가
-        // 이어서 시작하면 그건 멈춘 게 아니다
-        const maestro = adb.canceled ? { ms: null, canceled: true } : await runToEnd(flow, 'maestro')
-        listener({
-            type: 'compare',
-            flowId: flow.id,
-            name: flow.name,
-            maestroMs: maestro.ms,
-            adbMs: adb.ms,
-            at: Date.now(),
-        })
+        const results: { engine: Engine; ms: number | null }[] = []
+        for (const engine of ENGINES) {
+            const r = await runToEnd(flow, engine)
+            results.push({ engine, ms: r.ms })
+            // 사람이 중지했으면 다음 갈래를 시작하지 않는다. 멈추라고 눌렀는데 다른
+            // 갈래가 이어서 시작하면 그건 멈춘 게 아니다
+            if (r.canceled) break
+        }
+        listener({ type: 'compare', flowId: flow.id, name: flow.name, results, at: Date.now() })
     })()
     return { ok: true }
 }
@@ -180,10 +188,10 @@ export function cancel(reason = '사람이 중지'): boolean {
 async function begin(flow: Flow, engine: Engine): Promise<{ ok: boolean; error?: string; runId?: string }> {
     if (current) return { ok: false, error: '이미 다른 시나리오가 도는 중이에요' }
 
-    // adb 갈래는 **시작하기 전에** 단계를 다 읽는다. 절반쯤 돌다가 "모르는 명령"으로
-    // 서는 것보다, 아예 시작하지 않고 이유를 말해 주는 편이 낫다
+    // 우리가 직접 도는 갈래(adb·appium)는 **시작하기 전에** 단계를 다 읽는다. 절반쯤
+    // 돌다가 "모르는 명령"으로 서는 것보다, 아예 시작하지 않고 이유를 말해 주는 편이 낫다
     let steps: Step[] = []
-    if (engine === 'adb') {
+    if (engine !== 'maestro') {
         try {
             steps = flows.parse(flow.yaml)
         } catch (e) {
@@ -206,7 +214,7 @@ async function begin(flow: Flow, engine: Engine): Promise<{ ok: boolean; error?:
         name: flow.name,
         engine,
         at: startedAt,
-        steps: engine === 'adb' ? steps.length : 0,
+        steps: engine === 'maestro' ? 0 : steps.length,
     })
 
     const finish = (passed: boolean) => {
@@ -228,11 +236,9 @@ async function begin(flow: Flow, engine: Engine): Promise<{ ok: boolean; error?:
         })
     }
 
-    if (engine === 'maestro') {
-        void runMaestro(flow, runId, finish)
-    } else {
-        void runAdb(steps, flow, finish)
-    }
+    if (engine === 'maestro') void runMaestro(flow, runId, finish)
+    else if (engine === 'appium') void runSteps(steps, flow, finish, appiumDriver())
+    else void runSteps(steps, flow, finish, adbDriver())
     return { ok: true, runId }
 }
 
@@ -292,18 +298,42 @@ async function runMaestro(flow: Flow, runId: string, finish: (passed: boolean) =
         finish(code === 0)
     })
 }
-
-// ── 갈래 2: adb 로 직접 ───────────────────────────────────────────────────────
+// ── 갈래 2·3: 단계를 우리가 읽어 돌린다 ──────────────────────────────────────
+//
+// **한 벌의 실행기에 드라이버만 갈아 끼운다.** adb 갈래와 appium 갈래가 단계를 도는
+// 방식(순서·시간 재기·중지·로그)을 두 번 적으면, 어느 날 한쪽만 고쳐져서 견주기가
+// 거짓이 된다. 다른 것은 "한 단계를 어떻게 하느냐" 하나뿐이다.
 
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms))
 
-async function runAdb(steps: Step[], flow: Flow, finish: (passed: boolean) => void) {
+type Driver = {
+    /** 로그 첫 줄에 찍는 이름 */
+    label: string
+    /** 세션 열기 같은 준비. **이 시간도 실행 시간에 들어간다** — 그게 갈래의 값이다 */
+    setup(): Promise<void>
+    teardown(): Promise<void>
+    exec(step: Step, appId: string): Promise<void>
+}
+
+async function runSteps(steps: Step[], flow: Flow, finish: (passed: boolean) => void, driver: Driver) {
     const total = steps.length
     const appId = flows.appIdOf(flow.yaml) ?? device.APP_ID
-    log(`adb 갈래 — 단계 ${total}개 · 대상 ${appId}`, 'info')
+    log(`${driver.label} — 단계 ${total}개 · 대상 ${appId}`, 'info')
 
     const deadline = Date.now() + RUN_TIMEOUT_MS
     let passed = true
+
+    try {
+        const t0 = Date.now()
+        await driver.setup()
+        const ms = Date.now() - t0
+        if (ms > 200) log(`· 준비 ${ms}ms`, 'info')
+    } catch (e) {
+        log(`✗ 준비하지 못했어요 — ${e instanceof Error ? e.message : e}`, 'err')
+        finish(false)
+        return
+    }
+
     for (let i = 0; i < steps.length; i += 1) {
         if (current?.canceled) {
             passed = false
@@ -320,7 +350,7 @@ async function runAdb(steps: Step[], flow: Flow, finish: (passed: boolean) => vo
         let ok = true
         let detail = ''
         try {
-            await exec(step, appId)
+            await driver.exec(step, appId)
         } catch (e) {
             ok = false
             detail = e instanceof Error ? e.message : String(e)
@@ -333,6 +363,8 @@ async function runAdb(steps: Step[], flow: Flow, finish: (passed: boolean) => vo
             break
         }
     }
+
+    await driver.teardown()
     finish(passed)
 }
 
@@ -374,7 +406,19 @@ function selText(by: Selector): string {
     return by.kind === 'id' ? `id=${by.value}` : `"${by.value}"`
 }
 
-async function exec(step: Step, appId: string) {
+// ── 드라이버 1: adb 로 직접 ───────────────────────────────────────────────────
+
+function adbDriver(): Driver {
+    return {
+        label: 'adb 갈래',
+        // 준비가 없다. **그게 이 갈래의 값이다**
+        setup: async () => {},
+        teardown: async () => {},
+        exec: adbExec,
+    }
+}
+
+async function adbExec(step: Step, appId: string) {
     switch (step.op) {
         case 'launchApp': {
             device.invalidateDump()
@@ -506,14 +550,15 @@ async function find(by: Selector, useCache = false) {
 }
 
 /**
- * **Maestro 와 똑같이 고른다.** 여기가 다르면 견주기가 거짓이 된다 — 한쪽만 통과하는
+ * **세 갈래가 똑같이 고른다.** 여기가 다르면 견주기가 거짓이 된다 — 한쪽만 통과하는
  * 시나리오가 생기고, 그건 엔진의 속도가 아니라 우리가 만든 차이다.
  *
  * 2026-09-04 실측으로 Maestro 의 규칙을 확인했다(같은 화면에서 셋을 돌려 봤다):
  *   `"골목"`      → 실패   (부분 일치가 아니다)
  *   `"나의 골목"`  → 통과   (글자가 그대로 같으면 된다)
- *   `".*골목.*"`  → 통과   (정규식이면 **전체가 맞아야** 한다)
+ *   `".*골목.*"`  → 통과   (정규식이면 **전체가** 맞아야 한다)
  * 그래서 "글자가 똑같거나, 정규식으로 통째로 맞거나" 둘 중 하나다.
+ * (appium 갈래는 같은 규칙을 UiSelector 로 옮겨 놓았다 — appium.ts 의 findText)
  */
 function matchesText(node: device.UiNode, needle: string): boolean {
     if (node.text === needle || node.desc === needle) return true
@@ -544,6 +589,108 @@ async function locate(by: Selector, timeoutMs: number) {
     if (!hit) throw new Error('화면에서 못 찾았어요')
     return hit
 }
+
+// ── 드라이버 2: Appium (UiAutomator2) ────────────────────────────────────────
+
+function appiumDriver(): Driver {
+    let session = ''
+    return {
+        label: 'appium 갈래',
+        setup: async () => {
+            // **세션 여는 값이 이 갈래의 값이다.** 기기에 UiAutomator2 서버 apk 를 올리고
+            // 붙는 시간이 여기 들어간다 — 처음 한 번은 더 걸리고 그 뒤로는 짧아진다
+            session = await appium.open()
+        },
+        teardown: async () => {
+            if (session) await appium.close(session)
+            session = ''
+        },
+        exec: (step, appId) => appiumExec(session, step, appId),
+    }
+}
+
+/** appium 갈래의 요소 찾기 — 없으면 잠깐 기다렸다 다시 본다 (Maestro 와 같은 자리) */
+async function appiumFind(session: string, by: Selector, timeoutMs: number): Promise<string> {
+    if (by.kind === 'point') throw new Error('point 는 요소가 아니에요')
+    const until = Date.now() + timeoutMs
+    for (;;) {
+        const id =
+            by.kind === 'id' ? await appium.findId(session, by.value) : await appium.findText(session, by.value)
+        if (id) return id
+        if (Date.now() >= until) throw new Error('화면에서 못 찾았어요')
+        await sleep(200)
+    }
+}
+
+async function appiumExec(session: string, step: Step, appId: string) {
+    switch (step.op) {
+        case 'launchApp':
+            await appium.launch(session, appId, step.clearState)
+            await sleep(400)
+            return
+        case 'tapOn': {
+            if (step.by.kind === 'point') {
+                const { width, height } = await device.screenSize()
+                await appium.clickPoint(session, step.by.x * width, step.by.y * height)
+                return
+            }
+            await appium.click(session, await appiumFind(session, step.by, FIND_TIMEOUT_MS))
+            return
+        }
+        case 'longPressOn':
+            await appium.longClick(session, await appiumFind(session, step.by, FIND_TIMEOUT_MS))
+            return
+        case 'inputText':
+            // UiAutomator2 는 ACTION_SET_TEXT 로 넣는다 — 한글이 그대로 들어간다.
+            // adb 갈래가 키보드 apk 를 따로 심어야 했던 것과 대비되는 자리다
+            await appium.typeActive(session, step.text)
+            return
+        case 'eraseText':
+            await appium.clearActive(session)
+            return
+        case 'pressKey': {
+            const codes: Record<string, number> = { enter: 66, back: 4, home: 3, delete: 67, backspace: 67, tab: 61 }
+            await appium.pressKeyCode(session, codes[step.key.toLowerCase()] ?? 66)
+            return
+        }
+        case 'back':
+            await appium.back(session)
+            return
+        case 'scroll':
+            await appium.swipe(session, 'up', await device.screenSize())
+            return
+        case 'swipe':
+            await appium.swipe(
+                session,
+                step.direction.toLowerCase() as 'up' | 'down' | 'left' | 'right',
+                await device.screenSize(),
+            )
+            return
+        case 'scrollUntilVisible': {
+            if (step.by.kind !== 'text') throw new Error('글자로만 굴릴 수 있어요')
+            if (!(await appium.scrollIntoView(session, step.by.value))) throw new Error('끝까지 내려도 안 보여요')
+            return
+        }
+        case 'assertVisible':
+            await appiumFind(session, step.by, FIND_TIMEOUT_MS)
+            return
+        case 'assertNotVisible': {
+            await sleep(500)
+            try {
+                await appiumFind(session, step.by, 0)
+            } catch {
+                return
+            }
+            throw new Error('아직 보여요')
+        }
+        case 'waitForAnimationToEnd':
+            await sleep(600)
+            return
+        case 'takeScreenshot':
+            return
+    }
+}
+
 
 // ── 실패했을 때 모아 두는 근거 ────────────────────────────────────────────────
 

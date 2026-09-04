@@ -143,6 +143,11 @@ install_app() {
 # "기기가 아직 안 떴어요"를 보여 주고, 기기가 돌아오면 프레임이 다시 흐른다.
 supervise() {
     while true; do
+        # Appium 이 죽어도 다시 띄운다. 나머지 두 갈래는 그동안에도 돈다
+        if ! kill -0 "${APPIUM_PID:-0}" 2>/dev/null; then
+            log "!! Appium 이 내려갔어요. 다시 띄웁니다"
+            start_appium
+        fi
         if ! kill -0 "$EMU_PID" 2>/dev/null; then
             log "!! 에뮬레이터가 내려갔어요. 다시 띄웁니다"
             adb kill-server >/dev/null 2>&1 || true
@@ -167,6 +172,27 @@ if wait_for_boot; then
 else
     log "기기 없이 서버만 띄웁니다 — 화면이 그 사실을 알려 줍니다"
 fi
+
+# ── Appium ───────────────────────────────────────────────────────────────────
+# 세 번째 갈래가 붙는 자리. **밖으로 열지 않는다** — 127.0.0.1 에만 듣는다. 이 서버는
+# 붙는 사람에게 기기 전체를 내주므로, 컨테이너 밖에서 닿으면 안 된다.
+start_appium() {
+    log "Appium 기동"
+    appium server --address 127.0.0.1 --port 4723 --log-level error \
+        --relaxed-security >/tmp/appium.log 2>&1 &
+    APPIUM_PID=$!
+    for _ in $(seq 1 40); do
+        if wget -qO- http://127.0.0.1:4723/status >/dev/null 2>&1; then
+            log "Appium 준비됨"
+            return 0
+        fi
+        sleep 1
+    done
+    log "!! Appium 이 40초 안에 안 떴어요 — /tmp/appium.log (appium 갈래만 안 돕니다)"
+    tail -20 /tmp/appium.log
+}
+
+start_appium
 
 supervise &
 

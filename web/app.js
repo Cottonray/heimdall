@@ -87,6 +87,14 @@ async function loadConfig() {
   renderLoadOptions()
   renderCommands()
   resetEditor()
+  // Appium 서버가 아직 안 떴으면 그 갈래만 고르지 못하게 한다 — 눌러 놓고 "왜 안 되지"
+  // 하는 것보다 낫다. 기동에 30초쯤 걸리므로 화면을 열자마자면 이 상태일 수 있다
+  const appiumRadio = document.querySelector('input[name="engine"][value="appium"]')
+  if (appiumRadio && cfg.appium === false) {
+    appiumRadio.disabled = true
+    appiumRadio.closest('.engine').title = 'Appium 서버가 아직 준비 중이에요'
+    appiumRadio.closest('.engine').classList.add('engine--off')
+  }
   if (!cfg.llm) {
     // 편집기의 나머지(명령 단추·화면 요소·직접 쓰기)는 그대로 돈다 — 꺼지는 건 이 칸뿐이다
     $('ai-state').textContent = 'OpenRouter 키가 없어 말로 만들기만 꺼져 있어요'
@@ -135,6 +143,9 @@ function renderFlows() {
   syncRunning()
 }
 
+/** 표의 열 순서. 서버의 ENGINES 와 뜻은 같지만 여기는 **보여 주는 순서**다 */
+const COLUMNS = ['maestro', 'appium', 'adb']
+
 function renderTimings() {
   const body = $('timings-body')
   body.replaceChildren()
@@ -143,7 +154,7 @@ function renderTimings() {
   const byFlow = new Map()
   for (const t of state.timings) {
     if (!t.passed) continue
-    const row = byFlow.get(t.flowId) ?? { name: t.name, maestro: null, adb: null }
+    const row = byFlow.get(t.flowId) ?? { name: t.name }
     row[t.engine] = t.ms
     row.name = t.name
     byFlow.set(t.flowId, row)
@@ -153,7 +164,7 @@ function renderTimings() {
     const tr = document.createElement('tr')
     tr.className = 'empty'
     const td = document.createElement('td')
-    td.colSpan = 4
+    td.colSpan = COLUMNS.length + 2
     td.textContent = '아직 잰 게 없어요. [견주기] 를 눌러보세요.'
     tr.append(td)
     body.append(tr)
@@ -162,34 +173,34 @@ function renderTimings() {
 
   for (const row of byFlow.values()) {
     const tr = document.createElement('tr')
-    const cells = [
-      row.name,
-      row.maestro == null ? '—' : sec(row.maestro),
-      row.adb == null ? '—' : sec(row.adb),
-      row.maestro != null && row.adb != null ? diff(row.maestro, row.adb) : '—',
-    ]
-    cells.forEach((text, i) => {
+    const known = COLUMNS.filter((e) => row[e] != null)
+    const fastest = known.length > 1 ? known.reduce((a, b) => (row[a] <= row[b] ? a : b)) : null
+
+    const name = document.createElement('td')
+    name.textContent = row.name
+    tr.append(name)
+
+    for (const e of COLUMNS) {
       const td = document.createElement('td')
-      td.textContent = text
+      td.textContent = row[e] == null ? '—' : sec(row[e])
       // 빠른 쪽에 표시를 준다 — 숫자만 나란히 두면 어느 쪽이 이겼는지 매번 세어야 한다
-      if (row.maestro != null && row.adb != null) {
-        if (i === 1 && row.maestro < row.adb) td.className = 'win'
-        if (i === 2 && row.adb < row.maestro) td.className = 'win'
-      }
+      if (e === fastest) td.className = 'win'
       tr.append(td)
-    })
+    }
+
+    const verdict = document.createElement('td')
+    verdict.textContent = fastest ? diff(row, fastest, known) : '—'
+    tr.append(verdict)
     body.append(tr)
   }
 }
 
 const sec = (ms) => `${(ms / 1000).toFixed(1)}초`
 
-function diff(maestroMs, adbMs) {
-  const fast = Math.min(maestroMs, adbMs)
-  const slow = Math.max(maestroMs, adbMs)
-  const times = slow / Math.max(1, fast)
-  const winner = adbMs < maestroMs ? 'adb' : 'Maestro'
-  return `${winner} 가 ${times.toFixed(1)}배 빨라요`
+function diff(row, fastest, known) {
+  const slowest = known.reduce((a, b) => (row[a] >= row[b] ? a : b))
+  const times = row[slowest] / Math.max(1, row[fastest])
+  return `${engineLabel(fastest)} · ${times.toFixed(1)}배`
 }
 
 // ── 웹소켓 ────────────────────────────────────────────────────────────────
@@ -299,7 +310,9 @@ function handle(msg) {
       break
     case 'compare':
       appendLog(
-        `견주기 — Maestro ${msg.maestroMs ? sec(msg.maestroMs) : '실패'} · adb ${msg.adbMs ? sec(msg.adbMs) : '실패'}`,
+        `견주기 — ${msg.results
+          .map((r) => `${engineLabel(r.engine)} ${r.ms ? sec(r.ms) : '실패'}`)
+          .join(' · ')}`,
         'ok',
       )
       break
@@ -308,7 +321,8 @@ function handle(msg) {
   }
 }
 
-const engineLabel = (e) => (e === 'adb' ? 'adb 직접' : 'Maestro CLI')
+const ENGINE_LABELS = { maestro: 'Maestro CLI', appium: 'Appium', adb: 'adb 직접' }
+const engineLabel = (e) => ENGINE_LABELS[e] ?? e
 
 // ── 상태 그리기 ───────────────────────────────────────────────────────────
 

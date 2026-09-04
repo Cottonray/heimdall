@@ -98,6 +98,18 @@ RUN set -eux; \
     mkdir -p /opt/aiqa; \
     chown -R aiqa:aiqa /opt/aiqa
 
+# Appium(UiAutomator2). **세 번째 갈래다.**
+#
+# npm 패키지를 우리 서버에 들이는 것이 아니다 — Appium 은 이 이미지 안에서 도는 별개의
+# 서버이고, 우리 서버는 거기에 HTTP(W3C WebDriver)로 말한다(server/src/appium.ts).
+# 그래서 `node_modules` 0 이라는 전제는 그대로다.
+#
+# 드라이버는 **사용자 홈(~/.appium)에 깔린다.** 그래서 appium 자체는 root 로 전역 설치하고
+# 드라이버는 아래에서 aiqa 로 깐다 — 순서를 바꾸면 서버가 드라이버를 못 찾는다.
+ARG APPIUM_VERSION=2.19.0
+ARG UIA2_VERSION=4.2.3
+RUN npm install -g "appium@${APPIUM_VERSION}"
+
 # Maestro. 설치 스크립트가 최신을 받아 ~/.maestro 에 푼다.
 # **번호를 고정하려면 MAESTRO_VERSION 을 넘긴다** — 지금은 비워 둔다. 이 데모가 쓰는 명령은
 # tapOn/inputText/assertVisible 몇 개뿐이라 판번호에 민감하지 않고, 고정해 둔 번호가
@@ -108,6 +120,9 @@ RUN set -eux; \
     if [ -n "$MAESTRO_VERSION" ]; then export MAESTRO_VERSION; fi; \
     curl -fsSL "https://get.maestro.mobile.dev" | bash
 ENV PATH="/home/aiqa/.maestro/bin:$PATH"
+
+# UiAutomator2 드라이버 — aiqa 홈에 깔린다(위 주석 참고)
+RUN appium driver install --source=npm "appium-uiautomator2-driver@${UIA2_VERSION}"
 
 # AVD 한 대. **늘리지 않는다** — 이 데모의 전제다 (docs/aiqa.md §한 대만 띄운다).
 #

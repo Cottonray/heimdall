@@ -17,6 +17,7 @@ import { randomUUID } from 'node:crypto'
 import * as device from './device.ts'
 import * as screen from './screen.ts'
 import * as control from './control.ts'
+import * as appium from './appium.ts'
 import * as flows from './flows.ts'
 import * as runner from './runner.ts'
 import * as llm from './llm.ts'
@@ -90,7 +91,7 @@ type Incoming =
 
 /** 화면이 보내온 갈래 이름. 모르는 값은 maestro 로 본다 — 기본은 늘 진짜 도구 쪽이다 */
 function engineOf(value: unknown): runner.Engine {
-    return value === 'adb' ? 'adb' : 'maestro'
+    return value === 'adb' || value === 'appium' ? value : 'maestro'
 }
 
 /** 0~1 로 온 좌표를 기기 픽셀로 되돌린다. 브라우저 쪽 확대·축소를 서버가 알 필요가 없다 */
@@ -173,6 +174,8 @@ const server = http.createServer(async (req, res) => {
                 running: runner.busy(),
                 viewers: screen.count(),
                 llm: llm.enabled(),
+                appium: await appium.ready(),
+                engines: runner.ENGINES,
                 timings: runner.timings(),
                 flows: list.map((f) => ({ id: f.id, name: f.name, desc: f.desc, yaml: f.yaml })),
             })

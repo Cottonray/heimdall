@@ -54,6 +54,6 @@
     "invalidYaml": "appId 줄이 없어 실행할 수 없어요.",
     "savedNote": "여기서 만든 시나리오는 파일로 저장되지 않아요.",
     "timingTitle": "타스크별 실행 시간 비교",
-    "timingHint": "Maestro CLI와 adb 실행 시간을 나란히 보여 줘요."
+    "timingHint": "Maestro CLI·Appium·adb 실행 시간을 나란히 보여 줘요."
   }
 }
