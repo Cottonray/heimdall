@@ -145,6 +145,8 @@ COPY --from=apk --chown=aiqa:aiqa /src/app/build/outputs/apk/debug/app-debug.apk
 # 한글을 넣어 주는 QA 전용 키보드. 테스트 대상이 아니라 도구라 apk 가 따로다
 # (`adb shell input text` 는 아스키만 넣는다 — sample-app/ime/build.gradle.kts 참고)
 COPY --from=apk --chown=aiqa:aiqa /src/ime/build/outputs/apk/debug/ime-debug.apk /opt/aiqa/qaime.apk
+# 카메라에 물릴 견본 이미지 (신분증 촬영 화면을 자동으로 돌리기 위한 것 — docs/aiqa.md)
+COPY --chown=aiqa:aiqa assets/id-sample.png /opt/aiqa/id-sample.png
 COPY --chown=aiqa:aiqa entrypoint.sh /opt/aiqa/entrypoint.sh
 USER root
 RUN chmod +x /opt/aiqa/entrypoint.sh

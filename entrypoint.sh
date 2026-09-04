@@ -16,6 +16,17 @@ APP_ID=${AIQA_APP_ID:-com.example.demo.golmok}
 IME_APK=${AIQA_IME_APK:-/opt/aiqa/qaime.apk}
 IME_ID=${AIQA_IME_ID:-com.example.demo.qaime/.QaKeyboard}
 
+# **카메라에 물릴 이미지.** 신분증 촬영 같은 화면을 자동으로 돌리려면 렌즈 앞에 종이를
+# 들고 있을 사람이 없어야 한다 — 에뮬레이터의 `imagefile:` 모드가 그 자리를 대신한다.
+# 카메라를 여는 앱은 이 그림을 "지금 렌즈에 보이는 것"으로 받는다.
+# 파일이 없으면 카메라를 끈 채로 뜬다(none) — 옛 동작 그대로다.
+ID_IMAGE=${AIQA_CAMERA_IMAGE:-/opt/aiqa/id-sample.png}
+if [ -f "$ID_IMAGE" ]; then
+    CAMERA_BACK=${AIQA_CAMERA_BACK:-imagefile:$ID_IMAGE}
+else
+    CAMERA_BACK=${AIQA_CAMERA_BACK:-none}
+fi
+
 # ── 에뮬레이터 ────────────────────────────────────────────────────────────────
 # -no-window       : 화면이 없다. 우리는 screencap 으로 가져간다
 # -gpu swiftshader_indirect : 소프트웨어 렌더. 홈서버에 GPU 가 없다
@@ -31,12 +42,12 @@ start_emulator() {
     # **정말로 두 대가 뜰 일은 없다** (한 컨테이너에 한 대다).
     rm -rf "$HOME/.android/avd/$AVD.avd"/*.lock 2>/dev/null || true
 
-    log "에뮬레이터 기동 ($AVD)"
+    log "에뮬레이터 기동 ($AVD) · 카메라 $CAMERA_BACK"
     emulator -avd "$AVD" \
         -no-window -no-audio -no-boot-anim -no-snapshot \
         -gpu swiftshader_indirect -accel on \
         -memory 2048 -cores 4 \
-        -camera-back none -camera-front none \
+        -camera-back "$CAMERA_BACK" -camera-front none \
         -netdelay none -netspeed full \
         >/tmp/emulator.log 2>&1 &
     EMU_PID=$!
