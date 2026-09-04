@@ -79,7 +79,11 @@ else
 fi
 
 say "컨테이너 반영"
-ssh "$host" 'cd ~/aiqa && docker compose up -d'
+# **--force-recreate 를 뺄 수 없다.** 서버 소스는 마운트라 파일만 바꿔서는 이미 떠 있는
+# node 가 새 코드를 읽지 않는데, 설정이 그대로면 `up -d` 는 "이미 최신"이라며 아무것도
+# 하지 않는다 — 배포가 성공했다고 말하면서 옛 코드가 계속 도는 자리다 (2026-09-04 에
+# 두 번 헤맸다). 에뮬레이터가 같이 다시 뜨는 값(1분)을 치르고 확실히 갈아끼운다.
+ssh "$host" 'cd ~/aiqa && docker compose up -d --force-recreate'
 
 say "기동 확인 (에뮬레이터 부팅까지 1~3분)"
 ssh "$host" '

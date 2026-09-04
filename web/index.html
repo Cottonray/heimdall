@@ -108,7 +108,26 @@
 
           <div class="row">
             <button class="btn" id="stop" disabled>중지</button>
+            <label class="check-inline" title="켜면 기기가 인코딩까지 하느라 느려져요. 시간 비교와 나란히 두지 마세요">
+              <input type="checkbox" id="record" />
+              <span>화면 녹화</span>
+            </label>
           </div>
+          <p class="note" id="record-note">
+            녹화를 켜면 기기가 인코딩을 같이 해서 <b>걸린 시간이 늘어납니다.</b>
+            시간을 견주는 실행은 꺼 두세요.
+          </p>
+        </div>
+
+        <!-- 증적 — 실행이 끝날 때마다 한 줄씩 쌓인다 -->
+        <div class="panel">
+          <div class="panel-head">
+            <h2>증적 자료</h2>
+            <span class="hint-inline">단계별 화면이 들어간 엑셀과 녹화 파일이에요</span>
+          </div>
+          <ul class="runs" id="runs">
+            <li class="elements-note">아직 남은 증적이 없어요. 시나리오를 한 번 돌려보세요.</li>
+          </ul>
         </div>
 
         <div class="panel">

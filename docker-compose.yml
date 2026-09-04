@@ -39,6 +39,10 @@ services:
       AIQA_FRAME_SLOW_MS: ${AIQA_FRAME_SLOW_MS:-900}
       # 조작 권한을 놀렸을 때 스스로 놓는 시간
       AIQA_CONTROL_IDLE_MS: ${AIQA_CONTROL_IDLE_MS:-90000}
+      # 남겨 둘 증적 실행 수. 공개 데모라 무한히 쌓게 두지 않는다
+      AIQA_RUNS_KEEP: ${AIQA_RUNS_KEEP:-30}
+      # **카메라에 물릴 것.** image(기본·신분증 촬영) · video(얼굴 인증처럼 움직여야 하는 것) · none
+      AIQA_CAMERA_SOURCE: ${AIQA_CAMERA_SOURCE:-image}
       # 세 번째 갈래(Appium). 같은 컨테이너 안이라 loopback 이다 — 밖으로 열지 않는다
       AIQA_APPIUM_URL: ${AIQA_APPIUM_URL:-http://127.0.0.1:4723}
       # 시나리오 하나에 주는 시간 · adb 갈래가 요소를 기다리는 시간
@@ -56,6 +60,8 @@ services:
       - ./flows:/opt/aiqa/flows:ro
       # AVD 의 상태(설치된 앱·설정). 배포로 컨테이너가 새로 떠도 부팅이 조금 빠르다
       - aiqa-avd:/home/aiqa/.android/avd
+      # 증적(xlsx·스크린샷·녹화 mp4). 배포로 컨테이너가 새로 떠도 남는다
+      - aiqa-runs:/opt/aiqa/runs
     networks:
       # edge nginx 가 http://aiqa:8080 으로 붙는다
       - edge
@@ -70,6 +76,7 @@ services:
 
 volumes:
   aiqa-avd:
+  aiqa-runs:
 
 networks:
   edge:

@@ -1,0 +1,22 @@
+{
+  "name": "aiqa-server",
+  "private": true,
+  "type": "module",
+  "description": "AI QA 데모 서버. 의존성은 exceljs 하나뿐이다 — 이유는 아래.",
+  "//": [
+    "이 스택은 node_modules 0 을 전제로 만들었다 (AICC 와 같다). WebSocket 도 Maestro yaml",
+    "파서도 직접 짠 이유가 그것이다.",
+    "",
+    "**exceljs 하나만 예외다** (2026-09-04 사용자 지시 'exceljs 를 통해서 증적자료').",
+    "xlsx 는 XML 을 담은 zip 이라 표만 쓰는 거면 손으로도 짤 만하지만, 우리가 넣어야 하는",
+    "것은 **셀 안의 스크린샷**이다 — 이미지 관계(rels)·드로잉 XML·앵커 좌표를 직접 만드는",
+    "일이라 손으로 짜면 그 코드가 이 데모 전체보다 커진다.",
+    "",
+    "**설치 위치가 /opt/aiqa/node_modules 인 것도 일부러다.** server/ 는 컨테이너에",
+    "읽기 전용으로 마운트되므로 그 아래에 깔면 마운트가 통째로 덮어 가린다. Node 는",
+    "상위 디렉터리의 node_modules 까지 훑으므로 한 칸 위에 두면 마운트와 부딪히지 않는다."
+  ],
+  "dependencies": {
+    "exceljs": "4.4.0"
+  }
+}

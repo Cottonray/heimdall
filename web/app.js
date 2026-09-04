@@ -157,6 +157,70 @@ function engine() {
   return document.querySelector('input[name="engine"]:checked').value
 }
 
+/** 화면 녹화를 켠 실행인가. **켜면 기기가 느려져 시간 비교가 흔들린다** */
+function recording() {
+  return $('record').checked
+}
+
+// ── 증적 ──────────────────────────────────────────────────────────────────
+
+async function loadRuns() {
+  const res = await fetch(`${BASE}/api/runs`, { cache: 'no-store' })
+  const data = await res.json().catch(() => null)
+  if (!data) return
+  renderRuns(data.runs ?? [])
+}
+
+function renderRuns(runs) {
+  const ul = $('runs')
+  ul.replaceChildren()
+  if (runs.length === 0) {
+    const li = document.createElement('li')
+    li.className = 'elements-note'
+    li.textContent = '아직 남은 증적이 없어요. 시나리오를 한 번 돌려보세요.'
+    ul.append(li)
+    return
+  }
+
+  for (const run of runs.slice(0, 12)) {
+    const li = document.createElement('li')
+    li.className = 'run'
+
+    const mark = document.createElement('span')
+    mark.className = `run-mark ${run.passed ? 'run-mark--ok' : 'run-mark--fail'}`
+    mark.textContent = run.passed ? '통과' : '실패'
+
+    const copy = document.createElement('div')
+    copy.className = 'run-copy'
+    const name = document.createElement('div')
+    name.className = 'run-name'
+    name.textContent = run.flowName
+    const meta = document.createElement('div')
+    meta.className = 'run-meta'
+    meta.textContent = `${engineLabel(run.engine)} · ${sec(run.ms)} · 단계 ${run.steps} · ${when(run.at)}`
+    copy.append(name, meta)
+
+    li.append(mark, copy, link(run.runId, 'evidence.xlsx', '엑셀'), link(run.runId, 'log.txt', '로그'))
+    if (run.hasVideo) li.append(link(run.runId, 'screen.mp4', '녹화'))
+    ul.append(li)
+  }
+}
+
+function link(runId, file, label) {
+  const a = document.createElement('a')
+  a.className = 'btn btn-key'
+  a.href = `${BASE}/api/runs/${runId}/${file}`
+  a.textContent = label
+  a.download = ''
+  return a
+}
+
+function when(at) {
+  const d = new Date(at)
+  const pad = (n) => String(n).padStart(2, '0')
+  return `${pad(d.getMonth() + 1)}/${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}`
+}
+
 function renderFlows() {
   const ul = $('flows')
   ul.replaceChildren()
@@ -178,7 +242,7 @@ function renderFlows() {
     const runBtn = document.createElement('button')
     runBtn.className = 'btn btn-primary'
     runBtn.textContent = state.copy.ui.runButton
-    runBtn.onclick = () => post('/api/run', { flowId: flow.id, engine: engine() })
+    runBtn.onclick = () => post('/api/run', { flowId: flow.id, engine: engine(), record: recording() })
 
     // 두 갈래를 잇달아 돌려 시간을 견준다. 이 데모의 핵심 단추다
     const cmpBtn = document.createElement('button')
@@ -372,6 +436,10 @@ function handle(msg) {
           .join(' · ')}`,
         'ok',
       )
+      break
+    case 'evidence':
+      appendLog(`증적을 남겼어요 — 엑셀${msg.artifact.hasVideo ? '·녹화' : ''}`, 'ok')
+      void loadRuns()
       break
     case 'ping':
       break
@@ -721,7 +789,7 @@ $('editor-run').onclick = () => {
     flash(state.copy.ui.invalidYaml)
     return
   }
-  post('/api/run-adhoc', { name: '편집기 시나리오', yaml, engine: engine() })
+  post('/api/run-adhoc', { name: '편집기 시나리오', yaml, engine: engine(), record: recording() })
 }
 
 $('ai-make').onclick = async () => {
@@ -774,6 +842,7 @@ void (async () => {
   syncControl()
   connect()
   void loadElements()
+  void loadRuns()
   // 기기가 붙거나 빠지는 것은 화면이 알 길이 없다. 가끔 되물어 본다
   setInterval(() => void loadDevices(), 15_000)
 })()

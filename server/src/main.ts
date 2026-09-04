@@ -20,6 +20,7 @@ import * as screen from './screen.ts'
 import * as control from './control.ts'
 import * as appium from './appium.ts'
 import * as flows from './flows.ts'
+import * as recorder from './recorder.ts'
 import * as runner from './runner.ts'
 import * as llm from './llm.ts'
 import { accept } from './ws.ts'
@@ -189,8 +190,12 @@ const server = http.createServer(async (req, res) => {
         }
 
         if (req.method === 'POST' && route === '/api/run') {
-            const body = JSON.parse((await readBody(req)) || '{}') as { flowId?: string; engine?: string }
-            const r = await runner.run(String(body.flowId ?? ''), engineOf(body.engine))
+            const body = JSON.parse((await readBody(req)) || '{}') as {
+                flowId?: string
+                engine?: string
+                record?: boolean
+            }
+            const r = await runner.run(String(body.flowId ?? ''), engineOf(body.engine), body.record === true)
             json(res, r.ok ? 200 : 409, r)
             return
         }
@@ -213,19 +218,54 @@ const server = http.createServer(async (req, res) => {
                 name?: string
                 yaml?: string
                 engine?: string
+                record?: boolean
             }
             const yaml = String(body.yaml ?? '')
             if (!yaml.includes('appId:')) {
                 json(res, 400, { ok: false, error: 'appId 줄이 없는 시나리오예요' })
                 return
             }
-            const r = await runner.runAdhoc(String(body.name ?? '즉석 시나리오'), yaml, engineOf(body.engine))
+            const r = await runner.runAdhoc(
+                String(body.name ?? '즉석 시나리오'),
+                yaml,
+                engineOf(body.engine),
+                (body as { record?: boolean }).record === true,
+            )
             json(res, r.ok ? 200 : 409, r)
             return
         }
 
         if (req.method === 'POST' && route === '/api/stop') {
             json(res, 200, { ok: runner.cancel() })
+            return
+        }
+
+        // ── 증적 ──
+        if (req.method === 'GET' && route === '/api/runs') {
+            json(res, 200, { runs: await recorder.list() })
+            return
+        }
+
+        // 파일 이름은 **우리가 정한 셋 중 하나**로만 받는다. 밖에서 온 이름을 경로에 붙이면
+        // 그 자리가 곧 컨테이너 파일시스템을 훑는 길이 된다
+        const artifact = route.match(/^\/api\/runs\/([a-z0-9-]+)\/(evidence\.xlsx|screen\.mp4|log\.txt)$/)
+        if (req.method === 'GET' && artifact) {
+            const body = await recorder.file(artifact[1], artifact[2] as 'evidence.xlsx')
+            if (!body) {
+                json(res, 404, { error: 'not found' })
+                return
+            }
+            const types: Record<string, string> = {
+                'evidence.xlsx': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+                'screen.mp4': 'video/mp4',
+                'log.txt': 'text/plain; charset=utf-8',
+            }
+            res.writeHead(200, {
+                'content-type': types[artifact[2]],
+                'content-disposition': `attachment; filename="${artifact[1]}-${artifact[2]}"`,
+                'cache-control': 'no-store',
+            })
+            res.end(body)
             return
         }
 
@@ -388,8 +428,29 @@ server.on('upgrade', (req, socket, head) => {
 
 // 두 갈래가 내는 것은 전부 그대로 화면으로 흘린다. 로그가 곧 데모다
 runner.onEvent((e) => {
-    if (e.type === 'run-start') control.lockForRunner(`${e.name} · ${e.engine}`)
-    if (e.type === 'run-end') control.unlockRunner()
+    if (e.type === 'run-start') {
+        control.lockForRunner(`${e.name} · ${e.engine}`)
+        void recorder.start({
+            runId: e.runId,
+            flowId: e.flowId,
+            flowName: e.name,
+            engine: e.engine,
+            recording: e.record,
+        })
+    }
+    if (e.type === 'run-log') recorder.log(e.line)
+    // **화면을 새로 찍지 않는다.** 스트림이 이미 만들어 둔 마지막 장을 집어 온다 —
+    // 단계마다 screencap 을 부르면 그 값이 그대로 갈래별 시간에 얹힌다
+    if (e.type === 'run-step') recorder.step(e.index, e.label, e.ms, e.ok, screen.lastJpeg())
+    if (e.type === 'run-end') {
+        control.unlockRunner()
+        void recorder
+            .finish({ passed: e.passed, ms: e.ms })
+            .then((artifact) => {
+                if (artifact) screen.broadcast({ type: 'evidence', artifact })
+            })
+            .catch((err) => console.error('[aiqa] 증적을 만들지 못했어요', err))
+    }
     screen.broadcast(e)
     // 시나리오가 도는 동안은 화면이 빠르게 바뀐다. 프레임 박자를 그동안 올려 둔다
     screen.poke()

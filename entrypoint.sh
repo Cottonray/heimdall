@@ -16,16 +16,31 @@ APP_ID=${AIQA_APP_ID:-com.example.demo.golmok}
 IME_APK=${AIQA_IME_APK:-/opt/aiqa/qaime.apk}
 IME_ID=${AIQA_IME_ID:-com.example.demo.qaime/.QaKeyboard}
 
-# **카메라에 물릴 이미지.** 신분증 촬영 같은 화면을 자동으로 돌리려면 렌즈 앞에 종이를
-# 들고 있을 사람이 없어야 한다 — 에뮬레이터의 `imagefile:` 모드가 그 자리를 대신한다.
-# 카메라를 여는 앱은 이 그림을 "지금 렌즈에 보이는 것"으로 받는다.
-# 파일이 없으면 카메라를 끈 채로 뜬다(none) — 옛 동작 그대로다.
+# **카메라에 무엇을 물릴까.** 렌즈 앞에 종이를 들고 있을 사람이 없으니 에뮬레이터에게
+# 파일을 준다. 카메라를 여는 앱은 그걸 "지금 렌즈에 보이는 것"으로 받는다.
+#
+#   image  정지 이미지 — 신분증·카드·QR 촬영 (기본값)
+#   video  동영상      — 얼굴 인증처럼 가만히 있으면 안 되는 화면
+#   none   끔
+#
+# 더 특이한 것(`webcam0`·`image360:`)이 필요하면 AIQA_CAMERA_BACK 에 그대로 적는다 —
+# 그 값이 아래 판단을 통째로 이긴다.
+CAMERA_SOURCE=${AIQA_CAMERA_SOURCE:-image}
 ID_IMAGE=${AIQA_CAMERA_IMAGE:-/opt/aiqa/id-sample.png}
-if [ -f "$ID_IMAGE" ]; then
-    CAMERA_BACK=${AIQA_CAMERA_BACK:-imagefile:$ID_IMAGE}
-else
-    CAMERA_BACK=${AIQA_CAMERA_BACK:-none}
-fi
+ID_VIDEO=${AIQA_CAMERA_VIDEO:-/opt/aiqa/id-sample.mp4}
+
+pick_camera() {
+    case "$CAMERA_SOURCE" in
+        video)
+            [ -f "$ID_VIDEO" ] && { echo "videofile:$ID_VIDEO"; return; }
+            log "!! 영상이 없어요($ID_VIDEO) — 이미지로 갑니다"
+            ;;
+        none) echo none; return ;;
+    esac
+    [ -f "$ID_IMAGE" ] && { echo "imagefile:$ID_IMAGE"; return; }
+    echo none
+}
+CAMERA_BACK=${AIQA_CAMERA_BACK:-$(pick_camera)}
 
 # ── 에뮬레이터 ────────────────────────────────────────────────────────────────
 # -no-window       : 화면이 없다. 우리는 screencap 으로 가져간다

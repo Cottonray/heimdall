@@ -45,6 +45,16 @@ let lastFrame: Buffer | null = null
 /** 프레임 루프가 마지막으로 본 기기 상태. 화면에 뱃지로 나간다 */
 let deviceOnline = false
 
+/**
+ * **보는 사람이 없어도 화면을 계속 뜨게 붙잡아 두는 표.**
+ *
+ * 증적(recorder.ts)이 단계마다 집어 가는 것은 이 루프가 만든 마지막 프레임이다. 그런데
+ * 루프는 보는 사람이 없으면 서 있으므로, 브라우저를 아무도 안 열어 둔 채 API 로 시나리오를
+ * 돌리면 **증적에 화면이 한 장도 안 남는다** (2026-09-04 에 그렇게 빈 xlsx 를 만들었다).
+ * 그래서 녹화·증적이 도는 동안은 여기를 하나 올려 둔다.
+ */
+let holds = 0
+
 export function add(viewer: Viewer) {
     viewers.set(viewer.id, viewer)
     // 붙자마자 지난 화면 한 장을 던져 준다 — 첫 프레임까지 검은 화면을 보지 않게
@@ -54,7 +64,18 @@ export function add(viewer: Viewer) {
 
 export function remove(id: string) {
     viewers.delete(id)
-    if (viewers.size === 0) stopLoop()
+    if (viewers.size === 0 && holds === 0) stopLoop()
+}
+
+/** 보는 사람이 없어도 프레임을 계속 만든다 (증적·녹화가 도는 동안) */
+export function hold() {
+    holds += 1
+    ensureLoop()
+}
+
+export function release() {
+    holds = Math.max(0, holds - 1)
+    if (holds === 0 && viewers.size === 0) stopLoop()
 }
 
 export function count() {
@@ -63,6 +84,16 @@ export function count() {
 
 export function isDeviceOnline() {
     return deviceOnline
+}
+
+/**
+ * 마지막으로 보낸 화면 한 장.
+ *
+ * 증적이 이걸 집어 간다 — **새로 찍지 않으려고 있는 함수다.** 단계마다 screencap 을
+ * 새로 부르면 단계당 150ms 가 붙어서 세 갈래의 시간 비교가 통째로 거짓이 된다.
+ */
+export function lastJpeg(): Buffer | null {
+    return lastFrame
 }
 
 /**
@@ -130,10 +161,12 @@ let sinceLastShot = 0
 
 async function tick() {
     if (busy) return
-    if (viewers.size === 0) return
+    if (viewers.size === 0 && holds === 0) return
 
-    // 느린 박자일 때는 몇 판을 그냥 넘긴다. setInterval 을 갈아끼우는 것보다 셈이 단순하다
-    const fast = Date.now() - lastActivity < FAST_WINDOW_MS
+    // 느린 박자일 때는 몇 판을 그냥 넘긴다. setInterval 을 갈아끼우는 것보다 셈이 단순하다.
+    // **붙잡혀 있는 동안은 늘 빠른 쪽이다** — 증적이 집어 가는 화면이 900ms 묵은 것이면
+    // 단계와 그림이 어긋나서 증적으로 쓸 수가 없다
+    const fast = holds > 0 || Date.now() - lastActivity < FAST_WINDOW_MS
     const period = fast ? FAST_MS : SLOW_MS
     sinceLastShot += FAST_MS
     if (sinceLastShot < period) return

@@ -38,7 +38,17 @@ const FIND_TIMEOUT_MS = Number(process.env.AIQA_FIND_TIMEOUT_MS ?? 8_000)
 const DUMP_REUSE_MS = Number(process.env.AIQA_DUMP_REUSE_MS ?? 1_500)
 
 export type RunEvent =
-    | { type: 'run-start'; runId: string; flowId: string; name: string; engine: Engine; at: number; steps: number }
+    | {
+          type: 'run-start'
+          runId: string
+          flowId: string
+          name: string
+          engine: Engine
+          at: number
+          steps: number
+          /** 화면 녹화를 켠 실행인가. **켜면 기기가 느려져 시간 비교가 흔들린다** */
+          record: boolean
+      }
     | { type: 'run-log'; runId: string; line: string; level: 'info' | 'ok' | 'err' }
     | { type: 'run-step'; runId: string; index: number; total: number; label: string; ms: number; ok: boolean }
     | {
@@ -115,10 +125,14 @@ function log(line: string, level: 'info' | 'ok' | 'err' = 'info') {
 
 // ── 밖에서 부르는 자리 ────────────────────────────────────────────────────────
 
-export async function run(flowId: string, engine: Engine): Promise<{ ok: boolean; error?: string; runId?: string }> {
+export async function run(
+    flowId: string,
+    engine: Engine,
+    record = false,
+): Promise<{ ok: boolean; error?: string; runId?: string }> {
     const flow = await flows.get(flowId)
     if (!flow) return { ok: false, error: '없는 시나리오예요' }
-    return begin(flow, engine)
+    return begin(flow, engine, record)
 }
 
 /**
@@ -129,8 +143,9 @@ export async function runAdhoc(
     name: string,
     yaml: string,
     engine: Engine,
+    record = false,
 ): Promise<{ ok: boolean; error?: string; runId?: string }> {
-    return begin({ id: 'adhoc', name, desc: '화면에서 만든 시나리오', yaml, file: '' }, engine)
+    return begin({ id: 'adhoc', name, desc: '화면에서 만든 시나리오', yaml, file: '' }, engine, record)
 }
 
 /** 견주기 순서. **맨손이 먼저다** — 다른 갈래가 기기에 드라이버를 올려 둔 상태에서
@@ -187,7 +202,11 @@ export function cancel(reason = '사람이 중지'): boolean {
 
 // ── 공통 시작·끝 ──────────────────────────────────────────────────────────────
 
-async function begin(flow: Flow, engine: Engine): Promise<{ ok: boolean; error?: string; runId?: string }> {
+async function begin(
+    flow: Flow,
+    engine: Engine,
+    record = false,
+): Promise<{ ok: boolean; error?: string; runId?: string }> {
     if (current) return { ok: false, error: '이미 다른 시나리오가 도는 중이에요' }
 
     // 우리가 직접 도는 갈래(adb·appium)는 **시작하기 전에** 단계를 다 읽는다. 절반쯤
@@ -217,6 +236,7 @@ async function begin(flow: Flow, engine: Engine): Promise<{ ok: boolean; error?:
         engine,
         at: startedAt,
         steps: engine === 'maestro' ? 0 : steps.length,
+        record,
     })
 
     const finish = (passed: boolean) => {
@@ -279,6 +299,13 @@ async function runMaestro(flow: Flow, runId: string, finish: (passed: boolean) =
         if (current?.runId === runId) cancel('시간 초과')
     }, RUN_TIMEOUT_MS)
 
+    // Maestro 는 단계를 이벤트로 주지 않고 로그 줄로만 준다. 그 줄을 단계로 되읽어서
+    // **세 갈래가 같은 모양의 증적을 남기게** 한다 (recorder.ts 가 이 이벤트를 받는다).
+    //   `Tap on id: search_open... COMPLETED`
+    //   `Assert that "망원동" is visible... FAILED`
+    let stepIndex = 0
+    let stepSince = Date.now()
+
     const pump = (level: 'info' | 'err') => {
         // **조각마다 따로 디코딩하면 한글이 깨진다.** UTF-8 에서 한글은 3바이트인데,
         // 그 3바이트가 두 chunk 에 걸쳐 들어오면 양쪽 반쪽이 각각 U+FFFD(``)가 된다.
@@ -292,7 +319,25 @@ async function runMaestro(flow: Flow, runId: string, finish: (passed: boolean) =
             for (const raw of lines) {
                 // 커서 이동·색 지우기. Maestro 는 TTY 가 아니어도 가끔 이걸 흘린다
                 const line = raw.replace(/\x1b\[[0-9;?]*[A-Za-z]/g, '').replace(/\r/g, '').trimEnd()
-                if (line) log(line, level)
+                if (!line) continue
+                log(line, level)
+
+                const done = line.trim().match(/^(.*?)\.\.\.\s*(COMPLETED|FAILED)$/)
+                if (done && current) {
+                    const now = Date.now()
+                    listener({
+                        type: 'run-step',
+                        runId: current.runId,
+                        index: stepIndex,
+                        // Maestro 는 전체 단계 수를 미리 알려 주지 않는다. 0 은 "모른다"는 뜻
+                        total: 0,
+                        label: done[1].trim(),
+                        ms: now - stepSince,
+                        ok: done[2] === 'COMPLETED',
+                    })
+                    stepIndex += 1
+                    stepSince = now
+                }
             }
         }
     }

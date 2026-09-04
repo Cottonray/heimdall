@@ -511,6 +511,72 @@ body {
   color: var(--blue);
 }
 
+/* ── 증적 목록 ───────────────────────────────────────────────────────── */
+
+.check-inline {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  color: var(--muted);
+  font-size: 12.5px;
+  cursor: pointer;
+}
+
+.runs {
+  display: grid;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.run {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  padding: 9px 12px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: #fff;
+}
+
+.run-copy {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.run-name {
+  font-size: 13.5px;
+  font-weight: 600;
+}
+
+.run-meta {
+  color: var(--muted);
+  font-size: 11.5px;
+}
+
+.run-mark {
+  padding: 3px 8px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.run-mark--ok {
+  background: rgba(31, 138, 83, 0.14);
+  color: var(--ok);
+}
+
+.run-mark--fail {
+  background: rgba(255, 116, 85, 0.16);
+  color: #b8402a;
+}
+
+.run a.btn {
+  text-decoration: none;
+}
+
 /* ── 기기 고르기 ──────────────────────────────────────────────────────── */
 
 .devices {

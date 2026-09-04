@@ -145,11 +145,42 @@ COPY --from=apk --chown=aiqa:aiqa /src/app/build/outputs/apk/debug/app-debug.apk
 # 한글을 넣어 주는 QA 전용 키보드. 테스트 대상이 아니라 도구라 apk 가 따로다
 # (`adb shell input text` 는 아스키만 넣는다 — sample-app/ime/build.gradle.kts 참고)
 COPY --from=apk --chown=aiqa:aiqa /src/ime/build/outputs/apk/debug/ime-debug.apk /opt/aiqa/qaime.apk
+# **이 스택의 유일한 npm 의존성: exceljs.**
+# 증적 파일에 스크린샷을 셀 안에 박아야 하는데, 그 관계·드로잉 XML 을 손으로 만드는 일이
+# 이 데모 전체보다 커진다 (server/package.json 의 설명 참고).
+#
+# `/opt/aiqa` 에 깐다 — `server/` 는 읽기 전용으로 마운트되므로 그 아래에 깔면 마운트가
+# 덮어 가린다. Node 는 상위 node_modules 까지 훑으므로 한 칸 위가 안전하다.
+COPY --chown=aiqa:aiqa server/package.json /opt/aiqa/package.json
+RUN cd /opt/aiqa && npm install --omit=dev --no-audit --no-fund && chown -R aiqa:aiqa /opt/aiqa/node_modules
+
 # 카메라에 물릴 견본 이미지 (신분증 촬영 화면을 자동으로 돌리기 위한 것 — docs/aiqa.md)
 COPY --chown=aiqa:aiqa assets/id-sample.png /opt/aiqa/id-sample.png
+
+# **움직이는 화면도 하나 만들어 둔다.** 얼굴 인증처럼 "가만히 있으면 안 되는" 화면은
+# 정지 이미지로는 통과하지 못한다 — 에뮬레이터의 `videofile:` 자리에 넣을 것이다.
+#
+# 저장소에 mp4 를 커밋하지 않고 **여기서 굽는다.** 이미 있는 ffmpeg 로 견본 이미지에서
+# 만들면 되고, 그러면 무엇이 들어 있는 영상인지가 이 다섯 줄로 설명된다.
+#   · 6초 · 640x480 · 15fps (에뮬레이터가 되돌려 재생한다)
+#   · **화면 한가운데** 빨간 막대가 좌우로 오가고, 배경도 같이 흐른다 — **화면이 정말
+#     움직이는지**를 눈으로 확인하는 자리다. 정지 이미지를 물려 놓고 "영상이 들어갔다"고
+#     착각하는 것을 막는 유일한 표시다.
+#     **가장자리에 두지 않는다** — 세로 화면의 카메라 미리보기는 640x480 의 좌우(세로로 보면
+#     위아래)를 잘라 내므로, 아래쪽 막대는 잘려서 안 보인다. 실제로 그렇게 한 번 헤맸다
+RUN set -eux; \
+    ffmpeg -hide_banner -loglevel error -loop 1 -i /opt/aiqa/id-sample.png -t 6 -r 15 \
+      -vf "scale=900:-2,crop=640:480:x=(in_w-640)/2+140*sin(t*1.6):y=(in_h-480)/2,drawbox=x=(iw-170)*abs(sin(t*0.9)):y=ih/2-35:w=170:h=70:color=red@0.9:t=fill" \
+      -c:v libx264 -preset veryfast -pix_fmt yuv420p -an /opt/aiqa/id-sample.mp4; \
+    chown aiqa:aiqa /opt/aiqa/id-sample.mp4; \
+    ls -l /opt/aiqa/id-sample.mp4
 COPY --chown=aiqa:aiqa entrypoint.sh /opt/aiqa/entrypoint.sh
 USER root
 RUN chmod +x /opt/aiqa/entrypoint.sh
+# 증적이 쌓이는 자리. **이미지 안에 미리 만들어 둔다** — 도커는 이름 있는 볼륨을 처음
+# 붙일 때 그 자리의 내용과 **소유자를 그대로 복사**한다. 없으면 root 소유로 생기고,
+# 이 컨테이너는 aiqa 로 도니까 증적을 한 건도 못 쓴다(EACCES, 2026-09-04 에 밟았다).
+RUN mkdir -p /opt/aiqa/runs && chown aiqa:aiqa /opt/aiqa/runs
 USER aiqa
 
 WORKDIR /opt/aiqa
