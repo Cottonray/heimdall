@@ -23,7 +23,7 @@ const state = {
   flows: [],
   timings: [],
   lastEngine: null,
-  aiYaml: null,
+  appId: '',
 }
 
 // ── 문구 ──────────────────────────────────────────────────────────────────
@@ -46,11 +46,23 @@ async function loadCopy() {
   $('stop').textContent = c.stopButton
   $('log-title').textContent = c.logTitle
   $('log').dataset.empty = c.logEmpty
-  $('ai-title').textContent = c.aiTitle
-  $('ai-hint').textContent = c.aiHint
   $('ai-input').placeholder = c.aiPlaceholder
   $('ai-make').textContent = c.aiButton
-  $('ai-run').textContent = c.aiRunButton
+  $('timing-title').textContent = c.timingTitle
+  $('timing-hint').textContent = c.timingHint
+  $('editor-title').textContent = c.editorTitle
+  $('editor-hint').textContent = `${c.editorHint} ${c.aiHint}`
+  $('load-label').textContent = c.loadLabel
+  $('commands-label').textContent = c.commandsLabel
+  $('commands-hint').textContent = c.commandsHint
+  $('elements-label').textContent = c.elementsLabel
+  $('elements-hint').textContent = c.elementsHint
+  $('elements-refresh').textContent = c.elementsRefresh
+  $('yaml-label').textContent = c.yamlLabel
+  $('yaml').placeholder = c.yamlPlaceholder
+  $('editor-run').textContent = c.runLabel
+  $('editor-clear').textContent = c.clearLabel
+  $('saved-note').textContent = c.savedNote
   $('diagnose-title').textContent = c.diagnoseTitle
   $('one-device-note').textContent = c.oneDeviceNote
   $('public-note').textContent = c.publicNote
@@ -69,10 +81,15 @@ async function loadConfig() {
   state.flows = cfg.flows ?? []
   state.timings = cfg.timings ?? []
   state.running = cfg.running
+  state.appId = cfg.appId
   renderFlows()
   renderTimings()
+  renderLoadOptions()
+  renderCommands()
+  resetEditor()
   if (!cfg.llm) {
-    $('ai-state').textContent = 'OpenRouter 키가 없어 이 기능만 꺼져 있어요'
+    // 편집기의 나머지(명령 단추·화면 요소·직접 쓰기)는 그대로 돈다 — 꺼지는 건 이 칸뿐이다
+    $('ai-state').textContent = 'OpenRouter 키가 없어 말로 만들기만 꺼져 있어요'
     $('ai-make').disabled = true
     $('ai-input').disabled = true
   }
@@ -368,7 +385,7 @@ function syncControl() {
 function syncRunning() {
   $('stop').disabled = !state.running
   document.querySelectorAll('.flow .btn').forEach((b) => (b.disabled = state.running))
-  $('ai-run').disabled = state.running
+  $('editor-run').disabled = state.running
   if (!state.running && $('run-status').textContent === state.copy.ui.statusRunning) setStatus('idle')
 }
 
@@ -488,7 +505,140 @@ async function post(path, body) {
   return data
 }
 
-// ── 말로 시나리오 만들기 ──────────────────────────────────────────────────
+// ── 시나리오 편집기 ──────────────────────────────────────────────────────
+// 말로 만들거나 · 명령 단추로 쌓거나 · 화면 요소를 집어 오거나 — 셋 다 아래 yaml
+// 한 칸으로 모인다. 파일로 저장하지는 않는다(공개 데모라 아무나 쌓을 수 있다).
+
+/** 명령 단추. 값은 커서 자리에 그대로 끼워지는 yaml 조각이다 */
+const COMMANDS = [
+  ['앱 실행', '- launchApp:\n    clearState: true'],
+  ['탭(글자)', '- tapOn: "글자"'],
+  ['탭(아이디)', '- tapOn:\n    id: "아이디"'],
+  ['탭(좌표)', '- tapOn:\n    point: "50%,80%"'],
+  ['길게 누르기', '- longPressOn: "글자"'],
+  ['글자 입력', '- inputText: "글자"'],
+  ['글자 지우기', '- eraseText: 20'],
+  ['보임 확인', '- assertVisible: "글자"'],
+  ['안 보임 확인', '- assertNotVisible: "글자"'],
+  ['스크롤', '- scroll'],
+  ['쓸어넘기기', '- swipe:\n    direction: UP'],
+  ['보일 때까지', '- scrollUntilVisible:\n    element:\n      text: "글자"'],
+  ['뒤로', '- back'],
+  ['엔터', '- pressKey: Enter'],
+  ['잠깐 기다리기', '- waitForAnimationToEnd'],
+]
+
+function editorHeader() {
+  return `appId: ${state.appId}\n---\n`
+}
+
+function resetEditor() {
+  $('yaml').value = `${editorHeader()}- launchApp:\n    clearState: true\n`
+}
+
+function renderCommands() {
+  const box = $('commands')
+  box.replaceChildren()
+  for (const [label, snippet] of COMMANDS) {
+    const b = document.createElement('button')
+    b.className = 'btn btn-key'
+    b.textContent = label
+    b.title = snippet
+    b.onclick = () => insertLine(snippet)
+    box.append(b)
+  }
+}
+
+function renderLoadOptions() {
+  const sel = $('load-flow')
+  sel.replaceChildren()
+  const blank = document.createElement('option')
+  blank.value = ''
+  blank.textContent = state.copy.ui.loadPlaceholder
+  sel.append(blank)
+  for (const f of state.flows) {
+    const o = document.createElement('option')
+    o.value = f.id
+    o.textContent = f.name
+    sel.append(o)
+  }
+  sel.onchange = () => {
+    const flow = state.flows.find((f) => f.id === sel.value)
+    if (flow) $('yaml').value = flow.yaml
+  }
+}
+
+/**
+ * 커서가 있는 줄 **다음**에 끼운다. 커서 한가운데를 쪼개면 yaml 이 깨지는데,
+ * 그건 단추를 누른 사람이 기대한 일이 아니다.
+ */
+function insertLine(snippet) {
+  const ta = $('yaml')
+  const value = ta.value || editorHeader()
+  const caret = ta.selectionStart ?? value.length
+  let end = value.indexOf('\n', caret)
+  if (end === -1) end = value.length
+  const head = value.slice(0, end)
+  const tail = value.slice(end)
+  const next = `${head}\n${snippet}${tail}`
+  ta.value = next
+  const pos = head.length + 1 + snippet.length
+  ta.focus()
+  ta.setSelectionRange(pos, pos)
+}
+
+async function loadElements() {
+  const list = $('elements')
+  list.replaceChildren(li(state.copy.ui.elementsLoading))
+  const res = await fetch(`${BASE}/api/screen/elements`, { cache: 'no-store' })
+  const data = await res.json().catch(() => ({ texts: [], ids: [] }))
+  list.replaceChildren()
+  const rows = [
+    ...(data.texts ?? []).map((v) => ({ kind: 'text', value: v })),
+    ...(data.ids ?? []).map((v) => ({ kind: 'id', value: v })),
+  ]
+  if (rows.length === 0) {
+    list.append(li(state.copy.ui.elementsEmpty))
+    return
+  }
+  for (const row of rows) {
+    const el = document.createElement('li')
+    const code = document.createElement('code')
+    code.textContent = row.kind === 'id' ? `id: ${row.value}` : row.value
+    const tap = document.createElement('button')
+    tap.className = 'btn btn-key'
+    tap.textContent = '탭'
+    tap.onclick = () =>
+      insertLine(row.kind === 'id' ? `- tapOn:\n    id: "${row.value}"` : `- tapOn: "${row.value}"`)
+    el.append(code, tap)
+    if (row.kind === 'text') {
+      const check = document.createElement('button')
+      check.className = 'btn btn-key'
+      check.textContent = '확인'
+      check.onclick = () => insertLine(`- assertVisible: "${row.value}"`)
+      el.append(check)
+    }
+    list.append(el)
+  }
+}
+
+function li(text) {
+  const el = document.createElement('li')
+  el.className = 'elements-note'
+  el.textContent = text
+  return el
+}
+
+$('elements-refresh').onclick = () => void loadElements()
+$('editor-clear').onclick = resetEditor
+$('editor-run').onclick = () => {
+  const yaml = $('yaml').value
+  if (!yaml.includes('appId:')) {
+    flash(state.copy.ui.invalidYaml)
+    return
+  }
+  post('/api/run-adhoc', { name: '편집기 시나리오', yaml, engine: engine() })
+}
 
 $('ai-make').onclick = async () => {
   const instruction = $('ai-input').value.trim()
@@ -499,16 +649,9 @@ $('ai-make').onclick = async () => {
   $('ai-make').disabled = false
   $('ai-state').textContent = ''
   if (!data.ok) return
-  state.aiYaml = data.yaml
-  $('ai-yaml').textContent = data.yaml
-  $('ai-yaml').hidden = false
-  $('ai-run-row').hidden = false
-}
-
-$('ai-run').onclick = () => {
-  if (!state.aiYaml) return
-  // 만든 시나리오도 지금 고른 갈래로 돈다 — 견주기가 저장된 시나리오에만 되면 반쪽이다
-  post('/api/run-adhoc', { name: '말로 만든 시나리오', yaml: state.aiYaml, engine: engine() })
+  // 만든 것을 바로 편집기에 넣는다. 그래야 고쳐서 돌릴 수 있다
+  $('yaml').value = data.yaml
+  $('yaml').scrollIntoView({ behavior: 'smooth', block: 'nearest' })
 }
 
 // ── 실패 원인 ─────────────────────────────────────────────────────────────
@@ -546,4 +689,5 @@ void (async () => {
   setStatus('idle')
   syncControl()
   connect()
+  void loadElements()
 })()

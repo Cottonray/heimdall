@@ -133,6 +133,9 @@ async function handleInput(viewerId: string, msg: Incoming) {
             await device.key(String(msg.name ?? ''))
             break
     }
+
+    // 누른 결과를 다음 박자까지 기다리지 않는다. 조작감이 여기서 갈린다
+    screen.kick()
 }
 
 // ── HTTP ─────────────────────────────────────────────────────────────────────
@@ -224,7 +227,25 @@ const server = http.createServer(async (req, res) => {
             }
             screen.poke()
             await device.relaunchApp()
+            screen.kick(400)
             json(res, 200, { ok: true })
+            return
+        }
+
+        // 시나리오 편집기가 "지금 화면에 뭐가 있나"를 물어보는 자리.
+        // 사람이 글자를 손으로 옮겨 적지 않게 하려는 것이다 — 한 글자만 틀려도 안 잡힌다
+        if (req.method === 'GET' && route === '/api/screen/elements') {
+            const nodes = await device.dump()
+            const texts: string[] = []
+            const ids: string[] = []
+            for (const n of nodes) {
+                for (const t of [n.text, n.desc]) {
+                    const v = t.trim()
+                    if (v && !texts.includes(v)) texts.push(v)
+                }
+                if (n.id && !ids.includes(n.id)) ids.push(n.id)
+            }
+            json(res, 200, { texts: texts.slice(0, 80), ids: ids.slice(0, 60) })
             return
         }
 

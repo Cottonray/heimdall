@@ -42,20 +42,28 @@ function run(cmd: string, args: string[], timeoutMs: number, shell = false): Pro
     return new Promise((resolve) => {
         const child = spawn(cmd, args, { shell })
         const out: Buffer[] = []
-        let err = ''
+        // 표준에러도 조각으로 온다. 조각마다 따로 문자열로 바꾸면 한글이 걸친 자리에서
+        // 깨지므로(3바이트가 두 조각에 나뉜다) 여기서도 바이트로 모았다 한 번에 푼다
+        const errChunks: Buffer[] = []
+        let errBytes = 0
         let done = false
 
         const timer = setTimeout(() => {
             if (done) return
             done = true
             child.kill('SIGKILL')
-            resolve({ code: null, stdout: Buffer.concat(out), stderr: `${err}\n(timeout ${timeoutMs}ms)` })
+            resolve({ code: null, stdout: Buffer.concat(out), stderr: `${errText()}\n(timeout ${timeoutMs}ms)` })
         }, timeoutMs)
+
+        const errText = () => Buffer.concat(errChunks).toString('utf8')
 
         child.stdout.on('data', (d: Buffer) => out.push(d))
         child.stderr.on('data', (d: Buffer) => {
             // 표준에러는 몇 줄이면 충분하다. 죽은 기기가 같은 줄을 무한히 뱉는 일이 있다
-            if (err.length < 8192) err += d.toString('utf8')
+            if (errBytes < 8192) {
+                errChunks.push(d)
+                errBytes += d.length
+            }
         })
         child.on('error', (e) => {
             if (done) return
@@ -67,7 +75,7 @@ function run(cmd: string, args: string[], timeoutMs: number, shell = false): Pro
             if (done) return
             done = true
             clearTimeout(timer)
-            resolve({ code, stdout: Buffer.concat(out), stderr: err })
+            resolve({ code, stdout: Buffer.concat(out), stderr: errText() })
         })
     })
 }
@@ -132,22 +140,63 @@ export async function state(): Promise<DeviceState> {
 // ── 화면 ─────────────────────────────────────────────────────────────────────
 
 /**
+ * 원본 프레임을 어떻게 받을지. 한 번만 재고 그 뒤로는 그 값을 쓴다.
+ *
+ * `screencap -p` 는 **기기 안에서 PNG 로 압축한다** — 그 압축이 통째로 낭비다.
+ * 우리는 어차피 JPEG 으로 다시 만드니까. 압축하지 않은 `screencap` 은 4.6MB 를 그대로
+ * 내놓지만 adb 는 로컬 소켓이라 그 전송이 PNG 압축보다 싸다.
+ * 홈서버 실측: PNG 길 860ms · 원본 길 **512ms** (같은 화면·같은 결과 22KB).
+ */
+let rawFrame: { offset: number; width: number; height: number } | null = null
+let rawProbed = false
+
+/**
+ * 원본 프레임의 머리말 길이를 잰다.
+ *
+ * `screencap` 은 앞에 width·height·format(+ Android 9 부터 colorSpace)을 붙여 준다 —
+ * 판에 따라 12바이트이기도 16바이트이기도 하다. **외워서 쓰지 않는다**: 전체 길이에서
+ * 픽셀이 차지하는 만큼을 빼면 머리말 길이가 정확히 나온다. 어긋난 값을 쓰면 화면이
+ * 몇 픽셀 밀린 채로 나오는데, 그건 크기도 그대로라 눈으로 보기 전에는 모른다.
+ */
+async function probeRawFrame(): Promise<typeof rawFrame> {
+    if (rawProbed) return rawFrame
+    rawProbed = true
+    const r = await adb(['exec-out', 'screencap'], 25_000)
+    const buf = r.stdout
+    if (buf.length < 32) return (rawFrame = null)
+    const width = buf.readUInt32LE(0)
+    const height = buf.readUInt32LE(4)
+    const offset = buf.length - width * height * 4
+    rawFrame = width > 0 && height > 0 && (offset === 12 || offset === 16) ? { offset, width, height } : null
+    console.log(
+        rawFrame
+            ? `[aiqa] 원본 프레임 ${width}x${height} 머리말 ${offset}B — 빠른 길로 갑니다`
+            : '[aiqa] 원본 프레임 머리말을 못 읽었어요 — PNG 길로 갑니다',
+    )
+    return rawFrame
+}
+
+/**
  * 한 장 찍어 JPEG 으로 돌려준다.
  *
- * **왜 PNG 를 그대로 안 보내나.** `screencap -p` 는 720x1600 한 장이 150~300KB 다.
- * 초당 서너 장이면 집 업로드 대역을 이것만으로 1MB/s 씩 먹는다. 같은 화면을 폭 `width`
- * 로 줄여 JPEG 으로 바꾸면 20~40KB 다 — 한 자리 숫자 배로 준다.
+ * **왜 PNG 를 그대로 안 보내나.** 720x1600 한 장이 150~300KB 다. 초당 서너 장이면 집
+ * 업로드 대역을 이것만으로 1MB/s 씩 먹는다. 폭 `width` 로 줄여 JPEG 으로 바꾸면 20~40KB 다.
  *
  * **왜 screenrecord(h264) 가 아닌가.** 인코더가 한두 초를 물고 있다가 내놓는다. 화면만
  * 볼 때는 그게 더 곱지만, 여기서는 사람이 눌러 보는 자리라 **그 지연이 곧 조작감**이다.
  * 한 장씩 찍으면 늘 방금 화면이다.
  */
 export async function screenshotJpeg(width: number, quality: number): Promise<Buffer | null> {
-    // adb 와 ffmpeg 를 파이프로 잇는다 — 중간 파일도, PNG 를 Node 로 들여오는 왕복도 없다
-    const pipeline =
-        `${ADB} -s ${SERIAL} exec-out screencap -p | ` +
-        `ffmpeg -hide_banner -loglevel error -f image2pipe -i pipe:0 ` +
-        `-vf scale=${width}:-2 -q:v ${quality} -frames:v 1 -f mjpeg pipe:1`
+    const raw = await probeRawFrame()
+    // adb 와 ffmpeg 를 파이프로 잇는다 — 중간 파일도, 픽셀을 Node 로 들여오는 왕복도 없다
+    const pipeline = raw
+        ? `${ADB} -s ${SERIAL} exec-out screencap | tail -c +${raw.offset + 1} | ` +
+          `ffmpeg -hide_banner -loglevel error -f rawvideo -pixel_format rgba ` +
+          `-video_size ${raw.width}x${raw.height} -i pipe:0 ` +
+          `-vf scale=${width}:-2 -q:v ${quality} -frames:v 1 -f mjpeg pipe:1`
+        : `${ADB} -s ${SERIAL} exec-out screencap -p | ` +
+          `ffmpeg -hide_banner -loglevel error -f image2pipe -i pipe:0 ` +
+          `-vf scale=${width}:-2 -q:v ${quality} -frames:v 1 -f mjpeg pipe:1`
     const r = await run('/bin/sh', ['-c', pipeline], 15_000)
     if (r.stdout.length === 0) return null
     return r.stdout
@@ -156,10 +205,12 @@ export async function screenshotJpeg(width: number, quality: number): Promise<Bu
 // ── 조작 ─────────────────────────────────────────────────────────────────────
 
 export async function tap(x: number, y: number) {
+    invalidateDump()
     await adb(['shell', 'input', 'tap', String(Math.round(x)), String(Math.round(y))], 8_000)
 }
 
 export async function swipe(x1: number, y1: number, x2: number, y2: number, ms: number) {
+    invalidateDump()
     await adb(
         [
             'shell',
@@ -179,25 +230,52 @@ export async function longPress(x: number, y: number) {
     await swipe(x, y, x, y, 600)
 }
 
+/** QA 전용 키보드(별도 apk). 한글을 넣는 유일한 길이다 — 아래 typeText 주석 참고 */
+const IME_ACTION_TEXT = 'com.example.demo.qaime.TEXT'
+const IME_ACTION_CLEAR = 'com.example.demo.qaime.CLEAR'
+
 /**
  * 글자 넣기.
  *
- * `input text` 는 아스키만 안전하다 — 공백은 `%s` 로 바꿔야 하고, 따옴표·`$` 는 기기
- * 셸이 먼저 먹는다. 한글은 더 나빠서, adb 인자로 그냥 넘기면 도중에 깨진 채 들어간다.
+ * **`adb shell input text` 는 아스키만 넣는다.** 한글은 KeyCharacterMap 에 없어서 키
+ * 이벤트로 바뀌지 못하고 **조용히 사라진다** — 오류도 안 난다. 이걸 모르면 "왜 검색이
+ * 빈칸이지"를 한참 들여다보게 된다.
  *
- * 그래서 **글자를 base64 로 기기에 옮겨 두고, 기기 안에서 되돌려 넣는다.** 이러면 우리
- * 셸도 기기 셸도 원문을 한 번도 해석하지 않는다 — 지나가는 것은 `A-Za-z0-9+/=` 뿐이다.
+ * 그래서 길이 둘이다:
+ *   · 아스키뿐이면 `input text` (왕복 한 번, 제일 빠르다)
+ *   · 한 글자라도 아스키 밖이면 **QA 키보드에 방송**을 보낸다. 그 키보드가 붙어 있는
+ *     입력칸에 `commitText` 로 그대로 넣는다 (sample-app/ime/)
+ *
+ * 어느 쪽이든 원문을 셸에 그대로 싣지 않는다. 지나가는 길에 셸이 둘이라(우리 셸·기기 셸)
+ * 따옴표·`$`·공백을 그 둘이 먼저 해석한다 — base64 는 `A-Za-z0-9+/=` 뿐이라 안전하다.
  */
 export async function typeText(text: string) {
+    invalidateDump()
     if (/^[\x20-\x7e]*$/.test(text)) {
-        // 아스키만 있으면 한 번으로 끝난다. 공백은 %s 로 바꿔야 `input` 이 한 낱말로 본다
+        // 공백은 %s 로 바꿔야 `input` 이 한 낱말로 본다
         const escaped = text.replace(/(["'\\$`&|;<>()])/g, '\\$1').replace(/ /g, '%s')
         await adb(['shell', 'input', 'text', escaped], 10_000)
         return
     }
     const b64 = Buffer.from(text, 'utf8').toString('base64')
-    await adb(['shell', `echo ${b64} | base64 -d > /data/local/tmp/aiqa-text`], 8_000)
-    await adb(['shell', 'input text "$(cat /data/local/tmp/aiqa-text)"'], 12_000)
+
+    // **들어갔는지 확인하고 안 들어갔으면 다시 보낸다.** 방금 누른 입력칸에 키보드가
+    // 아직 안 붙었으면(탭과 입력 사이가 수십 ms 다) 글자가 조용히 사라진다 — 실제로
+    // 검색 시나리오가 그렇게 빈칸으로 떨어졌다.
+    // 신호는 키보드가 세우는 결과 코드다: `am broadcast` 가 "result=1" 로 찍어 준다.
+    for (let attempt = 0; attempt < 4; attempt += 1) {
+        const r = await adb(['shell', 'am', 'broadcast', '-a', IME_ACTION_TEXT, '--es', 'b64', b64], 12_000)
+        if (/result=1\b/.test(r.stdout.toString('utf8'))) return
+        await new Promise((done) => setTimeout(done, 200))
+    }
+}
+
+/** 입력칸 비우기. QA 키보드가 붙어 있으면 한 번에, 아니면 지우기 키를 반복한다 */
+export async function eraseText(count: number) {
+    invalidateDump()
+    const r = await adb(['shell', 'am', 'broadcast', '-a', IME_ACTION_CLEAR, '--ei', 'n', String(count)], 10_000)
+    // 키보드가 받았으면 그걸로 끝이다. 못 받았을 때만 지우기 키를 반복한다
+    if (!/result=1\b/.test(r.stdout.toString('utf8'))) await keyRepeat('del', count)
 }
 
 /** 하드웨어 키. 화면 아래 버튼 셋과 엔터·지우기가 여기로 온다 */
@@ -216,6 +294,7 @@ export async function key(name: string) {
     const code = allowed[name]
     // 목록에 없는 이름은 버린다. 화면에서 온 값이 그대로 셸에 닿는 자리라 열어 둘 수 없다
     if (!code) return
+    invalidateDump()
     await adb(['shell', 'input', 'keyevent', code], 8_000)
 }
 
@@ -225,6 +304,7 @@ export async function key(name: string) {
  * "adb 갈래가 느리다"로 보인다.
  */
 export async function keyRepeat(name: string, times: number) {
+    invalidateDump()
     const allowed: Record<string, string> = { del: 'KEYCODE_DEL', enter: 'KEYCODE_ENTER', back: 'KEYCODE_BACK' }
     const code = allowed[name]
     if (!code) return
@@ -242,6 +322,7 @@ export async function installApk(apkPath: string) {
 
 /** 앱을 처음부터 다시 띄운다. 시나리오 사이를 깨끗하게 만드는 유일한 방법이다 */
 export async function relaunchApp() {
+    invalidateDump()
     await adb(['shell', 'am', 'force-stop', APP_ID], 10_000)
     await adb(['shell', 'pm', 'clear', APP_ID], 15_000)
     await adb(['shell', 'am', 'start', '-n', `${APP_ID}/${APP_ACTIVITY}`], 15_000)
@@ -266,10 +347,31 @@ export type UiNode = {
 }
 
 /**
+ * 마지막으로 읽은 화면. **행동을 하면 그 자리에서 버린다** (아래 invalidateDump).
+ *
+ * 왜 캐시하나: `uiautomator dump` 는 홈서버 실측 **2.1초**다(--compressed 도 같다 —
+ * 창이 조용해지기를 기다리는 시간이라 줄지 않는다). 시나리오에서 assertVisible 이
+ * 잇달아 나오는 판이 흔한데, 그 사이에 아무 행동도 없었으면 화면은 같다. 그때 두 번
+ * 읽으면 2.1초를 그냥 버리는 것이다.
+ *
+ * **안전한 이유는 무효화가 행동 쪽에 붙어 있어서다** — tap·swipe·글자·키·앱 재실행이
+ * 전부 버린다. 화면을 바꿀 수 있는 자리가 그것뿐이다.
+ */
+let lastDump: { nodes: UiNode[]; at: number } | null = null
+
+/** 화면을 바꿀 만한 일을 했다. 다음 읽기는 기기에서 새로 가져온다 */
+export function invalidateDump() {
+    lastDump = null
+}
+
+/**
  * 지금 화면의 요소 목록.
  *
  * **adb 갈래의 눈이다** — "이 글자를 누르라"는 지시를 좌표로 바꾸는 유일한 길이고,
  * 실패했을 때 LLM 에 넘기는 근거이기도 하다.
+ *
+ * `maxAgeMs` 안쪽의 지난 읽기가 있으면 그걸 쓴다. 0(기본)이면 늘 새로 읽는다 —
+ * 화면이 바뀌기를 기다리는 자리(waitFor 의 두 번째 시도부터)는 반드시 0이어야 한다.
  *
  * `uiautomator dump /dev/tty` 로 파일을 거치지 않고 바로 받는다. `/sdcard` 에 떨어뜨렸다
  * 다시 당기면 왕복이 둘 늘고, 그만큼 adb 갈래가 느려 보인다 — 견주는 자리라 공정하지 않다.
@@ -277,7 +379,8 @@ export type UiNode = {
  * XML 파서를 들이지 않는다. uiautomator 가 내는 것은 속성만 있는 평평한 `<node .../>` 라
  * 정규식으로 충분하고, 이 스택은 의존성이 0이다.
  */
-export async function dump(): Promise<UiNode[]> {
+export async function dump(maxAgeMs = 0): Promise<UiNode[]> {
+    if (maxAgeMs > 0 && lastDump && Date.now() - lastDump.at <= maxAgeMs) return lastDump.nodes
     const r = await adb(['exec-out', 'uiautomator', 'dump', '/dev/tty'], 20_000)
     const xml = r.stdout.toString('utf8')
     const nodes: UiNode[] = []
@@ -295,6 +398,7 @@ export async function dump(): Promise<UiNode[]> {
             bounds: { left: Number(b[1]), top: Number(b[2]), right: Number(b[3]), bottom: Number(b[4]) },
         })
     }
+    lastDump = { nodes, at: Date.now() }
     return nodes
 }
 

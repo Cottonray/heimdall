@@ -99,6 +99,8 @@ appId: ${APP_ID}
   - waitForAnimationToEnd
   - takeScreenshot: 이름
 - 글자로 찾을 때는 **화면에 실제로 있는 말**을 써라. 아래 "앱에 있는 말" 목록에서 고른다.
+- **글자는 부분 일치가 아니다.** 요소의 글자와 **똑같거나**, 정규식으로 **통째로** 맞아야 한다.
+  목록에 있는 말을 그대로 쓰면 되고, 일부만 쓰고 싶으면 ".*골목온도.*" 처럼 감싼다.
 - 단계는 12개를 넘기지 마라. 마지막은 되도록 assertVisible 로 끝낸다.`
 
 export async function toFlow(instruction: string, appWords: string[]): Promise<string> {

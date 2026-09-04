@@ -28,6 +28,12 @@ const MAESTRO = process.env.AIQA_MAESTRO ?? 'maestro'
 const RUN_TIMEOUT_MS = Number(process.env.AIQA_RUN_TIMEOUT_MS ?? 240_000)
 /** adb 갈래가 요소 하나를 기다리는 최대 시간. Maestro 기본값과 같은 자리에 맞춰 둔다 */
 const FIND_TIMEOUT_MS = Number(process.env.AIQA_FIND_TIMEOUT_MS ?? 8_000)
+/**
+ * 직전 화면 읽기를 이만큼은 다시 써도 된다. **행동을 하면 그와 상관없이 버려진다**
+ * (device.invalidateDump) — 이 값은 "가만히 있었는데도 화면이 저절로 바뀌었을까"에
+ * 대한 여유일 뿐이다. 읽기 한 번이 2.1초라 이 한 줄이 시나리오를 절반으로 줄인다.
+ */
+const DUMP_REUSE_MS = Number(process.env.AIQA_DUMP_REUSE_MS ?? 1_500)
 
 export type RunEvent =
     | { type: 'run-start'; runId: string; flowId: string; name: string; engine: Engine; at: number; steps: number }
@@ -261,9 +267,13 @@ async function runMaestro(flow: Flow, runId: string, finish: (passed: boolean) =
     }, RUN_TIMEOUT_MS)
 
     const pump = (level: 'info' | 'err') => {
+        // **조각마다 따로 디코딩하면 한글이 깨진다.** UTF-8 에서 한글은 3바이트인데,
+        // 그 3바이트가 두 chunk 에 걸쳐 들어오면 양쪽 반쪽이 각각 U+FFFD(``)가 된다.
+        // `stream: true` 를 준 TextDecoder 는 걸친 바이트를 물고 있다가 다음 조각과 잇는다.
+        const decoder = new TextDecoder('utf-8')
         let rest = ''
         return (chunk: Buffer) => {
-            rest += chunk.toString('utf8')
+            rest += decoder.decode(chunk, { stream: true })
             const lines = rest.split('\n')
             rest = lines.pop() ?? ''
             for (const raw of lines) {
@@ -367,6 +377,7 @@ function selText(by: Selector): string {
 async function exec(step: Step, appId: string) {
     switch (step.op) {
         case 'launchApp': {
+            device.invalidateDump()
             await device.adb(['shell', 'am', 'force-stop', appId], 10_000)
             if (step.clearState) await device.adb(['shell', 'pm', 'clear', appId], 15_000)
             // 액티비티 이름을 시나리오에 적게 하지 않는다. monkey 로 런처 인텐트를 그대로 쏜다
@@ -392,7 +403,7 @@ async function exec(step: Step, appId: string) {
             await device.typeText(step.text)
             return
         case 'eraseText':
-            await device.keyRepeat('del', step.count)
+            await device.eraseText(step.count)
             return
         case 'pressKey': {
             const map: Record<string, string> = {
@@ -417,7 +428,7 @@ async function exec(step: Step, appId: string) {
             return
         case 'scrollUntilVisible': {
             for (let i = 0; i < 12; i += 1) {
-                const hit = await find(step.by)
+                const hit = await find(step.by, i === 0)
                 if (hit) return
                 await scrollOnce('UP')
                 await sleep(250)
@@ -430,9 +441,10 @@ async function exec(step: Step, appId: string) {
             return
         }
         case 'assertNotVisible': {
-            // 없다는 것은 기다려서 증명할 수 없다. 애니메이션이 끝날 만큼만 두고 한 번 본다
+            // 없다는 것은 기다려서 증명할 수 없다. 애니메이션이 끝날 만큼만 두고 한 번 본다.
+            // **여기서는 캐시를 쓰지 않는다** — 방금 사라졌을 수도 있는 것을 확인하는 자리다
             await sleep(500)
-            if (await find(step.by)) throw new Error('아직 보여요')
+            if (await find(step.by, false)) throw new Error('아직 보여요')
             return
         }
         case 'waitForAnimationToEnd':
@@ -472,17 +484,20 @@ async function waitForAny(timeoutMs: number) {
     }
 }
 
-async function find(by: Selector) {
+/**
+ * 화면에서 하나 찾는다.
+ *
+ * `useCache` 는 **직전 읽기를 재사용해도 되는 자리**에서만 참이다 — 즉 각 단계의 첫
+ * 시도. 두 번째 시도부터는 "화면이 바뀌기를 기다리는 중"이라 반드시 새로 읽어야 한다.
+ * (읽기 한 번이 2.1초다. 잇달아 나오는 assertVisible 이 그 값을 두 번 낼 이유는 없다)
+ */
+async function find(by: Selector, useCache = false) {
     if (by.kind === 'point') {
         const { width, height } = await device.screenSize()
         return { x: by.x * width, y: by.y * height }
     }
-    const nodes = await device.dump()
-    const hit = nodes.find((n) => {
-        if (by.kind === 'id') return n.id === by.value
-        const needle = by.value
-        return n.text === needle || n.desc === needle || n.text.includes(needle) || n.desc.includes(needle)
-    })
+    const nodes = await device.dump(useCache ? DUMP_REUSE_MS : 0)
+    const hit = nodes.find((n) => (by.kind === 'id' ? n.id === by.value : matchesText(n, by.value)))
     if (!hit) return null
     return {
         x: (hit.bounds.left + hit.bounds.right) / 2,
@@ -490,10 +505,34 @@ async function find(by: Selector) {
     }
 }
 
+/**
+ * **Maestro 와 똑같이 고른다.** 여기가 다르면 견주기가 거짓이 된다 — 한쪽만 통과하는
+ * 시나리오가 생기고, 그건 엔진의 속도가 아니라 우리가 만든 차이다.
+ *
+ * 2026-09-04 실측으로 Maestro 의 규칙을 확인했다(같은 화면에서 셋을 돌려 봤다):
+ *   `"골목"`      → 실패   (부분 일치가 아니다)
+ *   `"나의 골목"`  → 통과   (글자가 그대로 같으면 된다)
+ *   `".*골목.*"`  → 통과   (정규식이면 **전체가 맞아야** 한다)
+ * 그래서 "글자가 똑같거나, 정규식으로 통째로 맞거나" 둘 중 하나다.
+ */
+function matchesText(node: device.UiNode, needle: string): boolean {
+    if (node.text === needle || node.desc === needle) return true
+    let re: RegExp
+    try {
+        re = new RegExp(`^(?:${needle})$`, 's')
+    } catch {
+        // 정규식으로 못 읽히는 글자면 위의 같음 검사가 전부다
+        return false
+    }
+    return re.test(node.text) || re.test(node.desc)
+}
+
 async function waitFor(by: Selector, timeoutMs: number) {
     const until = Date.now() + timeoutMs
+    let first = true
     for (;;) {
-        const hit = await find(by)
+        const hit = await find(by, first)
+        first = false
         if (hit) return hit
         if (Date.now() >= until) return null
         await sleep(250)

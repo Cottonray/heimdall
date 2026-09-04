@@ -5,5 +5,7 @@ appId: com.example.demo.golmok
     clearState: true
 - tapOn: "원목 접이식 테이블"
 - assertVisible: "모퉁이햇살"
-- assertVisible: "골목온도"
+# 화면에는 "40.2℃ 골목온도" 로 한 덩어리다. Maestro 는 부분 일치를 하지 않으므로
+# 정규식으로 감싼다 (adb 갈래도 같은 규칙을 쓴다 — runner.ts matchesText)
+- assertVisible: ".*골목온도.*"
 - assertVisible: "채팅"

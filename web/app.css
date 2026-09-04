@@ -506,6 +506,99 @@ body {
   color: var(--blue);
 }
 
+/* ── 시나리오 편집기 ──────────────────────────────────────────────────── */
+
+.sub-head {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  margin: 16px 0 6px;
+  color: var(--muted);
+  font-size: 11.5px;
+  font-weight: 600;
+}
+
+.sub-head small {
+  font-weight: 400;
+}
+
+.sub-head .btn {
+  margin-left: auto;
+}
+
+.field-label {
+  flex: 0 0 auto;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.chips {
+  display: flex;
+  gap: 5px;
+  flex-wrap: wrap;
+}
+
+/* 화면에서 읽어 온 글자·아이디. 손으로 옮겨 적으면 한 글자만 틀려도 안 잡힌다 */
+.elements {
+  display: grid;
+  gap: 4px;
+  max-height: 190px;
+  margin: 0;
+  padding: 8px;
+  overflow-y: auto;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: #fbfbf6;
+  list-style: none;
+}
+
+.elements li {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+
+.elements code {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 11.5px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.elements .btn-key {
+  padding: 3px 8px;
+  font-size: 11px;
+}
+
+.elements-note {
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.yaml-edit {
+  width: 100%;
+  min-height: 220px;
+  padding: 12px;
+  border: 1px solid transparent;
+  border-radius: 12px;
+  background: #14161a;
+  color: #e6e6df;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 12px;
+  line-height: 1.6;
+  resize: vertical;
+  /* 탭 문자를 스페이스처럼 보이게 — yaml 은 들여쓰기가 문법이다 */
+  tab-size: 2;
+}
+
+.yaml-edit:focus {
+  border-color: var(--blue);
+  outline: none;
+}
+
 /* ── 좁은 화면 ────────────────────────────────────────────────────────── */
 
 @media (max-width: 900px) {

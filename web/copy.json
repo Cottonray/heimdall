@@ -35,6 +35,25 @@
     "statusFailed": "실패",
     "deviceOffline": "에뮬레이터가 아직 준비되지 않았어요.\n잠시 후 다시 확인해 주세요.",
     "oneDeviceNote": "에뮬레이터는 한 대뿐이에요. 다른 사람을 위해 사용이 끝나면 조작 권한을 반납해 주세요.",
-    "publicNote": "공개 데모 화면은 누구나 볼 수 있으니 공개해도 되는 내용만 입력해 주세요."
+    "publicNote": "공개 데모 화면은 누구나 볼 수 있으니 공개해도 되는 내용만 입력해 주세요.",
+    "editorTitle": "시나리오 편집기",
+    "editorHint": "YAML을 직접 고치거나 화면 요소와 명령을 골라 시나리오를 만들어요.",
+    "loadLabel": "시나리오",
+    "loadPlaceholder": "시나리오 선택",
+    "commandsLabel": "명령 추가",
+    "commandsHint": "명령을 누르면 커서 위치에 YAML 한 줄을 넣어요.",
+    "elementsLabel": "현재 화면 요소",
+    "elementsHint": "글자나 아이디를 누르면 가리키는 YAML 줄을 넣어요.",
+    "elementsRefresh": "새로고침",
+    "elementsEmpty": "현재 화면에서 읽을 글자나 아이디가 없어요.",
+    "elementsLoading": "현재 화면의 글자와 아이디를 읽고 있어요.",
+    "yamlLabel": "YAML",
+    "yamlPlaceholder": "YAML을 입력해 주세요",
+    "runLabel": "실행",
+    "clearLabel": "비우기",
+    "invalidYaml": "appId 줄이 없어 실행할 수 없어요.",
+    "savedNote": "여기서 만든 시나리오는 파일로 저장되지 않아요.",
+    "timingTitle": "타스크별 실행 시간 비교",
+    "timingHint": "Maestro CLI와 adb 실행 시간을 나란히 보여 줘요."
   }
 }

@@ -20,4 +20,7 @@ dependencyResolutionManagement {
 }
 
 rootProject.name = "golmok"
-include(":app")
+
+// :app 이 테스트 대상, :ime 는 그 대상을 조작하기 위한 도구다 (한글 입력).
+// 둘을 갈라 둔 이유는 ime/build.gradle.kts 첫 주석에 있다
+include(":app", ":ime")

@@ -105,8 +105,8 @@
 
         <div class="panel">
           <div class="panel-head">
-            <h2>갈래별 걸린 시간</h2>
-            <span class="hint-inline">같은 시나리오를 두 갈래로 돌린 결과예요</span>
+            <h2 id="timing-title">타스크별 실행 시간 비교</h2>
+            <span class="hint-inline" id="timing-hint"></span>
           </div>
           <div class="table-wrap">
             <table class="timings" id="timings">
@@ -133,20 +133,43 @@
           <pre class="log" id="log"></pre>
         </div>
 
-        <div class="panel" id="ai-panel">
+        <!-- 시나리오 편집기 — 말로 만들거나, 명령 단추로 쌓거나, 화면 요소를 집어 온다.
+             셋이 한 판에 있는 이유는 결과가 전부 아래 yaml 한 칸으로 모이기 때문이다. -->
+        <div class="panel" id="editor-panel">
           <div class="panel-head">
-            <h2 id="ai-title">말로 시나리오 만들기</h2>
+            <h2 id="editor-title">시나리오 편집기</h2>
             <span class="hint-inline" id="ai-state"></span>
           </div>
-          <p class="hint" id="ai-hint"></p>
+          <p class="hint" id="editor-hint"></p>
+
+          <div class="row">
+            <label class="field-label" for="load-flow" id="load-label">시나리오</label>
+            <select id="load-flow" class="text-input"></select>
+          </div>
+
           <div class="row">
             <input id="ai-input" class="text-input" type="text" autocomplete="off" />
-            <button class="btn btn-primary" id="ai-make">생성</button>
+            <button class="btn" id="ai-make">생성</button>
           </div>
-          <pre class="yaml" id="ai-yaml" hidden></pre>
-          <div class="row" id="ai-run-row" hidden>
-            <button class="btn btn-primary" id="ai-run">실행</button>
+
+          <div class="sub-head"><span id="commands-label">명령 추가</span><small id="commands-hint"></small></div>
+          <div class="chips" id="commands"></div>
+
+          <div class="sub-head">
+            <span id="elements-label">현재 화면 요소</span>
+            <button class="btn btn-key" id="elements-refresh">새로고침</button>
           </div>
+          <p class="hint" id="elements-hint"></p>
+          <ul class="elements" id="elements"></ul>
+
+          <div class="sub-head"><span id="yaml-label">YAML</span></div>
+          <textarea id="yaml" class="yaml-edit" spellcheck="false"></textarea>
+
+          <div class="row">
+            <button class="btn btn-primary" id="editor-run">실행</button>
+            <button class="btn" id="editor-clear">비우기</button>
+          </div>
+          <p class="note" id="saved-note"></p>
         </div>
 
         <div class="panel" id="diagnose-panel" hidden>

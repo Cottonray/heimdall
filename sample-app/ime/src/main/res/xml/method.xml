@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 시스템이 이 서비스를 키보드로 인식하는 데 필요한 최소 선언. 서브타입 하나면 된다. -->
+<input-method xmlns:android="http://schemas.android.com/apk/res/android">
+    <subtype
+        android:imeSubtypeLocale="ko_KR"
+        android:imeSubtypeMode="keyboard"
+        android:label="QA" />
+</input-method>

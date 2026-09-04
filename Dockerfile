@@ -15,7 +15,16 @@ FROM node:24-bookworm AS sdk
 
 ENV ANDROID_SDK_ROOT=/opt/android-sdk \
     ANDROID_HOME=/opt/android-sdk \
-    DEBIAN_FRONTEND=noninteractive
+    DEBIAN_FRONTEND=noninteractive \
+    # **로케일을 UTF-8 로 못박는다.** 없으면 JVM 이 콘솔 인코딩을 ASCII 로 잡고,
+    # Maestro 가 찍는 한글이 전부 `?` 가 된다("Tap on \"?? ??? ???\"").
+    # 화면 로그가 곧 이 데모의 절반이라 그게 그대로 깨져 보인다 — 실제로 밟았다.
+    #
+    # 이 블록을 고치면 **이미지 전체가 다시 구워진다** (SDK·시스템 이미지 3GB 재다운로드,
+    # 25분). 아래 두 단계가 전부 이 레이어 위에 얹혀 있어서다. 값을 바꿀 일이 생기면
+    # 그 사실을 알고 시작할 것 — 여기서 한 번 그렇게 25분을 썼다.
+    LANG=C.UTF-8 \
+    LC_ALL=C.UTF-8
 
 RUN set -eux; \
     apt-get update; \
@@ -118,6 +127,9 @@ RUN set -eux; \
     } >> "$cfg"
 
 COPY --from=apk --chown=aiqa:aiqa /src/app/build/outputs/apk/debug/app-debug.apk /opt/aiqa/golmok.apk
+# 한글을 넣어 주는 QA 전용 키보드. 테스트 대상이 아니라 도구라 apk 가 따로다
+# (`adb shell input text` 는 아스키만 넣는다 — sample-app/ime/build.gradle.kts 참고)
+COPY --from=apk --chown=aiqa:aiqa /src/ime/build/outputs/apk/debug/ime-debug.apk /opt/aiqa/qaime.apk
 COPY --chown=aiqa:aiqa entrypoint.sh /opt/aiqa/entrypoint.sh
 USER root
 RUN chmod +x /opt/aiqa/entrypoint.sh

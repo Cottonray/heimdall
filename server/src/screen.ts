@@ -70,6 +70,24 @@ export function poke() {
     lastActivity = Date.now()
 }
 
+/**
+ * 방금 화면이 바뀌었을 것이다 — **다음 박자를 기다리지 말고 지금 찍는다.**
+ *
+ * 이게 없으면 누른 결과가 최대 한 박자(220ms) 늦게 보인다. 실측으로 행동에서 화면
+ * 갱신까지 중앙값 895ms 였는데, 그 중 눈에 띄는 몫이 이 기다림이었다.
+ *
+ * `settleMs` 만큼 두는 이유: 누르자마자 찍으면 아직 안 바뀐 화면을 찍어 놓고, 프레임
+ * 해시가 같아서 **그 뒤로 한 박자를 더 기다린다.** 애니메이션을 꺼 둔 기기라 이 정도면
+ * 다시 그려져 있다.
+ */
+export function kick(settleMs = 120) {
+    lastActivity = Date.now()
+    setTimeout(() => {
+        sinceLastShot = SLOW_MS // 어느 박자든 이번 판은 무조건 찍는다
+        void tick()
+    }, settleMs)
+}
+
 /** 화면 말고 상태·로그를 뿌릴 때 — 붙어 있는 전부에게 같은 JSON 을 보낸다 */
 export function broadcast(message: unknown) {
     const text = JSON.stringify(message)
