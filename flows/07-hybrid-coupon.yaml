@@ -2,7 +2,7 @@
 #
 # **이 시나리오는 경계를 두 번 넘는다.** 배너까지는 네이티브(그래서 id: 로 집는다),
 # 그다음은 웹이라 id 가 없어 글자로 집고, 뒤로 나오면 다시 네이티브다.
-appId: com.example.demo.golmok
+appId: com.aidemo.golmok
 ---
 - launchApp:
     clearState: true

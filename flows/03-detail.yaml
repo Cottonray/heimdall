@@ -1,5 +1,5 @@
 # 상품 상세 확인 — 상품 하나를 열었을 때 선택한 상품의 상세 내용이 맞게 표시되는지 확인해요.
-appId: com.example.demo.golmok
+appId: com.aidemo.golmok
 ---
 - launchApp:
     clearState: true

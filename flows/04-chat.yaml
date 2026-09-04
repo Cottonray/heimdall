@@ -1,5 +1,5 @@
 # 채팅 메시지 — 상품 채팅으로 들어가 메시지를 보낼 수 있는지 확인해요.
-appId: com.example.demo.golmok
+appId: com.aidemo.golmok
 ---
 - launchApp:
     clearState: true

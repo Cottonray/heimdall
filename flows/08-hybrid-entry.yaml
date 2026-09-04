@@ -1,7 +1,7 @@
 # 웹→앱 응모 — 한글로 응모한 뒤 앱에 전달된 결과를 확인해요.
 #
 # 웹 폼에 한글을 넣고, 그 결과가 자바스크립트 다리를 타고 네이티브 화면에 나타나는지 본다.
-appId: com.example.demo.golmok
+appId: com.aidemo.golmok
 ---
 - launchApp:
     clearState: true

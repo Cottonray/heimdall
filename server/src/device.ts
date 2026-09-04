@@ -46,7 +46,7 @@ function cache(): DeviceCache {
 }
 
 /** 샘플 앱. 설치·재실행이 이 값 하나를 본다 */
-export const APP_ID = process.env.AIQA_APP_ID ?? 'com.example.demo.golmok'
+export const APP_ID = process.env.AIQA_APP_ID ?? 'com.aidemo.golmok'
 export const APP_ACTIVITY = process.env.AIQA_APP_ACTIVITY ?? '.MainActivity'
 
 /**
@@ -268,9 +268,9 @@ export async function longPress(x: number, y: number) {
 }
 
 /** QA 전용 키보드(별도 apk). 한글을 넣는 유일한 길이다 — 아래 typeText 주석 참고 */
-const IME_ACTION_TEXT = 'com.example.demo.qaime.TEXT'
-const IME_ACTION_CLEAR = 'com.example.demo.qaime.CLEAR'
-const IME_ID = process.env.AIQA_IME_ID ?? 'com.example.demo.qaime/.QaKeyboard'
+const IME_ACTION_TEXT = 'com.aidemo.qaime.TEXT'
+const IME_ACTION_CLEAR = 'com.aidemo.qaime.CLEAR'
+const IME_ID = process.env.AIQA_IME_ID ?? 'com.aidemo.qaime/.QaKeyboard'
 
 /**
  * 글자 넣기.

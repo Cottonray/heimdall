@@ -1,5 +1,5 @@
 # 홈 화면 확인 — 앱이 실행되고 홈에 상품 목록이 보이는지 확인해요.
-appId: com.example.demo.golmok
+appId: com.aidemo.golmok
 ---
 - launchApp:
     clearState: true

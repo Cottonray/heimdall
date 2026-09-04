@@ -1,5 +1,5 @@
 # 새 물건 등록 — 글쓰기에서 새 물건을 등록할 수 있는지 확인해요.
-appId: com.example.demo.golmok
+appId: com.aidemo.golmok
 ---
 - launchApp:
     clearState: true

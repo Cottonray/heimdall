@@ -11,10 +11,10 @@ log() { printf '[aiqa %s] %s\n' "$(date +%H:%M:%S)" "$*"; }
 AVD=${AIQA_AVD:-aiqa}
 SERIAL=${AIQA_SERIAL:-emulator-5554}
 APK=${AIQA_APK:-/opt/aiqa/golmok.apk}
-APP_ID=${AIQA_APP_ID:-com.example.demo.golmok}
+APP_ID=${AIQA_APP_ID:-com.aidemo.golmok}
 # 한글을 넣어 주는 QA 전용 키보드 (sample-app/ime/). 테스트 대상이 아니라 도구다
 IME_APK=${AIQA_IME_APK:-/opt/aiqa/qaime.apk}
-IME_ID=${AIQA_IME_ID:-com.example.demo.qaime/.QaKeyboard}
+IME_ID=${AIQA_IME_ID:-com.aidemo.qaime/.QaKeyboard}
 
 # **카메라에 무엇을 물릴까.** 렌즈 앞에 종이를 들고 있을 사람이 없으니 에뮬레이터에게
 # 파일을 준다. 카메라를 여는 앱은 그걸 "지금 렌즈에 보이는 것"으로 받는다.
@@ -140,7 +140,7 @@ install_ime() {
     # 기본 키보드로 세워 두면 자판이 화면을 가리지도 않는다(1px 짜리다).
     [ -f "$IME_APK" ] || { log "!! QA 키보드 apk 가 없어요: $IME_APK"; return 0; }
     log "QA 키보드 설치"
-    install_apk "$IME_APK" "com.example.demo.qaime" || return 0
+    install_apk "$IME_APK" "com.aidemo.qaime" || return 0
 
     # **한 번 세우고 마는 것으로는 안 된다.** 방금 깔린 패키지를 시스템의 IME 관리자가
     # 아직 훑기 전이면 `ime set` 이 성공했다고 말해 놓고 곧 되돌아간다 — 실제로 로그에는

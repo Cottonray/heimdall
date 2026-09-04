@@ -106,7 +106,7 @@ ssh "$host" '
         if [ "$boot" = "1" ]; then echo "    부팅 완료"; break; fi
         sleep 5
     done
-    docker exec aiqa adb -s emulator-5554 shell pm list packages com.example.demo.golmok 2>/dev/null \
+    docker exec aiqa adb -s emulator-5554 shell pm list packages com.aidemo.golmok 2>/dev/null \
       | sed "s/^/    /" || echo "    (샘플 앱 아직 없음)"
 '
 

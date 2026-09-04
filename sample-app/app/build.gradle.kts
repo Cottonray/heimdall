@@ -5,14 +5,15 @@ plugins {
 }
 
 android {
-    namespace = "com.example.demo.golmok"
+    namespace = "com.aidemo.golmok"
     compileSdk = 35
 
     defaultConfig {
-        // **`com.example.app.*` 가 아니다.** 그 네임스페이스는 스토어에 올라가는 앱의
-        // 것이고(docs/rules.md §앱 식별자), 이 앱은 데모 에뮬레이터 안에서만 산다.
-        // `demo` 를 끼워 두면 스토어 콘솔 목록에서도 한눈에 갈린다.
-        applicationId = "com.example.demo.golmok"
+        // **회사 네임스페이스를 쓰지 않는다.** 이 이름은 AI QA 화면의 실행 로그와
+        // 시나리오 yaml 에 그대로 찍혀서 방문자에게 보인다 — 데모 사이트에는 사명이
+        // 드러나면 안 된다 (docs/rules.md §데모 사이트에는 example 라는 낱말을 쓰지 않는다).
+        // 스토어에 올라가는 앱의 네임스페이스와도 갈려 있어야 한다(§앱 식별자).
+        applicationId = "com.aidemo.golmok"
         minSdk = 26
         targetSdk = 34
         versionCode = 1

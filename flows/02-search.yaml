@@ -1,5 +1,5 @@
 # 상품 검색 — 상품을 검색했을 때 결과 목록이 나오는지 확인해요.
-appId: com.example.demo.golmok
+appId: com.aidemo.golmok
 ---
 - launchApp:
     clearState: true

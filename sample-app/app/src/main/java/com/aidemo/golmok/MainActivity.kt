@@ -1,4 +1,4 @@
-package com.example.demo.golmok
+package com.aidemo.golmok
 
 import android.os.Bundle
 import androidx.activity.ComponentActivity

@@ -1,5 +1,5 @@
 # 전체 탭 확인 — 다섯 개 탭을 차례로 열어 각 화면이 표시되는지 확인해요.
-appId: com.example.demo.golmok
+appId: com.aidemo.golmok
 ---
 - launchApp:
     clearState: true

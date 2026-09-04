@@ -12,11 +12,11 @@ plugins {
 }
 
 android {
-    namespace = "com.example.demo.qaime"
+    namespace = "com.aidemo.qaime"
     compileSdk = 35
 
     defaultConfig {
-        applicationId = "com.example.demo.qaime"
+        applicationId = "com.aidemo.qaime"
         minSdk = 26
         targetSdk = 34
         versionCode = 1

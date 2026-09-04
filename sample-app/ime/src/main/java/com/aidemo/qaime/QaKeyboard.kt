@@ -1,4 +1,4 @@
-package com.example.demo.qaime
+package com.aidemo.qaime
 
 import android.content.BroadcastReceiver
 import android.content.Context
@@ -18,7 +18,7 @@ import android.view.ViewGroup
  * `adb shell input text` 는 **아스키만 넣는다** — 한글은 KeyCharacterMap 에 없어 키
  * 이벤트로 바뀌지 못하고 조용히 사라진다. 그래서 adb 갈래는 글자를 여기로 보낸다:
  *
- *     adb shell am broadcast -a com.example.demo.qaime.TEXT --es b64 <base64>
+ *     adb shell am broadcast -a com.aidemo.qaime.TEXT --es b64 <base64>
  *
  * **base64 로 받는 이유**: 지나가는 길에 셸이 둘 있다(우리 셸, 기기 셸). 원문을 그대로
  * 실으면 따옴표·`$`·공백을 그 둘이 먼저 해석한다. base64 는 `A-Za-z0-9+/=` 뿐이라
@@ -33,10 +33,10 @@ class QaKeyboard : InputMethodService() {
         private const val TAG = "QaKeyboard"
 
         /** 글자 넣기. `--es b64 <base64 of UTF-8>` */
-        const val ACTION_TEXT = "com.example.demo.qaime.TEXT"
+        const val ACTION_TEXT = "com.aidemo.qaime.TEXT"
 
         /** 앞의 글자 지우기. `--ei n <개수>` (없으면 전부) */
-        const val ACTION_CLEAR = "com.example.demo.qaime.CLEAR"
+        const val ACTION_CLEAR = "com.aidemo.qaime.CLEAR"
     }
 
     private val receiver = object : BroadcastReceiver() {

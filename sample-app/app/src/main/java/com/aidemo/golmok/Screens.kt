@@ -1,4 +1,4 @@
-package com.example.demo.golmok
+package com.aidemo.golmok
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable

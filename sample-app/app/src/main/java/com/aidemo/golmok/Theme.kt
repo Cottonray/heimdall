@@ -1,4 +1,4 @@
-package com.example.demo.golmok
+package com.aidemo.golmok
 
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Typography

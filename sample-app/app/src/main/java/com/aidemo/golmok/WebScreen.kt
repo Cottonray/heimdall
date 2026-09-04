@@ -1,4 +1,4 @@
-package com.example.demo.golmok
+package com.aidemo.golmok
 
 import android.annotation.SuppressLint
 import android.graphics.Bitmap
@@ -38,7 +38,7 @@ import org.json.JSONObject
  *
  * `10.0.2.2` 는 **에뮬레이터에서 본 호스트의 루프백**이다. 이 앱이 도는 에뮬레이터와
  * 그 웹앱을 내주는 서버가 같은 컨테이너에 있어서, 이 주소가 곧 우리 서버(:8080)다.
- * 진짜 서비스라면 여기가 `https://example.invalid/...` 자리다.
+ * 진짜 서비스라면 여기가 회사 도메인 자리다.
  */
 const val EVENT_URL = "http://10.0.2.2:8080/aiqa/webapp/"
 

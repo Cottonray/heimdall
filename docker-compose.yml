@@ -30,7 +30,7 @@ services:
       # 보인다 — 주소를 아는 누구나 여는 화면이라, 개인 폰이 그냥 열리면 안 된다.
       # 여는 것은 ./deploy/aiqa/attach-device.sh public 이 한다 (경고를 한 번 더 띄운다)
       AIQA_PUBLIC_SERIALS: ${AIQA_PUBLIC_SERIALS:-emulator-5554}
-      AIQA_APP_ID: com.example.demo.golmok
+      AIQA_APP_ID: com.aidemo.golmok
       AIQA_APP_ACTIVITY: .MainActivity
       # 화면 프레임 — 폭·품질·박자. 집 업로드 회선이 정하는 값이다
       AIQA_FRAME_WIDTH: ${AIQA_FRAME_WIDTH:-360}
