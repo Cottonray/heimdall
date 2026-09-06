@@ -88,6 +88,30 @@
 
       <!-- ── 오른쪽: 시나리오·로그 ─────────────────────────────────────── -->
       <section class="right">
+        <!-- ── AI 와 시나리오 짜기 ───────────────────────────────────────
+             이름이 AI QA 인데 AI 가 편집기 맨 아래 입력칸 한 줄이라 화면 어디에도
+             보이지 않았다 (2026-09-06 사용자 지적). 자리를 맨 위로 올리고, 한 방에
+             만들던 것을 **되묻는 대화**로 바꿨다 — QA 를 짜는 일에서 정작 중요한 것은
+             "무엇을 확인할 것인가" 인데 그건 한 줄 지시에 늘 빠져 있다. -->
+        <div class="panel">
+          <div class="panel-head">
+            <h2 id="chat-title">AI 시나리오 설계</h2>
+            <span class="hint-inline" id="chat-state"></span>
+          </div>
+          <p class="hint" id="chat-hint"></p>
+
+          <div class="chat" id="chat" role="log" aria-live="polite"></div>
+
+          <!-- AI 가 준 보기. 누르면 그대로 다음 말이 된다 -->
+          <div class="chips chat-choices" id="chat-choices"></div>
+
+          <div class="row">
+            <input id="chat-input" class="text-input" type="text" autocomplete="off" />
+            <button class="btn btn-primary" id="chat-send">보내기</button>
+            <button class="btn" id="chat-reset">처음부터</button>
+          </div>
+        </div>
+
         <div class="panel">
           <div class="panel-head">
             <h2 id="scenario-title">테스트 시나리오</h2>
@@ -180,18 +204,13 @@
         <details class="panel fold" id="editor-panel" data-narrow-fold open>
           <summary class="panel-head">
             <h2 id="editor-title">시나리오 편집기</h2>
-            <span class="hint-inline" id="ai-state"></span>
+            <span class="hint-inline" id="editor-state"></span>
           </summary>
           <p class="hint" id="editor-hint"></p>
 
           <div class="row">
             <label class="field-label" for="load-flow" id="load-label">시나리오</label>
             <select id="load-flow" class="text-input"></select>
-          </div>
-
-          <div class="row">
-            <input id="ai-input" class="text-input" type="text" autocomplete="off" />
-            <button class="btn" id="ai-make">생성</button>
           </div>
 
           <div class="sub-head"><span id="commands-label">명령 추가</span><small id="commands-hint"></small></div>

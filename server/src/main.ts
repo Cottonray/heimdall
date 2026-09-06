@@ -322,22 +322,47 @@ const server = http.createServer(async (req, res) => {
             return
         }
 
-        if (req.method === 'POST' && route === '/api/ai/flow') {
-            const body = JSON.parse((await readBody(req)) || '{}') as { instruction?: string }
-            const instruction = String(body.instruction ?? '').slice(0, 500)
-            if (!instruction.trim()) {
-                json(res, 400, { ok: false, error: '무엇을 시킬지 적어주세요' })
-                return
-            }
+        // AI 와 시나리오를 짜는 자리. **대화는 서버에 쌓이지 않는다** — 지금까지 오간 말을
+        // 화면이 통째로 들고 있다가 매번 같이 보낸다. 공개 데모라 사람마다 세션을 쥐고
+        // 있으면 그걸 언제 버릴지를 정해야 하는데, 그 규칙이 곧 다음에 새는 자리다.
+        if (req.method === 'POST' && route === '/api/ai/chat') {
             if (!llm.enabled()) {
                 json(res, 503, { ok: false, error: 'OpenRouter 키가 없어 이 기능만 꺼져 있어요' })
                 return
             }
-            // **지금 화면에 실제로 있는 글자**를 같이 넘긴다. 앱을 통째로 설명하는 것보다
-            // 이게 정확하고, 앱이 바뀌어도 프롬프트를 고칠 일이 없다
-            const words = await device.visibleTexts(60)
-            const yaml = await llm.toFlow(instruction, words)
-            json(res, 200, { ok: true, yaml })
+            const body = JSON.parse((await readBody(req)) || '{}') as {
+                messages?: { role?: string; text?: string; yaml?: string }[]
+            }
+            // 밖에서 오는 값이라 길이를 여기서 자른다. 대화가 길어지면 앞쪽은 버린다 —
+            // 시나리오 하나 짜는 데 열두 마디면 넉넉하고, 그보다 길면 값만 든다
+            const turns: llm.Turn[] = (Array.isArray(body.messages) ? body.messages : [])
+                .slice(-12)
+                .map((m) => ({
+                    role: m.role === 'assistant' ? ('assistant' as const) : ('user' as const),
+                    text: String(m.text ?? '').slice(0, 600),
+                    yaml: typeof m.yaml === 'string' ? m.yaml.slice(0, 3000) : undefined,
+                }))
+                .filter((m) => m.text || m.yaml)
+            if (turns.length === 0 || turns[turns.length - 1].role !== 'user') {
+                json(res, 400, { ok: false, error: '무엇을 테스트할지 적어주세요' })
+                return
+            }
+            // 앱 사정은 **저장소에 있는 것에서 뽑는다** — 저장된 시나리오의 이름·선택자와
+            // 지금 화면의 글자다. 앱을 말로 설명해 두면 앱이 바뀔 때 프롬프트만 남는다.
+            // 화면 읽기는 2.1초짜리라 대화하는 동안은 15초 안쪽의 지난 읽기를 다시 쓴다
+            const [screen, known, list, example] = await Promise.all([
+                device.visibleTexts(50, 15_000).catch(() => [] as string[]),
+                flows.vocabulary(),
+                flows.list(),
+                flows.example(),
+            ])
+            const design = await llm.design(turns, {
+                screen,
+                known,
+                flows: list.map((f) => ({ name: f.name, desc: f.desc })),
+                example,
+            })
+            json(res, 200, { ok: true, ...design })
             return
         }
 

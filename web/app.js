@@ -28,6 +28,8 @@ const state = {
   size: { width: 720, height: 1600 },
   devices: [],
   serial: '',
+  /** OpenRouter 키가 있나. 없으면 대화 판만 꺼진다 */
+  llm: true,
 }
 
 // ── 문구 ──────────────────────────────────────────────────────────────────
@@ -50,12 +52,15 @@ async function loadCopy() {
   $('stop').textContent = c.stopButton
   $('log-title').textContent = c.logTitle
   $('log').dataset.empty = c.logEmpty
-  $('ai-input').placeholder = c.aiPlaceholder
-  $('ai-make').textContent = c.aiButton
+  $('chat-title').textContent = c.chatTitle
+  $('chat-hint').textContent = c.chatHint
+  $('chat-input').placeholder = c.chatPlaceholder
+  $('chat-send').textContent = c.chatSend
+  $('chat-reset').textContent = c.chatReset
   $('timing-title').textContent = c.timingTitle
   $('timing-hint').textContent = c.timingHint
   $('editor-title').textContent = c.editorTitle
-  $('editor-hint').textContent = `${c.editorHint} ${c.aiHint}`
+  $('editor-hint').textContent = c.editorHint
   $('load-label').textContent = c.loadLabel
   $('commands-label').textContent = c.commandsLabel
   $('commands-hint').textContent = c.commandsHint
@@ -106,12 +111,15 @@ async function loadConfig() {
     // 되고, 실행을 누르는 순간 engine() 이 null 을 읽어 화면이 통째로 멈춘다
     document.querySelector('input[name="engine"][value="maestro"]').checked = true
   }
-  if (!cfg.llm) {
-    // 편집기의 나머지(명령 단추·화면 요소·직접 쓰기)는 그대로 돈다 — 꺼지는 건 이 칸뿐이다
-    $('ai-state').textContent = 'OpenRouter 키가 없어 말로 만들기만 꺼져 있어요'
-    $('ai-make').disabled = true
-    $('ai-input').disabled = true
+  // 키가 없으면 **이 판만** 꺼진다. 편집기(불러오기·명령 단추·화면 요소·직접 쓰기)도
+  // 실행도 견주기도 그대로 돈다 — 꺼진 자리를 화면이 밝혀 두는 편이 낫다
+  state.llm = cfg.llm !== false
+  if (!state.llm) {
+    $('chat-state').textContent = state.copy.ui.chatOff
+    $('chat-send').disabled = true
+    $('chat-input').disabled = true
   }
+  greet()
 }
 
 /**
@@ -795,19 +803,152 @@ $('editor-run').onclick = () => {
   post('/api/run-adhoc', { name: '편집기 시나리오', yaml, engine: engine(), record: recording() })
 }
 
-$('ai-make').onclick = async () => {
-  const instruction = $('ai-input').value.trim()
-  if (!instruction) return
-  $('ai-state').textContent = state.copy.ui.aiThinking
-  $('ai-make').disabled = true
-  const data = await post('/api/ai/flow', { instruction })
-  $('ai-make').disabled = false
-  $('ai-state').textContent = ''
-  if (!data.ok) return
-  // 만든 것을 바로 편집기에 넣는다. 그래야 고쳐서 돌릴 수 있다
-  $('yaml').value = data.yaml
-  $('yaml').scrollIntoView({ behavior: 'smooth', block: 'nearest' })
+// ── AI 와 시나리오 짜기 ──────────────────────────────────────────────────
+// 예전에는 입력칸 하나에 시킬 일을 적으면 yaml 이 나오는 자리였다. 그런데 "검색을 보고
+// 싶다" 는 말 하나에는 *무엇으로 검색하나 · 결과만 보나 상세까지 들어가나* 가 빠져
+// 있고, 그 빈칸을 모델이 혼자 메우면 사람이 원한 것과 다른 시나리오가 그럴듯하게
+// 나온다. 되물으면 그 빈칸이 **선택지로 화면에 보인다.**
+//
+// **대화는 여기에만 있다.** 서버는 매번 받은 것만 보고 답한다 — 공개 데모라 사람마다
+// 세션을 쥐고 있으면 그걸 언제 버릴지를 정해야 하고, 그 규칙이 곧 다음에 새는 자리다.
+
+const chat = { turns: [], busy: false }
+
+/** 첫 인사. [처음부터] 도 여기로 돌아온다 */
+function greet() {
+  const c = state.copy.ui
+  chat.turns = [{ role: 'assistant', text: c.chatGreeting, choices: state.llm ? c.chatStarters ?? [] : [] }]
+  chat.busy = false
+  renderChat()
 }
+
+function renderChat() {
+  const box = $('chat')
+  box.replaceChildren(...chat.turns.map(bubble))
+  if (chat.busy) box.append(typingBubble())
+  box.scrollTop = box.scrollHeight
+  renderChoices()
+}
+
+function bubble(turn) {
+  const el = document.createElement('div')
+  el.className = turn.role === 'user' ? 'msg msg--me' : 'msg msg--ai'
+  const p = document.createElement('p')
+  // **모델이 준 글을 HTML 로 해석하지 않는다.** 여기 오는 말은 밖에서 온 글자다
+  p.textContent = turn.text
+  el.append(p)
+  if (turn.note) {
+    const note = document.createElement('p')
+    note.className = 'msg-note'
+    note.textContent = turn.note
+    el.append(note)
+  }
+  if (turn.yaml) el.append(flowCard(turn.yaml))
+  return el
+}
+
+/** 만들어진 시나리오. 여기서 바로 돌리거나 편집기로 넘긴다 */
+function flowCard(yaml) {
+  const c = state.copy.ui
+  const card = document.createElement('div')
+  card.className = 'chat-flow'
+  const pre = document.createElement('pre')
+  pre.textContent = yaml
+  const row = document.createElement('div')
+  row.className = 'row'
+
+  const run = document.createElement('button')
+  run.className = 'btn btn-primary btn-key'
+  run.textContent = c.chatRun
+  run.onclick = () => {
+    // 돌린 것을 편집기에도 넣어 둔다. 실패했을 때 사람이 손대는 자리가 거기다
+    $('yaml').value = yaml
+    post('/api/run-adhoc', { name: c.chatFlowName, yaml, engine: engine(), record: recording() })
+  }
+
+  const open = document.createElement('button')
+  open.className = 'btn btn-key'
+  open.textContent = c.chatOpenEditor
+  open.onclick = () => {
+    $('yaml').value = yaml
+    $('editor-panel').open = true
+    $('editor-panel').scrollIntoView({ behavior: 'smooth', block: 'nearest' })
+  }
+
+  row.append(run, open)
+  card.append(pre, row)
+  return card
+}
+
+/**
+ * AI 가 준 보기. **마지막 말 아래에만 둔다** — 지나간 물음의 보기가 남아 있으면
+ * 그걸 눌렀을 때 무엇에 답한 것인지 사람도 모델도 알 수 없다.
+ */
+function renderChoices() {
+  const box = $('chat-choices')
+  box.replaceChildren()
+  const last = chat.turns[chat.turns.length - 1]
+  if (chat.busy || !last || last.role !== 'assistant') return
+  for (const label of last.choices ?? []) {
+    const b = document.createElement('button')
+    b.className = 'btn btn-key choice'
+    b.textContent = label
+    b.onclick = () => void sendChat(label)
+    box.append(b)
+  }
+}
+
+function typingBubble() {
+  const el = document.createElement('div')
+  el.className = 'msg msg--ai'
+  const p = document.createElement('p')
+  p.className = 'typing'
+  p.setAttribute('aria-label', state.copy.ui.chatThinking)
+  for (let i = 0; i < 3; i += 1) p.append(document.createElement('i'))
+  el.append(p)
+  return el
+}
+
+async function sendChat(text) {
+  const value = String(text ?? '').trim()
+  if (!value || chat.busy || !state.llm) return
+  chat.turns.push({ role: 'user', text: value })
+  chat.busy = true
+  $('chat-send').disabled = true
+  $('chat-input').value = ''
+  renderChat()
+
+  // **시나리오는 마지막 한 벌만 같이 보낸다.** 고칠 때 필요한 건 지금 만들어 둔 것이고,
+  // 지나간 판까지 실어 보내면 대화가 길어질수록 그만큼 값이 든다
+  const payload = chat.turns.map((t) => ({ role: t.role, text: t.text }))
+  let lastFlow = -1
+  chat.turns.forEach((t, i) => {
+    if (t.yaml) lastFlow = i
+  })
+  if (lastFlow >= 0) payload[lastFlow].yaml = chat.turns[lastFlow].yaml
+
+  const data = await post('/api/ai/chat', { messages: payload })
+  chat.busy = false
+  $('chat-send').disabled = false
+  if (data.ok) {
+    chat.turns.push({
+      role: 'assistant',
+      text: data.say,
+      choices: data.choices ?? [],
+      yaml: data.yaml ?? null,
+      note: data.note ?? null,
+    })
+  } else {
+    chat.turns.push({ role: 'assistant', text: data.error ?? state.copy.ui.chatError, choices: [] })
+  }
+  renderChat()
+}
+
+$('chat-send').onclick = () => void sendChat($('chat-input').value)
+$('chat-input').addEventListener('keydown', (ev) => {
+  if (ev.key === 'Enter') void sendChat($('chat-input').value)
+})
+$('chat-reset').onclick = greet
 
 // ── 실패 원인 ─────────────────────────────────────────────────────────────
 

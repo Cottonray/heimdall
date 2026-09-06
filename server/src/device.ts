@@ -466,15 +466,19 @@ function decodeXml(s: string): string {
 }
 
 /**
- * 화면에 실제로 보이는 글자들. 실패 원인을 LLM 에 물을 때와, 말로 시나리오를 만들 때
+ * 화면에 실제로 보이는 글자들. 실패 원인을 LLM 에 물을 때와, AI 와 시나리오를 짜는 동안
  * "고를 수 있는 말"로 같이 넘긴다.
  *
  * 스크린샷을 넘기지 않는 이유는 값이다 — 이미지 한 장은 토큰이 비싸고, "무엇이 안
  * 눌렸나"는 대개 글자 목록만 보면 안다.
+ *
+ * `maxAgeMs` 는 `dump` 의 것과 같다. **대화하는 자리는 반드시 이걸 준다** — 한 마디마다
+ * 새로 읽으면 `uiautomator dump` 2.1초가 모델을 기다리는 시간 위에 그대로 얹힌다.
+ * 실패를 들여다보는 자리는 그 순간의 화면이어야 하므로 기본은 지금까지처럼 0이다.
  */
-export async function visibleTexts(limit = 60): Promise<string[]> {
+export async function visibleTexts(limit = 60, maxAgeMs = 0): Promise<string[]> {
     const seen = new Set<string>()
-    for (const n of await dump()) {
+    for (const n of await dump(maxAgeMs)) {
         for (const t of [n.text, n.desc]) {
             const v = t.trim()
             if (v && !seen.has(v)) seen.add(v)

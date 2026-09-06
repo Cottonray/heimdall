@@ -197,3 +197,46 @@ function toStep(head: string, nested: { key: string; value: string; depth: numbe
             throw new FlowParseError(`adb 갈래가 모르는 명령이에요: ${op}`)
     }
 }
+
+// ── 저장된 시나리오에서 뽑아 쓰는 것들 ────────────────────────────────────────
+//
+// AI 에게 "이 앱은 이렇게 생겼다"를 말로 적어 주지 않는다. 적어 두면 앱이 바뀔 때마다
+// 프롬프트를 같이 고쳐야 하고, 대개 한쪽만 고쳐진다. 대신 **이미 통과해 본 시나리오에서
+// 뽑는다** — 여기 있는 글자·아이디는 실제로 잡히는 것이 확인된 값이다.
+
+/** 저장된 시나리오가 실제로 집는 글자와 아이디 */
+export async function vocabulary(): Promise<{ texts: string[]; ids: string[] }> {
+    const texts: string[] = []
+    const ids: string[] = []
+    for (const flow of await list()) {
+        let steps: Step[]
+        try {
+            steps = parse(flow.yaml)
+        } catch {
+            // 사람이 고치다 깨뜨린 파일 하나 때문에 목록이 통째로 비지 않게 한다
+            continue
+        }
+        for (const step of steps) {
+            const by = (step as { by?: Selector }).by
+            if (!by) continue
+            if (by.kind === 'text' && !texts.includes(by.value)) texts.push(by.value)
+            if (by.kind === 'id' && !ids.includes(by.value)) ids.push(by.value)
+        }
+    }
+    return { texts, ids }
+}
+
+/**
+ * 예시로 보여 줄 시나리오 한 벌. **주석은 뗀다** — 우리 주석은 사람에게 하는 말이라
+ * 모델이 그 말투를 따라 하면 시나리오에 설명이 섞여 들어온다.
+ */
+export async function example(prefer = '07-hybrid-coupon'): Promise<string> {
+    const all = await list()
+    const pick = all.find((f) => f.id === prefer) ?? all[0]
+    if (!pick) return ''
+    return pick.yaml
+        .split('\n')
+        .filter((l) => !l.trim().startsWith('#'))
+        .join('\n')
+        .trim()
+}
