@@ -174,6 +174,21 @@ RUN set -eux; \
       -c:v libx264 -preset veryfast -pix_fmt yuv420p -an /opt/aiqa/id-sample.mp4; \
     chown aiqa:aiqa /opt/aiqa/id-sample.mp4; \
     ls -l /opt/aiqa/id-sample.mp4
+# scrcpy 서버 — 기기 안에서 화면을 H.264 로 인코딩해 내주는 jar (server/src/stream.ts).
+# screencap 한 장에 0.5초가 들던 자리를 프레임당 수십 ms 로 바꾼다. 실행할 때 기기에
+# push 하므로 이미지에는 파일만 둔다. **버전 문자열이 첫 인자로 가고 jar 와 같아야 뜬다.**
+# 해시가 다르면 빌드가 여기서 멈춘다 — 내려받은 것이 우리가 아는 그 파일이라는 확인이다.
+ARG SCRCPY_VERSION=4.1
+ARG SCRCPY_SHA256=deacb991ed2509715160ffdc7907e47b4160eb30d1566217e9047fd5b8850cae
+USER root
+RUN set -eux; \
+    curl -fsSL -o /opt/aiqa/scrcpy-server.jar \
+      "https://github.com/Genymobile/scrcpy/releases/download/v${SCRCPY_VERSION}/scrcpy-server-v${SCRCPY_VERSION}"; \
+    echo "${SCRCPY_SHA256}  /opt/aiqa/scrcpy-server.jar" | sha256sum -c -; \
+    chown aiqa:aiqa /opt/aiqa/scrcpy-server.jar
+ENV AIQA_SCRCPY_JAR=/opt/aiqa/scrcpy-server.jar \
+    AIQA_SCRCPY_VERSION=${SCRCPY_VERSION}
+
 COPY --chown=aiqa:aiqa entrypoint.sh /opt/aiqa/entrypoint.sh
 USER root
 RUN chmod +x /opt/aiqa/entrypoint.sh

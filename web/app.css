@@ -29,6 +29,23 @@
   box-sizing: border-box;
 }
 
+/* 확대가 안 된다. iOS 는 viewport 메타의 user-scalable 을 무시하므로 여기서 막는다 —
+   두 손가락 확대는 pan-x pan-y 가, 더블탭 확대는 단추의 manipulation 이 막는다 */
+html {
+  touch-action: pan-x pan-y;
+  overflow-x: hidden;
+}
+
+button,
+a,
+input,
+select,
+textarea,
+label,
+summary {
+  touch-action: manipulation;
+}
+
 /* `hidden` 을 display 로 이기지 못하게 한다. .row 가 display:flex 라서, 그냥 두면
    숨겨 둔 줄이 그대로 보인다 — 실제로 [실행] 단추가 만들기 전에도 떠 있었다 */
 [hidden] {
@@ -395,6 +412,23 @@ textarea {
   pointer-events: none;
 }
 
+/* H.264 가 풀리는 자리. img 와 같은 상자에 같은 object-fit 이라 좌표 환산이 같다.
+   영상이 실제로 그려지기 시작하면(.phone.h264) 위에 덮이고, 그 전엔 JPEG 이 보인다 */
+.phone canvas {
+  position: absolute;
+  inset: 0;
+  display: none;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  background: #14161a;
+  pointer-events: none;
+}
+
+.phone.h264 canvas {
+  display: block;
+}
+
 .phone-off,
 .phone-lock {
   position: absolute;
@@ -432,6 +466,12 @@ textarea {
 .badge.mine {
   background: var(--acid);
   color: var(--ink);
+}
+
+/* 아무도 안 쥐고 있다 — 누르면 바로 내 손이 된다 */
+.badge.free {
+  background: rgba(31, 138, 83, 0.14);
+  color: var(--ok);
 }
 
 .badge.locked {
@@ -1627,7 +1667,8 @@ textarea {
 /* 실행 띠 — 탭 줄 바로 위. 통째로 단추라 어디를 눌러도 결과로 간다 */
 .runbar {
   position: fixed;
-  right: 10px;
+  /* 오른쪽은 로그인 칩 자리다 — 칩이 탭 줄 위로 올라와 이 줄과 같은 높이에 선다 */
+  right: 66px;
   bottom: calc(62px + env(safe-area-inset-bottom));
   left: 10px;
   z-index: 41;
@@ -1693,10 +1734,42 @@ textarea {
 }
 
 @media (max-width: 960px) {
+  /* ── 앱 껍데기 ─────────────────────────────────────────────────────────
+     폭·높이가 기기 화면에 고정된다 (2026-09-07 사용자 지시). 문서가 구르는 게 아니라
+     **가운데 칸만** 구른다 — 머리와 바닥 탭은 늘 그 자리다. 주소창이 접히고 펴져도
+     dvh 가 따라간다 */
+  html,
+  body {
+    height: 100dvh;
+    overflow: hidden;
+  }
+
+  body {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .top {
+    flex: none;
+  }
+
   .work {
+    flex: 1 1 auto;
+    min-height: 0;
     grid-template-columns: 1fr;
-    /* 바닥 탭(과 그 위 실행 띠)이 마지막 판을 덮지 않게 */
-    padding-bottom: calc(120px + env(safe-area-inset-bottom));
+    align-content: start;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
+    /* 실행 띠가 마지막 판을 덮지 않게 */
+    padding-bottom: calc(64px + env(safe-area-inset-bottom));
+  }
+
+  /* 탭 줄은 fixed 가 아니라 흐름의 마지막이다 — 그래야 가운데 칸의 높이가 정확히
+     나머지가 되고, 키보드가 올라와도 겹치지 않는다 */
+  .tabbar {
+    position: static;
+    flex: none;
   }
 
   .col--device {
@@ -1827,7 +1900,7 @@ textarea {
   .phone {
     /* 머리 두 줄 96 + 판 머리 44 + 도구 줄 셋 150 + 바닥 탭 62 + 여백 — 그 나머지가 폰의
        높이다. 812px 폰에서 조작 단추·키 줄까지 한 화면에 들어온다 */
-    max-width: calc((100svh - 360px) * 0.45);
+    max-width: calc((100dvh - 360px) * 0.45);
     min-width: 200px;
     margin-inline: auto;
     border-width: 6px;

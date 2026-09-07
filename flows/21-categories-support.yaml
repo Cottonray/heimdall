@@ -14,6 +14,11 @@ appId: com.aidemo.golmok
     id: "chip_도서"
 - assertVisible: "2개 선택"
 - back
+# 고객센터는 나의 골목 목록의 여섯째 줄이라 720x1600 에서는 탭바 아래(y 1392 너머)에 있다 —
+# 굴리지 않으면 uiautomator 트리에 없어 "못 찾았어요"로 떨어진다 (2026-09-07 실측)
+- scrollUntilVisible:
+    element:
+      text: "고객센터"
 - tapOn:
     id: "menu_5"
 - tapOn:

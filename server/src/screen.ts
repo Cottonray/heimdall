@@ -64,7 +64,39 @@ export function add(viewer: Viewer) {
 
 export function remove(id: string) {
     viewers.delete(id)
-    if (viewers.size === 0 && holds === 0) stopLoop()
+    if (jpegViewers() === 0 && holds === 0) stopLoop()
+}
+
+/**
+ * 영상(stream.ts)으로 보는 사람은 JPEG 을 받지 않는다. 그 사람만 붙어 있을 때 루프가
+ * 돌면 아무에게도 안 가는 화면을 0.5초에 한 장씩 찍는 셈이다 — 그래서 JPEG 을 받는
+ * 사람 수로 루프를 돌리고 세운다.
+ */
+export function setWantsFrames(id: string, wants: boolean) {
+    const v = viewers.get(id)
+    if (!v) return
+    v.wantsFrames = wants
+    if (wants) {
+        if (lastFrame) v.ws.sendBinary(lastFrame)
+        ensureLoop()
+    } else if (jpegViewers() === 0 && holds === 0) stopLoop()
+}
+
+function jpegViewers() {
+    let n = 0
+    for (const v of viewers.values()) if (v.wantsFrames) n += 1
+    return n
+}
+
+export function hasJpegViewers() {
+    return jpegViewers() > 0
+}
+
+/** 영상 길이 기기 상태를 알려 준다 — JPEG 루프가 서 있는 동안은 여기가 유일한 눈이다 */
+export function noteDevice(online: boolean) {
+    if (deviceOnline === online) return
+    deviceOnline = online
+    broadcast({ type: 'device', online })
 }
 
 /** 보는 사람이 없어도 프레임을 계속 만든다 (증적·녹화가 도는 동안) */
@@ -75,7 +107,7 @@ export function hold() {
 
 export function release() {
     holds = Math.max(0, holds - 1)
-    if (holds === 0 && viewers.size === 0) stopLoop()
+    if (holds === 0 && jpegViewers() === 0) stopLoop()
 }
 
 export function count() {
@@ -161,7 +193,7 @@ let sinceLastShot = 0
 
 async function tick() {
     if (busy) return
-    if (viewers.size === 0 && holds === 0) return
+    if (jpegViewers() === 0 && holds === 0) return
 
     // 느린 박자일 때는 몇 판을 그냥 넘긴다. setInterval 을 갈아끼우는 것보다 셈이 단순하다.
     // **붙잡혀 있는 동안은 늘 빠른 쪽이다** — 증적이 집어 가는 화면이 900ms 묵은 것이면

@@ -41,6 +41,12 @@ services:
       AIQA_CONTROL_IDLE_MS: ${AIQA_CONTROL_IDLE_MS:-90000}
       # 남겨 둘 증적 실행 수. 공개 데모라 무한히 쌓게 두지 않는다
       AIQA_RUNS_KEEP: ${AIQA_RUNS_KEEP:-30}
+      # 영상 길(server/src/stream.ts). 긴 변 상한·fps·비트레이트, 그리고 지연을 가를 때 켜는 시각 기록
+      AIQA_STREAM_MAX_SIZE: ${AIQA_STREAM_MAX_SIZE:-1600}
+      AIQA_STREAM_MAX_FPS: ${AIQA_STREAM_MAX_FPS:-24}
+      AIQA_STREAM_BIT_RATE: ${AIQA_STREAM_BIT_RATE:-2500000}
+      AIQA_STREAM_DEBUG: ${AIQA_STREAM_DEBUG:-0}
+      AIQA_STREAM_CODEC_OPTIONS: ${AIQA_STREAM_CODEC_OPTIONS:-latency:int=0,priority:int=0}
       # **카메라에 물릴 것.** image(기본·신분증 촬영) · video(얼굴 인증처럼 움직여야 하는 것) · none
       AIQA_CAMERA_SOURCE: ${AIQA_CAMERA_SOURCE:-image}
       # 세 번째 갈래(Appium). 같은 컨테이너 안이라 loopback 이다 — 밖으로 열지 않는다

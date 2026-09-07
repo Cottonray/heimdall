@@ -738,9 +738,20 @@ async function appiumExec(session: string, step: Step, appId: string) {
             )
             return
         case 'scrollUntilVisible': {
-            if (step.by.kind !== 'text') throw new Error('글자로만 굴릴 수 있어요')
-            if (!(await appium.scrollIntoView(session, step.by.value))) throw new Error('끝까지 내려도 안 보여요')
-            return
+            // UiScrollable.scrollIntoView 는 Compose 화면에서 "끝에 닿았다"고 잘못 판정한다 —
+            // adb `input swipe` 로는 한 번에 보이는 줄을 3초 만에 못 찾았다고 돌려줬다 (2026-09-07
+            // 실측). 그래서 adb 갈래와 같은 방식으로 **직접 굴리며 찾는다** — 보이면 그 자리에서 끝
+            if (step.by.kind !== 'text' && step.by.kind !== 'id') throw new Error('글자나 아이디로만 굴릴 수 있어요')
+            for (let i = 0; i < 12; i += 1) {
+                try {
+                    await appiumFind(session, step.by, i === 0 ? 800 : 400)
+                    return
+                } catch {
+                    // 아직 안 보인다 — 한 번 더 굴린다
+                }
+                await appium.swipe(session, 'up', await device.screenSize())
+            }
+            throw new Error('끝까지 내려도 안 보여요')
         }
         case 'assertVisible':
             await appiumFind(session, step.by, FIND_TIMEOUT_MS)

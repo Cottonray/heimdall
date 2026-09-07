@@ -5,7 +5,12 @@
 <html lang="ko" data-demo-sso="compact">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <!-- 폰에서는 앱처럼 — 확대가 안 되고(iOS 는 이 메타를 무시하므로 CSS touch-action 과
+         gesturestart 막기가 같이 간다), 폭·높이가 기기 화면에 고정된다 (app.css §앱 껍데기) -->
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover"
+    />
     <meta name="theme-color" content="#f2efe5" />
     <meta
       name="description"
@@ -55,18 +60,22 @@
           <!-- 붙어 있는 기기. 에뮬레이터 하나뿐이면 통째로 숨는다 -->
           <div class="chips devices" id="devices" hidden></div>
 
+          <!-- 그림이 둘이다. <img> 는 JPEG 길(대체), <canvas> 는 H.264 길(기본) — 영상이
+               풀리기 시작하면 canvas 가 위에 덮인다. 좌표 환산은 둘 다 같은 상자라 img 를 본다 -->
           <div class="phone" id="phone">
             <img id="screen" alt="에뮬레이터 화면" draggable="false" />
+            <canvas id="video" aria-hidden="true"></canvas>
             <div class="phone-off" id="phone-off"><span></span></div>
             <div class="phone-lock" id="phone-lock" hidden><span></span></div>
           </div>
 
           <p class="hint" id="device-hint"></p>
 
+          <!-- [조작] 단추는 없다 (2026-09-07 사용자 지시) — 화면을 누르면 그 손이 바로 잡는다.
+               [반납] 만 남는다: 다 썼으면 다음 사람에게 넘기는 단추 -->
           <div class="toolbar">
-            <button class="btn btn-primary" id="claim">조작</button>
+            <button class="btn btn-primary" id="restart-app">앱 재시작</button>
             <button class="btn" id="release" hidden>반납</button>
-            <button class="btn" id="restart-app">앱 재시작</button>
           </div>
 
           <div class="keys" role="group" aria-label="하드웨어 키">
@@ -317,6 +326,9 @@
       if (matchMedia('(max-width: 620px)').matches) {
         for (const d of document.querySelectorAll('[data-narrow-fold]')) d.open = false
       }
+      // iOS 사파리는 viewport 의 user-scalable=no 를 무시한다(접근성). 두 손가락 확대는
+      // 여기서, 더블탭 확대는 CSS touch-action 이 막는다
+      document.addEventListener('gesturestart', (e) => e.preventDefault(), { passive: false })
     </script>
     <script src="app.js"></script>
   </body>

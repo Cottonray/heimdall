@@ -23,6 +23,7 @@ import * as flows from './flows.ts'
 import * as recorder from './recorder.ts'
 import * as runner from './runner.ts'
 import * as llm from './llm.ts'
+import * as stream from './stream.ts'
 import { accept } from './ws.ts'
 
 const BASE = process.env.AIQA_BASE_PATH ?? '/aiqa'
@@ -85,7 +86,9 @@ async function serveStatic(res: http.ServerResponse, rel: string) {
 // ── 화면이 보내오는 것 ────────────────────────────────────────────────────────
 
 type Incoming =
-    | { t: 'hello'; frames?: boolean }
+    | { t: 'hello'; frames?: boolean; video?: 'h264' | 'jpeg' }
+    /** 화면이 영상을 못 풀겠다고 돌아설 때 (WebCodecs 가 없거나 디코더가 죽었다) */
+    | { t: 'video'; mode: 'h264' | 'jpeg' }
     | { t: 'claim' }
     | { t: 'release' }
     | { t: 'tap'; x: number; y: number }
@@ -108,41 +111,52 @@ function toPixels(nx: number, ny: number, size: { width: number; height: number 
 
 async function handleInput(viewerId: string, msg: Incoming) {
     if (runner.busy() || control.runnerBusy()) return
-    if (!control.mayTouch(viewerId)) return
+    // **누르면 바로 잡는다** (2026-09-07 사용자 지시 — [조작] 을 먼저 누르지 않아도).
+    // 아무도 안 쥐고 있으면 이 손이 임자가 되고, 다른 사람이 쥐고 있으면 그 사실만 알려 준다
+    if (!control.mayTouch(viewerId)) {
+        const r = control.claim(viewerId)
+        if (!r.ok) {
+            screen.sendTo(viewerId, { type: 'claim-denied', reason: r.reason })
+            return
+        }
+    }
     screen.poke()
     const size = await device.screenSize()
+    // 영상 길(scrcpy 제어 소켓)이 살아 있으면 그리로 — adb 보다 열 배 빠르다
+    const fast = stream.ready()
 
     switch (msg.t) {
         case 'tap': {
             const p = toPixels(msg.x, msg.y, size)
-            await device.tap(p.x, p.y)
+            if (!(fast && (await stream.tap(p.x, p.y, size)))) await device.tap(p.x, p.y)
             break
         }
         case 'longpress': {
             const p = toPixels(msg.x, msg.y, size)
-            await device.longPress(p.x, p.y)
+            if (!(fast && (await stream.longPress(p.x, p.y, size)))) await device.longPress(p.x, p.y)
             break
         }
         case 'swipe': {
             const a = toPixels(msg.x1, msg.y1, size)
             const b = toPixels(msg.x2, msg.y2, size)
             const ms = Math.min(2000, Math.max(60, Number(msg.ms ?? 200)))
-            await device.swipe(a.x, a.y, b.x, b.y, ms)
+            if (!(fast && (await stream.swipe(a.x, a.y, b.x, b.y, ms, size)))) await device.swipe(a.x, a.y, b.x, b.y, ms)
             break
         }
         case 'text': {
             const value = String(msg.value ?? '')
-            // 한 번에 밀어 넣는 양을 묶어 둔다. 긴 문자열은 기기 셸에서 잘리기도 한다
-            if (value.length > 0 && value.length <= 200) await device.typeText(value)
+            // 한 번에 밀어 넣는 양을 묶어 둔다. 긴 문자열은 기기 셸에서 잘리기도 한다.
+            // ASCII 는 영상 길로 바로 넣고, 한글은 QA 키보드 방송으로 간다
+            if (value.length > 0 && value.length <= 200 && !(fast && stream.text(value))) await device.typeText(value)
             break
         }
         case 'key':
-            await device.key(String(msg.name ?? ''))
+            if (!(fast && (await stream.key(String(msg.name ?? ''))))) await device.key(String(msg.name ?? ''))
             break
     }
 
-    // 누른 결과를 다음 박자까지 기다리지 않는다. 조작감이 여기서 갈린다
-    screen.kick()
+    // JPEG 으로 보는 사람이 있으면 누른 결과를 다음 박자까지 기다리지 않는다
+    if (screen.hasJpegViewers()) screen.kick()
 }
 
 // ── HTTP ─────────────────────────────────────────────────────────────────────
@@ -181,6 +195,7 @@ const server = http.createServer(async (req, res) => {
                 viewers: screen.count(),
                 llm: llm.enabled(),
                 appium: await appium.ready(),
+                stream: stream.ready(),
                 serial: device.target(),
                 devices: await devices.list(),
                 engines: runner.ENGINES,
@@ -286,6 +301,7 @@ const server = http.createServer(async (req, res) => {
             const r = await devices.select(String(body.serial ?? ''))
             if (r.ok) {
                 screen.retarget()
+                stream.retarget()
                 const size = await device.screenSize()
                 screen.broadcast({ type: 'device-changed', serial: device.target(), size })
             }
@@ -439,6 +455,20 @@ server.on('upgrade', (req, socket, head) => {
                     control.release(viewerId)
                     return
                 case 'hello':
+                    // 영상을 풀 수 있는 브라우저는 JPEG 을 받지 않고 H.264 를 받는다
+                    if (msg.video === 'h264') {
+                        screen.setWantsFrames(viewerId, false)
+                        stream.addViewer(viewerId, ws)
+                    }
+                    return
+                case 'video':
+                    if (msg.mode === 'jpeg') {
+                        stream.removeViewer(viewerId)
+                        screen.setWantsFrames(viewerId, true)
+                    } else {
+                        screen.setWantsFrames(viewerId, false)
+                        stream.addViewer(viewerId, ws)
+                    }
                     return
                 default:
                     void handleInput(viewerId, msg)
@@ -446,6 +476,7 @@ server.on('upgrade', (req, socket, head) => {
         },
         onClose: () => {
             control.forget(viewerId)
+            stream.removeViewer(viewerId)
             screen.remove(viewerId)
             screen.broadcast({ type: 'viewers', viewers: screen.count() })
         },

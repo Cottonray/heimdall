@@ -58,7 +58,6 @@ async function loadCopy() {
   text('device-eyebrow', c.deviceEyebrow)
   text('device-title', c.deviceTitle)
   text('device-hint', `${c.deviceHint} ${c.claimHint}`)
-  text('claim', c.claimButton)
   text('release', c.releaseButton)
   text('restart-app', c.restartApp)
   text('type-send', c.typeSend)
@@ -502,16 +501,19 @@ let retry = 0
 function connect() {
   const proto = location.protocol === 'https:' ? 'wss:' : 'ws:'
   ws = new WebSocket(`${proto}//${location.host}${BASE}/ws`)
-  ws.binaryType = 'blob'
+  ws.binaryType = 'arraybuffer'
 
   ws.onopen = () => {
     retry = 0
-    send({ t: 'hello' })
+    send({ t: 'hello', video: h264.wanted() ? 'h264' : 'jpeg' })
   }
 
   ws.onmessage = (ev) => {
     if (typeof ev.data !== 'string') {
-      showFrame(ev.data)
+      const u8 = new Uint8Array(ev.data)
+      // 'H' + 플래그 한 바이트로 시작하면 영상 조각, 아니면 JPEG 한 장(FF D8)
+      if (u8.length > 2 && u8[0] === 0x48 && u8[1] < 8) h264.receive(u8)
+      else showFrame(new Blob([ev.data], { type: 'image/jpeg' }))
       return
     }
     handle(JSON.parse(ev.data))
@@ -527,6 +529,176 @@ function connect() {
 
 function send(msg) {
   if (ws && ws.readyState === WebSocket.OPEN) ws.send(JSON.stringify(msg))
+}
+
+// ── 영상 — H.264 를 WebCodecs 로 푼다 ──────────────────────────────────────
+// 서버(stream.ts)가 scrcpy 의 패킷을 그대로 흘려 준다: [ 'H', 플래그, 본문 ].
+//   플래그 4 = 세션(폭·높이 4B 씩) · 1 = 설정(SPS/PPS, Annex-B) · 2 = 키프레임 · 0 = 델타
+// WebCodecs 에는 avcC 로 설명하고 조각은 길이 접두사(AVCC)로 바꿔 넣는다 — 크롬은 Annex-B
+// 도 받지만 사파리는 avcC 여야 한다. 못 풀겠으면 서버에 말하고 JPEG 으로 돌아선다.
+
+const h264 = {
+  ok: typeof VideoDecoder !== 'undefined' && typeof EncodedVideoChunk !== 'undefined',
+  decoder: null,
+  canvas: $('video'),
+  ctx: null,
+  size: null,
+  sawKey: false,
+  ts: 0,
+  frames: 0,
+  gaveUp: false,
+
+  wanted() {
+    return this.ok && !this.gaveUp
+  },
+
+  receive(u8) {
+    if (!this.wanted()) return
+    const flags = u8[1]
+    const body = u8.subarray(2)
+    if (flags & 4) {
+      const dv = new DataView(body.buffer, body.byteOffset, body.byteLength)
+      this.size = { width: dv.getInt32(0), height: dv.getInt32(4) }
+      this.canvas.width = this.size.width
+      this.canvas.height = this.size.height
+      this.reset()
+      return
+    }
+    if (flags & 1) {
+      void this.configure(body)
+      return
+    }
+    if (!this.decoder || this.decoder.state !== 'configured') return
+    const key = (flags & 2) !== 0
+    // 델타부터 오면 풀 수 없다 — 키프레임을 기다린다
+    if (!this.sawKey && !key) return
+    this.sawKey = true
+    try {
+      this.decoder.decode(
+        new EncodedVideoChunk({ type: key ? 'key' : 'delta', timestamp: this.ts++ * 1000, data: toAvcc(body) }),
+      )
+    } catch (e) {
+      this.fail(e)
+    }
+  },
+
+  reset() {
+    if (this.decoder) {
+      try {
+        this.decoder.close()
+      } catch {}
+    }
+    this.decoder = null
+    this.sawKey = false
+  },
+
+  async configure(annexB) {
+    const nals = splitNals(annexB)
+    const sps = nals.find((n) => (n[0] & 0x1f) === 7)
+    const pps = nals.find((n) => (n[0] & 0x1f) === 8)
+    if (!sps || !pps) return
+    const hex = (b) => b.toString(16).padStart(2, '0')
+    const codec = `avc1.${hex(sps[1])}${hex(sps[2])}${hex(sps[3])}`
+    const description = new Uint8Array(11 + sps.length + pps.length)
+    let o = 0
+    description[o++] = 1
+    description[o++] = sps[1]
+    description[o++] = sps[2]
+    description[o++] = sps[3]
+    description[o++] = 0xff // 길이 접두사 4바이트
+    description[o++] = 0xe1 // SPS 하나
+    description[o++] = sps.length >> 8
+    description[o++] = sps.length & 0xff
+    description.set(sps, o)
+    o += sps.length
+    description[o++] = 1 // PPS 하나
+    description[o++] = pps.length >> 8
+    description[o++] = pps.length & 0xff
+    description.set(pps, o)
+
+    const cfg = { codec, description, optimizeForLatency: true }
+    try {
+      const support = await VideoDecoder.isConfigSupported(cfg)
+      if (!support.supported) throw new Error(`unsupported ${codec}`)
+      this.reset()
+      this.ctx = this.canvas.getContext('2d', { alpha: false, desynchronized: true })
+      this.decoder = new VideoDecoder({
+        output: (frame) => this.paint(frame),
+        error: (e) => this.fail(e),
+      })
+      this.decoder.configure(cfg)
+    } catch (e) {
+      this.fail(e)
+    }
+  },
+
+  paint(frame) {
+    try {
+      this.ctx.drawImage(frame, 0, 0, this.canvas.width, this.canvas.height)
+    } finally {
+      frame.close()
+    }
+    if (this.frames === 0) $('phone').classList.add('h264')
+    this.frames += 1
+    setDevice(true)
+  },
+
+  /** 못 풀겠다. 서버에 말하고 JPEG 으로 돌아선다 — 이 브라우저에서는 그 뒤로 영상을 안 받는다 */
+  fail(e) {
+    if (this.gaveUp) return
+    console.warn('h264 decode failed, falling back to jpeg', e)
+    this.gaveUp = true
+    this.reset()
+    $('phone').classList.remove('h264')
+    send({ t: 'video', mode: 'jpeg' })
+  },
+}
+
+/** Annex-B 를 NAL 단위로 자른다 (00 00 01 · 00 00 00 01 둘 다) */
+function splitNals(u8) {
+  const out = []
+  let i = 0
+  let start = -1
+  while (i + 2 < u8.length) {
+    if (u8[i] === 0 && u8[i + 1] === 0 && (u8[i + 2] === 1 || (u8[i + 2] === 0 && u8[i + 3] === 1))) {
+      const len = u8[i + 2] === 1 ? 3 : 4
+      if (start >= 0) out.push(u8.subarray(start, trimZeros(u8, start, i)))
+      i += len
+      start = i
+      continue
+    }
+    i += 1
+  }
+  if (start >= 0) out.push(u8.subarray(start))
+  return out
+}
+
+/** 다음 시작 코드 앞의 0 들(trailing zero)을 뗀다 */
+function trimZeros(u8, from, to) {
+  let end = to
+  while (end > from && u8[end - 1] === 0) end -= 1
+  return end
+}
+
+/** Annex-B 조각을 4바이트 길이 접두사(AVCC)로. 설정 NAL(SPS·PPS·AUD)은 뺀다 — 설명에 이미 있다 */
+function toAvcc(annexB) {
+  const nals = splitNals(annexB).filter((n) => {
+    const t = n[0] & 0x1f
+    return t !== 7 && t !== 8 && t !== 9
+  })
+  let total = 0
+  for (const n of nals) total += 4 + n.length
+  const out = new Uint8Array(total)
+  let o = 0
+  for (const n of nals) {
+    out[o++] = (n.length >>> 24) & 0xff
+    out[o++] = (n.length >>> 16) & 0xff
+    out[o++] = (n.length >>> 8) & 0xff
+    out[o++] = n.length & 0xff
+    out.set(n, o)
+    o += n.length
+  }
+  return out
 }
 
 function showFrame(blob) {
@@ -752,7 +924,7 @@ function setTab(name) {
     b.classList.toggle('is-on', on)
     b.setAttribute('aria-current', on ? 'page' : 'false')
   }
-  if (NARROW.matches) window.scrollTo({ top: 0 })
+  if (NARROW.matches) document.querySelector('.work').scrollTo({ top: 0 })
 }
 
 document.querySelectorAll('.tab').forEach((b) => {
@@ -840,9 +1012,18 @@ function markFlow(flowId, kind) {
   })
 }
 
-/** 내가 지금 누를 수 있나. 폰 위의 덮개와 단추 상태가 전부 이 하나를 본다 */
+/** 내가 쥐고 있나 */
 function mine() {
   return state.control.kind === 'human' && state.control.viewerId === state.viewerId
+}
+
+/**
+ * 내가 지금 누를 수 있나 — 쥐고 있거나, **아무도 안 쥐고 있거나.** 누르면 서버가 그 자리에서
+ * 잡아 준다(2026-09-07 사용자 지시 — [조작] 을 먼저 누르지 않아도). 폰 위의 덮개와 단추
+ * 상태가 전부 이 하나를 본다
+ */
+function canTouch() {
+  return mine() || state.control.kind === 'none'
 }
 
 function syncControl() {
@@ -866,18 +1047,16 @@ function syncControl() {
     lock.hidden = false
     lock.firstElementChild.textContent = c.claimedByOther
   } else {
-    badge.textContent = c.watchingOnly
-    badge.className = 'badge'
+    badge.textContent = c.controlFree
+    badge.className = 'badge free'
     lock.hidden = true
   }
 
   $('phone').classList.toggle('mine', mine())
-  $('claim').hidden = mine()
   $('release').hidden = !mine()
-  $('claim').disabled = runnerBusy
-  document.querySelectorAll('.key').forEach((b) => (b.disabled = !mine()))
-  $('type-send').disabled = !mine()
-  $('type-input').disabled = !mine()
+  document.querySelectorAll('.key').forEach((b) => (b.disabled = !canTouch()))
+  $('type-send').disabled = !canTouch()
+  $('type-input').disabled = !canTouch()
 }
 
 function syncRunning() {
@@ -927,14 +1106,14 @@ function pointOf(ev) {
 }
 
 phone.addEventListener('pointerdown', (ev) => {
-  if (!mine()) return
+  if (!canTouch()) return
   phone.setPointerCapture(ev.pointerId)
   pressAt = Date.now()
   pressPoint = pointOf(ev)
 })
 
 phone.addEventListener('pointerup', (ev) => {
-  if (!mine() || !pressPoint) return
+  if (!canTouch() || !pressPoint) return
   const to = pointOf(ev)
   const held = Date.now() - pressAt
   const moved = Math.hypot(to.x - pressPoint.x, to.y - pressPoint.y)
@@ -953,7 +1132,7 @@ phone.addEventListener('pointerup', (ev) => {
 // 폰에 초점을 두고 키보드를 그대로 쓰는 길. 원격 데스크톱처럼 만들려면 이게 있어야 한다
 phone.tabIndex = 0
 phone.addEventListener('keydown', (ev) => {
-  if (!mine()) return
+  if (!canTouch()) return
   if (ev.key === 'Backspace') {
     ev.preventDefault()
     send({ t: 'key', name: 'del' })
@@ -971,7 +1150,6 @@ phone.addEventListener('keydown', (ev) => {
 
 // ── 단추 ──────────────────────────────────────────────────────────────────
 
-$('claim').onclick = () => send({ t: 'claim' })
 $('release').onclick = () => send({ t: 'release' })
 $('stop').onclick = () => post('/api/stop', {})
 $('restart-app').onclick = () => post('/api/app/restart', {})

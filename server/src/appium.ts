@@ -209,11 +209,11 @@ export async function swipe(sessionId: string, direction: 'up' | 'down' | 'left'
 }
 
 /** 보일 때까지 굴린다. UiScrollable 이 그 일을 한 번에 해 준다 */
-export async function scrollIntoView(sessionId: string, needle: string): Promise<boolean> {
+/** 글자나 아이디가 보일 때까지 굴린다. Compose 의 testTag 는 resource-id 에 그대로 실린다 */
+export async function scrollIntoView(sessionId: string, needle: string, kind: 'text' | 'id' = 'text'): Promise<boolean> {
     const lit = javaString(needle)
-    const expr =
-        `new UiScrollable(new UiSelector().scrollable(true).instance(0))` +
-        `.scrollIntoView(new UiSelector().text("${lit}"))`
+    const target = kind === 'id' ? `new UiSelector().resourceId("${lit}")` : `new UiSelector().text("${lit}")`
+    const expr = `new UiScrollable(new UiSelector().scrollable(true).instance(0)).scrollIntoView(${target})`
     return (await findBy(sessionId, '-android uiautomator', expr)) !== null
 }
 

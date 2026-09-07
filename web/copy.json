@@ -10,8 +10,7 @@
     "deviceEyebrow": "공유 기기",
     "deviceTitle": "Android 에뮬레이터",
     "deviceHint": "화면을 탭하거나 키보드로 입력하면 기기에 그대로 전달돼요.",
-    "claimHint": "한 번에 한 사람만 [조작] 을 눌러 기기를 조작할 수 있어요.",
-    "claimButton": "조작",
+    "claimHint": "화면을 누르면 바로 조작돼요. 한 번에 한 사람이고, 90초 동안 손을 떼면 다음 사람에게 넘어가요.",
     "releaseButton": "반납",
     "claimedByOther": "다른 사용자가 조작 중이라 지금은 화면만 볼 수 있어요.",
     "watchingOnly": "보기 전용",
@@ -129,6 +128,7 @@
     "tabDevice": "기기",
     "tabRun": "실행",
     "tabAi": "AI",
-    "tabEvidence": "증적"
+    "tabEvidence": "증적",
+    "controlFree": "조작 가능"
   }
 }
