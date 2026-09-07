@@ -1,0 +1,24 @@
+# 내 근처 가게 — 거리로 거르고, 가게를 열어 단골 등록과 후기 남기기가 되는지 확인해요.
+appId: com.aidemo.golmok
+---
+- launchApp:
+    clearState: true
+- tapOn:
+    id: "tab_2"
+- assertVisible: "세시의빵"
+- tapOn:
+    id: "chip_2km 이내"
+- assertNotVisible: "세시의빵"
+- tapOn: "모퉁이찬방"
+- assertVisible: "가게 정보"
+- assertVisible: "이웃 후기 1"
+- tapOn:
+    id: "place_favorite"
+- assertVisible: "단골이에요"
+- tapOn:
+    id: "review_input"
+- inputText: "반찬이 정갈하고 양도 넉넉해요"
+- tapOn:
+    id: "review_submit"
+- assertVisible: "반찬이 정갈하고 양도 넉넉해요"
+- assertVisible: "이웃 후기 2"

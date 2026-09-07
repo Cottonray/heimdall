@@ -1,0 +1,22 @@
+# 채팅 자동 답장 — 채팅 목록에서 방을 열어 메시지를 보내면 상대가 답하는지 확인해요.
+#
+# 답은 보낸 뒤 1.5초에 온다. assertVisible 은 세 갈래 모두 몇 초를 기다려 주므로 그 사이에 잡힌다.
+appId: com.aidemo.golmok
+---
+- launchApp:
+    clearState: true
+- tapOn:
+    id: "tab_3"
+- tapOn:
+    id: "chat_0"
+- assertVisible: "모퉁이햇살"
+- tapOn:
+    id: "chat_input"
+- inputText: "내일 저녁도 괜찮을까요"
+- tapOn:
+    id: "chat_send"
+- assertVisible: "내일 저녁도 괜찮을까요"
+- assertVisible: "네, 확인했어요."
+# 목록으로 나오면 마지막 말이 그 답으로 바뀌어 있다
+- back
+- assertVisible: "네, 확인했어요."

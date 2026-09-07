@@ -1,0 +1,30 @@
+# 관심 카테고리와 고객센터 — 카테고리를 고르면 개수가 세지고, 문의를 보내면 접수 안내가 남는지 확인해요.
+appId: com.aidemo.golmok
+---
+- launchApp:
+    clearState: true
+- tapOn:
+    id: "tab_4"
+- tapOn:
+    id: "menu_3"
+- assertVisible: "0개 선택"
+- tapOn:
+    id: "chip_가구"
+- tapOn:
+    id: "chip_도서"
+- assertVisible: "2개 선택"
+- back
+- tapOn:
+    id: "menu_5"
+- tapOn:
+    id: "faq_0"
+- assertVisible: "채팅으로 시간과 장소를 정해요. 서로 확인하기 쉬운 곳을 골라 주세요."
+- tapOn:
+    id: "inquiry_submit"
+- assertVisible: "문의 내용을 입력해 주세요."
+- tapOn:
+    id: "inquiry_input"
+- inputText: "거래 후기는 어디서 보나요"
+- tapOn:
+    id: "inquiry_submit"
+- assertVisible: "문의가 접수됐어요."
