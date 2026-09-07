@@ -31,7 +31,7 @@
     "deviceOffline": "에뮬레이터가 아직 준비되지 않았어요.\n잠시 후 다시 확인해 주세요.",
     "runEyebrow": "테스트 실행",
     "scenarioTitle": "시나리오",
-    "scenarioHint": "방식을 고르고 시나리오를 실행하거나, [견주기]로 세 방식을 비교해요.",
+    "scenarioHint": "방식을 고르고 시나리오를 실행하거나, [비교하기]로 세 방식의 시간을 나란히 재요.",
     "engineLabel": "실행 방식",
     "engines": {
       "appium": {
@@ -51,7 +51,7 @@
     "nativeTag": "네이티브",
     "hybridTag": "앱·웹 혼합",
     "runButton": "실행",
-    "compareButton": "견주기",
+    "compareButton": "비교하기",
     "compareTooltip": "같은 시나리오를 adb → Appium → Maestro CLI 순서로 실행해 시간을 기록해요",
     "stopButton": "중지",
     "recordLabel": "화면 녹화",
@@ -74,7 +74,7 @@
     "compareEyebrow": "세 방식 비교",
     "timingTitle": "시나리오별 경과 시간",
     "timingHint": "방식별 마지막 통과 기록만 남기며, 막대는 같은 행의 상대 길이예요.",
-    "timingEmpty": "[견주기] 를 누르면 세 방식의 실행 시간과 상대 막대가 표시돼요.",
+    "timingEmpty": "[비교하기] 를 누르면 세 방식의 실행 시간과 상대 막대가 표시돼요.",
     "fastestLabel": "가장 빠름",
     "timesLabel": "배",
     "totalLabel": "합계",
@@ -125,6 +125,10 @@
     "runLabel": "실행",
     "clearLabel": "비우기",
     "invalidYaml": "appId 항목이 없어 실행할 수 없어요.",
-    "savedNote": "편집기와 AI 대화에서 만든 시나리오는 파일로 저장되지 않아요."
+    "savedNote": "편집기와 AI 대화에서 만든 시나리오는 파일로 저장되지 않아요.",
+    "tabDevice": "기기",
+    "tabRun": "실행",
+    "tabAi": "AI",
+    "tabEvidence": "증적"
   }
 }

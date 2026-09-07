@@ -42,7 +42,7 @@
     <!-- ── 작업대 — 기기 | 실행·결과·비교 | AI·증적 ──────────────────────────── -->
     <main class="work">
       <!-- 왼쪽: 기기. 넓은 화면에서는 붙어 있어서(sticky) 오른쪽을 내려도 폰이 보인다 -->
-      <aside class="col col--device">
+      <aside class="col col--device" data-pane="device">
         <section class="panel device-panel">
           <div class="panel-head">
             <div class="head-copy">
@@ -92,7 +92,7 @@
       </aside>
 
       <!-- 가운데: 이 데모가 보여 주려는 것 — 세 방식으로 돌리고 나란히 견준다 -->
-      <section class="col col--main">
+      <section class="col col--main" data-pane="run">
         <section class="panel">
           <div class="panel-head">
             <div class="head-copy">
@@ -246,7 +246,7 @@
              화면 어디에도 보이지 않았다 (2026-09-06 사용자 지적). 오른쪽 맨 위가 그 자리다.
              한 방에 만들지 않고 **되묻는 대화**다 — "무엇을 확인할 것인가"는 한 줄 지시에
              늘 빠져 있다. -->
-        <section class="panel chat-panel">
+        <section class="panel chat-panel" data-pane="ai">
           <div class="panel-head">
             <div class="head-copy">
               <span class="eyebrow" id="chat-eyebrow">AI</span>
@@ -269,7 +269,7 @@
         </section>
 
         <!-- 증적 — 실행이 끝날 때마다 한 줄씩 쌓인다 -->
-        <section class="panel">
+        <section class="panel" data-pane="evidence">
           <div class="panel-head">
             <div class="head-copy">
               <span class="eyebrow" id="evidence-eyebrow">증적</span>
@@ -281,6 +281,35 @@
         </section>
       </aside>
     </main>
+
+    <!-- ── 폰 — 바닥 탭과 실행 띠 ──────────────────────────────────────────────
+         960px 아래에서는 세 칸이 한 줄로 쌓여 4,000px 짜리 문서가 된다. 폰에서는 그 대신
+         **한 번에 한 칸만** 보여 주고 바닥 탭으로 오간다 (기기 · 실행 · AI · 증적).
+         실행이 도는 동안은 어느 탭에 있든 바닥 띠에 진행이 보이고, 띠를 누르면 실행 탭이다.
+         넓은 화면에서는 둘 다 없다(CSS 가 감춘다) — 세 칸이 나란히 있으니 오갈 게 없다. -->
+    <button class="runbar" id="runbar" type="button" hidden>
+      <span class="runbar-dot"></span>
+      <span class="runbar-text" id="runbar-text"></span>
+      <span class="runbar-time" id="runbar-time"></span>
+    </button>
+    <nav class="tabbar" id="tabbar" aria-label="화면">
+      <button class="tab" type="button" data-tab="device">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="7" y="2.5" width="10" height="19" rx="2.5" /><circle cx="12" cy="18" r="1" fill="currentColor" stroke="none" /></svg>
+        <span id="tab-device">기기</span>
+      </button>
+      <button class="tab" type="button" data-tab="run">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5.5v13l10-6.5z" /></svg>
+        <span id="tab-run">실행</span>
+      </button>
+      <button class="tab" type="button" data-tab="ai">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8z" /><path d="M18.5 15.5l.8 2.2 2.2.8-2.2.8-.8 2.2-.8-2.2-2.2-.8 2.2-.8z" /></svg>
+        <span id="tab-ai">AI</span>
+      </button>
+      <button class="tab" type="button" data-tab="evidence">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3.5 6.5a2 2 0 0 1 2-2h4l2 2h7a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2h-13a2 2 0 0 1-2-2z" /></svg>
+        <span id="tab-evidence">증적</span>
+      </button>
+    </nav>
 
     <!-- `<details>` 는 열림 여부를 CSS 로 정할 수 없다(속성이지 스타일이 아니다).
          그래서 폭 판정만 여기서 한 줄로 한다 — 좁은 화면에서만 접는다. -->

@@ -82,6 +82,8 @@ async function loadCopy() {
     if (!e) continue
     el.querySelector('.engine-name').textContent = e.name
     el.querySelector('.engine-why').textContent = e.why
+    // 폰에서는 설명이 감춰진다 — 길게 누르면(title) 읽을 수 있게 남겨 둔다
+    el.title = e.why
   }
   text('stop', c.stopButton)
   text('record-label', c.recordLabel)
@@ -114,6 +116,12 @@ async function loadCopy() {
   text('evidence-eyebrow', c.evidenceEyebrow)
   text('evidence-title', c.evidenceTitle)
   text('evidence-hint', c.evidenceHint)
+
+  // 폰의 바닥 탭
+  text('tab-device', c.tabDevice)
+  text('tab-run', c.tabRun)
+  text('tab-ai', c.tabAi)
+  text('tab-evidence', c.tabEvidence)
 
   // 편집기
   text('editor-eyebrow', c.editorEyebrow)
@@ -411,6 +419,8 @@ function renderTimings() {
     for (const e of COLUMNS) {
       const td = document.createElement('td')
       td.className = 'cell'
+      // 폰에서는 표가 카드로 풀리고 머리글이 없어진다 — 칸마다 방식 이름을 들고 있는다
+      td.dataset.label = engineLabel(e)
       // 숫자 밑에 막대 — 같은 줄 안에서 상대 길이다. 숫자만 나란히 두면 어느 쪽이
       // 얼마나 이겼는지 매번 세어야 한다
       td.append(timingCell(row[e], max, e === fastest))
@@ -423,6 +433,7 @@ function renderTimings() {
 
     const verdict = document.createElement('td')
     verdict.className = 'verdict'
+    verdict.dataset.label = c.fastestLabel
     if (fastest) {
       const b = document.createElement('b')
       b.textContent = engineLabel(fastest)
@@ -450,11 +461,13 @@ function renderTimings() {
     for (const e of COLUMNS) {
       const td = document.createElement('td')
       td.className = 'cell'
+      td.dataset.label = engineLabel(e)
       td.append(timingCell(sum[e], sum[slowest], e === fastest))
       tr.append(td)
     }
     const verdict = document.createElement('td')
     verdict.className = 'verdict'
+    verdict.dataset.label = c.fastestLabel
     const b = document.createElement('b')
     b.textContent = engineLabel(fastest)
     verdict.append(b, ` · ${(sum[slowest] / Math.max(1, sum[fastest])).toFixed(1)}${c.timesLabel}`)
@@ -562,6 +575,9 @@ function handle(msg) {
       state.running = true
       state.lastEngine = msg.engine
       beginRun(msg)
+      // 폰에서 AI 탭의 [바로 실행] 으로 시작했으면 결과가 있는 탭으로 데려간다.
+      // 실행 탭에서 눌렀으면 이미 거기고, 기기 탭에서 보고 있었으면 그대로 둔다
+      if (document.body.dataset.tab === 'ai') setTab('run')
       $('log').replaceChildren()
       $('log-engine').textContent = `${msg.name} · ${engineLabel(msg.engine)}`
       $('diagnose-panel').hidden = true
@@ -643,6 +659,7 @@ function beginRun(msg) {
     if (state.run && !state.run.done) $('result-elapsed').textContent = sec(Date.now() - state.run.startedAt)
   }, 100)
   $('result-elapsed').textContent = sec(0)
+  syncRunbar()
 }
 
 /** 다음 단계가 도는 동안 맨 아래에 서 있는 줄. 단계가 오면 그 줄이 그 단계가 된다 */
@@ -696,6 +713,7 @@ function addStep(msg) {
   // 아직 남았고 이 단계가 통과했으면 다음 줄을 세운다
   if (msg.ok && (!total || msg.index + 1 < total)) addRunningStep()
   else list.scrollTop = list.scrollHeight
+  syncRunbar()
 }
 
 function endRun(msg, kind) {
@@ -717,7 +735,59 @@ function endRun(msg, kind) {
   const bar = $('progress')
   bar.className = `progress ${kind === 'passed' ? 'passed' : kind === 'failed' ? 'failed' : ''}`
   bar.firstElementChild.style.width = kind === 'passed' ? '100%' : bar.firstElementChild.style.width || '100%'
+  state.run.kind = kind
+  syncRunbar()
 }
+
+// ── 폰 — 바닥 탭과 실행 띠 ─────────────────────────────────────────────────
+// 960px 아래에서만 뜻이 있다(넓은 화면에서는 CSS 가 둘 다 감춘다). 탭은 body 의
+// data-tab 하나로 정하고, 어느 칸이 보이는지는 CSS 가 그 값을 보고 가른다.
+
+const NARROW = matchMedia('(max-width: 960px)')
+
+function setTab(name) {
+  document.body.dataset.tab = name
+  for (const b of document.querySelectorAll('.tab')) {
+    const on = b.dataset.tab === name
+    b.classList.toggle('is-on', on)
+    b.setAttribute('aria-current', on ? 'page' : 'false')
+  }
+  if (NARROW.matches) window.scrollTo({ top: 0 })
+}
+
+document.querySelectorAll('.tab').forEach((b) => {
+  b.onclick = () => setTab(b.dataset.tab)
+})
+
+/**
+ * 실행 띠 — 도는 동안과 끝난 직후에 바닥에 붙어 있는 한 줄. 어느 탭에 있든 진행이 보이고,
+ * 누르면 실행 탭의 결과 판으로 간다. 넓은 화면에서는 CSS 가 감춘다.
+ */
+function syncRunbar() {
+  const bar = $('runbar')
+  const run = state.run
+  if (!run) {
+    bar.hidden = true
+    return
+  }
+  const kind = run.kind ?? 'running'
+  bar.hidden = false
+  bar.className = `runbar ${kind}`
+  const done = run.steps.length
+  const count = run.total ? `${done}/${run.total}` : done ? String(done) : ''
+  $('runbar-text').textContent = `${statusText(kind)} · ${run.name}${count ? ` · ${count}` : ''}`
+  $('runbar-time').textContent = $('result-elapsed').textContent
+}
+
+$('runbar').onclick = () => {
+  setTab('run')
+  $('result-panel').scrollIntoView({ block: 'start', behavior: 'smooth' })
+}
+
+// 경과 시간이 띠에도 같이 흐르게 — 결과 판의 숫자를 그대로 베낀다
+setInterval(() => {
+  if (state.run && !state.run.done && !$('runbar').hidden) $('runbar-time').textContent = $('result-elapsed').textContent
+}, 250)
 
 // ── 상태 그리기 ───────────────────────────────────────────────────────────
 
@@ -1139,6 +1209,7 @@ function flowCard(yaml) {
   open.onclick = () => {
     $('yaml').value = yaml
     $('editor-panel').open = true
+    setTab('run')
     $('editor-panel').scrollIntoView({ behavior: 'smooth', block: 'nearest' })
   }
 
@@ -1255,6 +1326,8 @@ async function diagnose() {
 void (async () => {
   await loadCopy()
   await loadConfig()
+  // 폰의 첫 화면은 기기다 — 폰이 브라우저 안에서 살아 움직이는 것이 이 데모의 첫인상이다
+  setTab('device')
   setStatus('idle')
   syncControl()
   connect()

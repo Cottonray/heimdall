@@ -1566,6 +1566,119 @@ textarea {
   }
 }
 
+/* ── 폰의 바닥 탭과 실행 띠 ────────────────────────────────────────────────
+   960px 아래에서만 보인다. 넓은 화면은 세 칸이 나란히 있어 오갈 것이 없다. */
+
+.tabbar {
+  position: fixed;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  z-index: 40;
+  display: none;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  padding: 6px 8px calc(6px + env(safe-area-inset-bottom));
+  border-top: 1px solid var(--line);
+  background: rgba(255, 253, 246, 0.94);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+}
+
+.tab {
+  display: grid;
+  gap: 2px;
+  justify-items: center;
+  min-height: 48px;
+  padding: 5px 4px 4px;
+  border: 0;
+  border-radius: 12px;
+  background: transparent;
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.tab svg {
+  width: 22px;
+  height: 22px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  stroke-linejoin: round;
+  stroke-linecap: round;
+}
+
+.tab.is-on {
+  color: var(--ink);
+  background: rgba(16, 18, 15, 0.06);
+}
+
+.tab.is-on svg {
+  fill: var(--acid);
+  stroke: var(--ink);
+}
+
+.tab:focus-visible {
+  outline: 2px solid var(--blue);
+  outline-offset: -2px;
+}
+
+/* 실행 띠 — 탭 줄 바로 위. 통째로 단추라 어디를 눌러도 결과로 간다 */
+.runbar {
+  position: fixed;
+  right: 10px;
+  bottom: calc(62px + env(safe-area-inset-bottom));
+  left: 10px;
+  z-index: 41;
+  display: none;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  gap: 10px;
+  align-items: center;
+  min-height: 44px;
+  padding: 0 14px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--ink);
+  color: #fff;
+  font-size: 12.5px;
+  font-weight: 700;
+  text-align: left;
+  box-shadow: 0 10px 30px rgba(16, 18, 15, 0.25);
+  cursor: pointer;
+}
+
+.runbar-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--blue);
+  animation: pulse 1s ease-in-out infinite;
+}
+
+.runbar.passed .runbar-dot {
+  background: #7ee2a3;
+  animation: none;
+}
+
+.runbar.failed .runbar-dot,
+.runbar.canceled .runbar-dot {
+  background: var(--coral);
+  animation: none;
+}
+
+.runbar-text {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.runbar-time {
+  font-family: var(--mono);
+  font-variant-numeric: tabular-nums;
+  color: #d5d7cf;
+}
+
 /* ── 좁은 화면 ────────────────────────────────────────────────────────── */
 
 /* 세 칸이 안 들어가면 오른쪽(AI·증적)을 가운데 칸 아래로 내린다 */
@@ -1582,6 +1695,8 @@ textarea {
 @media (max-width: 960px) {
   .work {
     grid-template-columns: 1fr;
+    /* 바닥 탭(과 그 위 실행 띠)이 마지막 판을 덮지 않게 */
+    padding-bottom: calc(120px + env(safe-area-inset-bottom));
   }
 
   .col--device {
@@ -1598,6 +1713,76 @@ textarea {
     width: 100%;
     max-width: 420px;
     margin: 0 auto;
+  }
+
+  /* **한 번에 한 칸만 보인다.** body[data-tab] 이 고른 칸 말고는 전부 접는다 —
+     칸을 한 줄로 쌓으면 4,000px 짜리 문서가 되어 폰에서는 아무것도 못 찾는다 */
+  .tabbar {
+    display: grid;
+  }
+
+  .runbar:not([hidden]) {
+    display: grid;
+  }
+
+  /* 실행 탭에서는 결과 판이 바로 위에 있다. 도는 동안만 띠를 두고, 끝나면 겹말이라 감춘다 */
+  body[data-tab="run"] .runbar:not(.running) {
+    display: none;
+  }
+
+  [data-pane] {
+    display: none;
+  }
+
+  body[data-tab="device"] [data-pane="device"],
+  body[data-tab="run"] [data-pane="run"],
+  body[data-tab="ai"] [data-pane="ai"],
+  body[data-tab="evidence"] [data-pane="evidence"] {
+    display: grid;
+  }
+
+  body[data-tab="ai"] [data-pane="ai"],
+  body[data-tab="evidence"] [data-pane="evidence"] {
+    display: block;
+  }
+
+  /* 손가락이 누르는 것은 전부 44px 언저리로 — 마우스보다 손가락이 굵다 */
+  .btn,
+  .key,
+  .text-input {
+    height: 40px;
+  }
+
+  .btn-sm {
+    height: 34px;
+  }
+
+  .flow-actions .btn {
+    height: 36px;
+  }
+
+  .pill {
+    height: 32px;
+  }
+
+  /* 증적 줄은 두 줄로 — 이름·메타 위, 받기 단추 아래. 한 줄에 셋을 두면 이름이 잘린다 */
+  .run {
+    grid-template-columns: auto minmax(0, 1fr);
+  }
+
+  .run-links {
+    grid-column: 2;
+    flex-wrap: wrap;
+  }
+
+  .run-name {
+    white-space: normal;
+  }
+
+  /* 대화 칸은 화면 높이를 따라간다 — 입력칸이 늘 손 닿는 자리에 있게 */
+  .chat {
+    min-height: 240px;
+    max-height: calc(100dvh - 380px);
   }
 }
 
@@ -1640,26 +1825,151 @@ textarea {
      dvh 가 아니라 svh 인 이유는, 주소창이 접혔다 펴질 때마다 폰이 커졌다 작아지면
      조작 중에 좌표가 흔들리기 때문이다. */
   .phone {
-    max-width: calc((100svh - 230px) * 0.45);
+    /* 머리 두 줄 96 + 판 머리 44 + 도구 줄 셋 150 + 바닥 탭 62 + 여백 — 그 나머지가 폰의
+       높이다. 812px 폰에서 조작 단추·키 줄까지 한 화면에 들어온다 */
+    max-width: calc((100svh - 360px) * 0.45);
+    min-width: 200px;
     margin-inline: auto;
     border-width: 6px;
   }
 
+  /* 폰 탭에서는 설명 두 줄이 자리를 먹는다 — 접힌 규칙 칸에 이미 있으니 감춘다 */
+  .device-panel > .hint {
+    display: none;
+  }
+
+  /* 머리는 한 줄로 — 이름과 핀 셋. 설명은 넓은 화면의 것이다 */
+  .brand p {
+    display: none;
+  }
+
+  .brand-mark {
+    width: 30px;
+    height: 30px;
+    border-radius: 9px;
+  }
+
+  .brand-mark::before {
+    top: 6px;
+    left: 10px;
+    width: 10px;
+    height: 17px;
+  }
+
+  .brand-mark::after {
+    bottom: 8px;
+    left: 14px;
+  }
+
+  .top-status {
+    gap: 6px;
+  }
+
+  .pill {
+    height: 28px;
+    padding: 0 10px;
+    font-size: 11.5px;
+  }
+
+  /* 로그인 칩이 오른쪽 아래로 내려가는데(widget.js), 그 자리엔 이제 탭 줄이 있다.
+     커스텀 속성은 섀도 DOM 안으로 상속되므로 이 한 줄로 칩이 탭 위로 뜬다 */
+  html {
+    --demo-sso-bottom: calc(60px + env(safe-area-inset-bottom));
+  }
+
+  /* 비교 표는 폰에서 카드다 — 다섯 칸을 옆으로 굴리면 막대가 뜻을 잃는다.
+     시나리오 이름 아래 방식 셋이 줄줄이 서고, 각 줄이 라벨(data-label) · 숫자 · 막대다 */
+  .table-wrap {
+    overflow: visible;
+  }
+
+  .timings,
+  .timings tbody,
+  .timings tfoot,
+  .timings tr,
+  .timings td {
+    display: block;
+  }
+
+  .timings thead {
+    display: none;
+  }
+
+  .timings tr {
+    padding: 10px 0 6px;
+    border-bottom: 1px solid var(--line-soft);
+  }
+
+  .timings tfoot tr {
+    border-top: 1px solid var(--line);
+    border-bottom: 0;
+  }
+
+  .timings td {
+    padding: 2px 0;
+    border-bottom: 0;
+  }
+
+  .timings td.name {
+    min-width: 0;
+    margin-bottom: 4px;
+    font-size: 13px;
+  }
+
+  .timings td.cell {
+    display: grid;
+    grid-template-columns: 84px minmax(0, 1fr);
+    gap: 10px;
+    align-items: center;
+    min-width: 0;
+  }
+
+  .timings td.cell::before {
+    color: var(--muted);
+    font-size: 11.5px;
+    font-weight: 700;
+    content: attr(data-label);
+  }
+
+  .tcell {
+    grid-template-columns: 56px minmax(0, 1fr);
+    align-items: center;
+    gap: 8px;
+  }
+
+  .timings .verdict {
+    padding-top: 4px;
+    white-space: normal;
+  }
+
+  .timings .verdict::before {
+    margin-right: 6px;
+    content: attr(data-label);
+  }
+
+  .timings .empty td {
+    padding: 16px 0;
+    text-align: left;
+  }
+
+  /* 폰에서는 이름만 있는 세그먼트다. 설명 세 줄씩을 셋 나란히 두면 열두 줄이 되고
+     "Maestro CLI" 가 두 줄로 접힌다. 설명은 title 로 남는다 */
   .engines {
     gap: 4px;
   }
 
   .engine {
-    padding: 8px 9px;
+    padding: 10px 6px;
+    justify-items: center;
   }
 
   .engine-name {
     font-size: 12.5px;
+    white-space: nowrap;
   }
 
   .engine-why {
-    font-size: 10.5px;
-    line-height: 1.35;
+    display: none;
   }
 
   .flow {
