@@ -30,6 +30,11 @@ const state = {
   serial: '',
   /** OpenRouter 키가 있나. 없으면 대화 판만 꺼진다 */
   llm: true,
+  /**
+   * 지금 그리고 있는 실행 하나. run-start 에서 비우고 run-step 이 채운다.
+   * 화면의 "실행 결과" 판(단계 목록·진행 막대·걸린 시간)이 전부 이걸 본다.
+   */
+  run: null,
 }
 
 // ── 문구 ──────────────────────────────────────────────────────────────────
@@ -39,47 +44,93 @@ async function loadCopy() {
   const res = await fetch(`${BASE}/copy.json`, { cache: 'no-cache' })
   state.copy = await res.json()
   const c = state.copy.ui
+  const text = (id, value) => {
+    const el = $(id)
+    if (el && value != null) el.textContent = value
+  }
   document.title = c.title
-  $('title').textContent = c.title
-  $('subtitle').textContent = c.subtitle
-  $('device-title').textContent = c.deviceTitle
-  $('device-hint').textContent = `${c.deviceHint} ${c.keyboardHint}`
-  $('claim').textContent = c.claimButton
-  $('release').textContent = c.releaseButton
-  $('restart-app').textContent = c.restartApp
-  $('scenario-title').textContent = c.scenarioTitle
-  $('scenario-hint').textContent = c.scenarioHint
-  $('stop').textContent = c.stopButton
-  $('log-title').textContent = c.logTitle
-  $('log').dataset.empty = c.logEmpty
-  $('chat-title').textContent = c.chatTitle
-  $('chat-hint').textContent = c.chatHint
-  $('chat-input').placeholder = c.chatPlaceholder
-  $('chat-send').textContent = c.chatSend
-  $('chat-reset').textContent = c.chatReset
-  $('timing-title').textContent = c.timingTitle
-  $('timing-hint').textContent = c.timingHint
-  $('editor-title').textContent = c.editorTitle
-  $('editor-hint').textContent = c.editorHint
-  $('load-label').textContent = c.loadLabel
-  $('commands-label').textContent = c.commandsLabel
-  $('commands-hint').textContent = c.commandsHint
-  $('elements-label').textContent = c.elementsLabel
-  $('elements-hint').textContent = c.elementsHint
-  $('elements-refresh').textContent = c.elementsRefresh
-  $('yaml-label').textContent = c.yamlLabel
-  $('yaml').placeholder = c.yamlPlaceholder
-  $('editor-run').textContent = c.runLabel
-  $('editor-clear').textContent = c.clearLabel
-  $('saved-note').textContent = c.savedNote
-  $('diagnose-title').textContent = c.diagnoseTitle
-  $('one-device-note').textContent = c.oneDeviceNote
-  $('public-note').textContent = c.publicNote
+  text('title', c.title)
+  text('tagline', c.tagline)
+  text('gallery-link', c.galleryLink)
+  $('device-pill').lastElementChild.textContent = c.deviceChecking
+
+  // 기기
+  text('device-eyebrow', c.deviceEyebrow)
+  text('device-title', c.deviceTitle)
+  text('device-hint', `${c.deviceHint} ${c.claimHint}`)
+  text('claim', c.claimButton)
+  text('release', c.releaseButton)
+  text('restart-app', c.restartApp)
+  text('type-send', c.typeSend)
+  $('type-input').placeholder = c.typePlaceholder
+  text('rules-title', c.rulesTitle)
+  text('one-device-note', c.oneDeviceNote)
+  text('public-note', c.publicNote)
   $('phone-off').firstElementChild.textContent = c.deviceOffline
-  document.querySelectorAll('.btn-key').forEach((b) => {
-    const map = { back: c.backKey, home: c.homeKey, recent: c.recentKey }
-    if (map[b.dataset.key]) b.textContent = map[b.dataset.key]
+  const keys = { back: c.backKey, home: c.homeKey, recent: c.recentKey, enter: c.enterKey, del: c.delKey }
+  document.querySelectorAll('.key').forEach((b) => {
+    if (keys[b.dataset.key]) b.textContent = keys[b.dataset.key]
   })
+
+  // 실행
+  text('run-eyebrow', c.runEyebrow)
+  text('scenario-title', c.scenarioTitle)
+  text('scenario-hint', c.scenarioHint)
+  document.querySelector('.engines').setAttribute('aria-label', c.engineLabel)
+  for (const el of document.querySelectorAll('.engine')) {
+    const e = c.engines?.[el.dataset.engine]
+    if (!e) continue
+    el.querySelector('.engine-name').textContent = e.name
+    el.querySelector('.engine-why').textContent = e.why
+  }
+  text('stop', c.stopButton)
+  text('record-label', c.recordLabel)
+  text('record-note', c.recordNote)
+  $('record-switch').title = c.recordNote
+
+  // 결과
+  text('result-eyebrow', c.resultEyebrow)
+  text('result-empty', c.resultEmpty)
+  text('log-title', c.logTitle)
+  $('log').dataset.empty = c.logEmpty
+  text('diagnose-title', c.diagnoseTitle)
+
+  // 비교
+  text('compare-eyebrow', c.compareEyebrow)
+  text('timing-title', c.timingTitle)
+  text('timing-hint', c.timingHint)
+  text('th-scenario', c.scenarioTitle)
+  text('th-fastest', c.fastestLabel)
+
+  // AI
+  text('chat-eyebrow', c.chatEyebrow)
+  text('chat-title', c.chatTitle)
+  text('chat-hint', c.chatHint)
+  $('chat-input').placeholder = c.chatPlaceholder
+  text('chat-send', c.chatSend)
+  text('chat-reset', c.chatReset)
+
+  // 증적
+  text('evidence-eyebrow', c.evidenceEyebrow)
+  text('evidence-title', c.evidenceTitle)
+  text('evidence-hint', c.evidenceHint)
+
+  // 편집기
+  text('editor-eyebrow', c.editorEyebrow)
+  text('editor-title', c.editorTitle)
+  text('editor-summary', c.editorSummary)
+  text('editor-hint', c.editorHint)
+  text('load-label', c.loadLabel)
+  text('commands-label', c.commandsLabel)
+  text('commands-hint', c.commandsHint)
+  text('elements-label', c.elementsLabel)
+  text('elements-hint', c.elementsHint)
+  text('elements-refresh', c.elementsRefresh)
+  text('yaml-label', c.yamlLabel)
+  $('yaml').placeholder = c.yamlPlaceholder
+  text('editor-run', c.runLabel)
+  text('editor-clear', c.clearLabel)
+  text('saved-note', c.savedNote)
 }
 
 // ── 설정·시나리오 ─────────────────────────────────────────────────────────
@@ -100,12 +151,12 @@ async function loadConfig() {
   renderLoadOptions()
   renderCommands()
   resetEditor()
-  // Appium 서버가 아직 안 떴으면 그 갈래만 고르지 못하게 한다 — 눌러 놓고 "왜 안 되지"
+  // Appium 서버가 아직 안 떴으면 그 방식만 고르지 못하게 한다 — 눌러 놓고 "왜 안 되지"
   // 하는 것보다 낫다. 기동에 30초쯤 걸리므로 화면을 열자마자면 이 상태일 수 있다
   const appiumRadio = document.querySelector('input[name="engine"][value="appium"]')
   if (appiumRadio && cfg.appium === false) {
     appiumRadio.disabled = true
-    appiumRadio.closest('.engine').title = 'Appium 서버가 아직 준비 중이에요'
+    appiumRadio.closest('.engine').title = state.copy.ui.appiumNotReady
     appiumRadio.closest('.engine').classList.add('engine--off')
     // **Appium 이 기본으로 골라져 있다.** 그 칸을 잠그기만 하면 아무것도 안 골라진 상태가
     // 되고, 실행을 누르는 순간 engine() 이 null 을 읽어 화면이 통째로 멈춘다
@@ -150,7 +201,7 @@ function renderDevices() {
 
   for (const d of state.devices) {
     const b = document.createElement('button')
-    b.className = 'btn btn-key device'
+    b.className = 'btn btn-sm device'
     b.textContent = `${d.kind === 'emulator' ? '에뮬레이터' : d.model || d.serial}`
     b.title = `${d.serial} · ${d.state}`
     if (d.serial === state.serial) b.classList.add('device--on')
@@ -183,12 +234,13 @@ async function loadRuns() {
 }
 
 function renderRuns(runs) {
+  const c = state.copy.ui
   const ul = $('runs')
   ul.replaceChildren()
   if (runs.length === 0) {
     const li = document.createElement('li')
     li.className = 'elements-note'
-    li.textContent = '아직 남은 증적이 없어요. 시나리오를 한 번 돌려보세요.'
+    li.textContent = c.evidenceEmpty
     ul.append(li)
     return
   }
@@ -199,7 +251,7 @@ function renderRuns(runs) {
 
     const mark = document.createElement('span')
     mark.className = `run-mark ${run.passed ? 'run-mark--ok' : 'run-mark--fail'}`
-    mark.textContent = run.passed ? '통과' : '실패'
+    mark.title = run.passed ? c.statusPassed : c.statusFailed
 
     const copy = document.createElement('div')
     copy.className = 'run-copy'
@@ -208,18 +260,22 @@ function renderRuns(runs) {
     name.textContent = run.flowName
     const meta = document.createElement('div')
     meta.className = 'run-meta'
-    meta.textContent = `${engineLabel(run.engine)} · ${sec(run.ms)} · 단계 ${run.steps} · ${when(run.at)}`
+    meta.textContent = `${engineLabel(run.engine)} · ${sec(run.ms)} · ${c.evidenceSteps} ${run.steps} · ${when(run.at)}`
     copy.append(name, meta)
 
-    li.append(mark, copy, link(run.runId, 'evidence.xlsx', '엑셀'), link(run.runId, 'log.txt', '로그'))
-    if (run.hasVideo) li.append(link(run.runId, 'screen.mp4', '녹화'))
+    const links = document.createElement('div')
+    links.className = 'run-links'
+    links.append(link(run.runId, 'evidence.xlsx', c.evidenceXlsx), link(run.runId, 'log.txt', c.evidenceLog))
+    if (run.hasVideo) links.append(link(run.runId, 'screen.mp4', c.evidenceVideo))
+
+    li.append(mark, copy, links)
     ul.append(li)
   }
 }
 
 function link(runId, file, label) {
   const a = document.createElement('a')
-  a.className = 'btn btn-key'
+  a.className = 'btn btn-sm'
   a.href = `${BASE}/api/runs/${runId}/${file}`
   a.textContent = label
   a.download = ''
@@ -232,50 +288,91 @@ function when(at) {
   return `${pad(d.getMonth() + 1)}/${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}`
 }
 
+// ── 시나리오 목록 ─────────────────────────────────────────────────────────
+
+/** 앱·웹이 섞인 시나리오. 파일 이름이 밝힌다 (flows/07-hybrid-*, 08-hybrid-*) */
+const isHybrid = (flow) => /hybrid/.test(flow.id)
+
 function renderFlows() {
-  const ul = $('flows')
-  ul.replaceChildren()
+  const c = state.copy.ui
+  const ol = $('flows')
+  ol.replaceChildren()
   for (const flow of state.flows) {
     const li = document.createElement('li')
     li.className = 'flow'
     li.dataset.flowId = flow.id
+
+    const num = document.createElement('span')
+    num.className = 'flow-num'
 
     const copy = document.createElement('div')
     copy.className = 'flow-copy'
     const name = document.createElement('div')
     name.className = 'flow-name'
     name.textContent = flow.name
+    const tag = document.createElement('span')
+    tag.className = `tag ${isHybrid(flow) ? 'tag--hybrid' : 'tag--native'}`
+    tag.textContent = isHybrid(flow) ? c.hybridTag : c.nativeTag
+    name.append(tag)
     const desc = document.createElement('div')
     desc.className = 'flow-desc'
     desc.textContent = flow.desc
-    copy.append(name, desc)
+    const last = document.createElement('div')
+    last.className = 'flow-last'
+    copy.append(name, desc, last)
 
+    const actions = document.createElement('div')
+    actions.className = 'flow-actions'
     const runBtn = document.createElement('button')
     runBtn.className = 'btn btn-primary'
-    runBtn.textContent = state.copy.ui.runButton
+    runBtn.textContent = c.runButton
     runBtn.onclick = () => post('/api/run', { flowId: flow.id, engine: engine(), record: recording() })
 
-    // 두 갈래를 잇달아 돌려 시간을 견준다. 이 데모의 핵심 단추다
+    // 세 방식을 잇달아 돌려 시간을 견준다. 이 데모의 핵심 단추다
     const cmpBtn = document.createElement('button')
     cmpBtn.className = 'btn'
-    cmpBtn.textContent = '견주기'
-    cmpBtn.title = '같은 시나리오를 adb → Maestro 순서로 돌려 시간을 잽니다'
+    cmpBtn.textContent = c.compareButton
+    cmpBtn.title = c.compareTooltip
     cmpBtn.onclick = () => post('/api/compare', { flowId: flow.id })
+    actions.append(runBtn, cmpBtn)
 
-    li.append(copy, runBtn, cmpBtn)
-    ul.append(li)
+    li.append(num, copy, actions)
+    ol.append(li)
   }
+  renderFlowLast()
   syncRunning()
 }
+
+/**
+ * 시나리오 줄마다 **지금 고른 방식으로 마지막에 통과한 시간**을 한 줄 적는다.
+ * 방식을 바꾸면 그 줄이 같이 바뀐다 — 고른 것이 무엇인지 목록에서도 보이게.
+ */
+function renderFlowLast() {
+  const e = engine()
+  for (const li of document.querySelectorAll('.flow')) {
+    const hit = [...state.timings].reverse().find((t) => t.flowId === li.dataset.flowId && t.engine === e && t.passed)
+    li.querySelector('.flow-last').textContent = hit ? `${engineLabel(e)} · ${sec(hit.ms)}` : ''
+  }
+}
+
+document.querySelectorAll('input[name="engine"]').forEach((r) => {
+  r.addEventListener('change', renderFlowLast)
+})
+
+// ── 세 방식 비교 표 ────────────────────────────────────────────────────────
 
 /** 표의 열 순서. 서버의 ENGINES 와 뜻은 같지만 여기는 **보여 주는 순서**다 */
 const COLUMNS = ['appium', 'maestro', 'adb']
 
 function renderTimings() {
+  const c = state.copy.ui
   const body = $('timings-body')
+  const foot = $('timings-foot')
   body.replaceChildren()
+  foot.replaceChildren()
+  foot.hidden = true
 
-  // 시나리오별로 **갈래마다 마지막 성공**만 남긴다. 표가 견주는 표이지 기록장이 아니다
+  // 시나리오별로 **방식마다 마지막 성공**만 남긴다. 표가 견주는 표이지 기록장이 아니다
   const byFlow = new Map()
   for (const t of state.timings) {
     if (!t.passed) continue
@@ -290,43 +387,99 @@ function renderTimings() {
     tr.className = 'empty'
     const td = document.createElement('td')
     td.colSpan = COLUMNS.length + 2
-    td.textContent = '아직 잰 게 없어요. [견주기] 를 눌러보세요.'
+    td.textContent = c.timingEmpty
     tr.append(td)
     body.append(tr)
     return
   }
 
+  const totals = { appium: 0, maestro: 0, adb: 0 }
+  const counts = { appium: 0, maestro: 0, adb: 0 }
+
   for (const row of byFlow.values()) {
     const tr = document.createElement('tr')
     const known = COLUMNS.filter((e) => row[e] != null)
     const fastest = known.length > 1 ? known.reduce((a, b) => (row[a] <= row[b] ? a : b)) : null
+    const slowest = known.length > 0 ? known.reduce((a, b) => (row[a] >= row[b] ? a : b)) : null
+    const max = slowest ? row[slowest] : 1
 
     const name = document.createElement('td')
+    name.className = 'name'
     name.textContent = row.name
     tr.append(name)
 
     for (const e of COLUMNS) {
       const td = document.createElement('td')
-      td.textContent = row[e] == null ? '—' : sec(row[e])
-      // 빠른 쪽에 표시를 준다 — 숫자만 나란히 두면 어느 쪽이 이겼는지 매번 세어야 한다
-      if (e === fastest) td.className = 'win'
+      td.className = 'cell'
+      // 숫자 밑에 막대 — 같은 줄 안에서 상대 길이다. 숫자만 나란히 두면 어느 쪽이
+      // 얼마나 이겼는지 매번 세어야 한다
+      td.append(timingCell(row[e], max, e === fastest))
       tr.append(td)
+      if (row[e] != null) {
+        totals[e] += row[e]
+        counts[e] += 1
+      }
     }
 
     const verdict = document.createElement('td')
-    verdict.textContent = fastest ? diff(row, fastest, known) : '—'
+    verdict.className = 'verdict'
+    if (fastest) {
+      const b = document.createElement('b')
+      b.textContent = engineLabel(fastest)
+      verdict.append(b, ` · ${(row[slowest] / Math.max(1, row[fastest])).toFixed(1)}${c.timesLabel}`)
+    } else {
+      verdict.textContent = '—'
+    }
     tr.append(verdict)
     body.append(tr)
   }
+
+  // 두 줄 이상이면 합계를 단다. **세 방식 모두 잰 시나리오만** 더한다 — 한쪽만 잰
+  // 시나리오를 섞으면 합계가 견주기가 아니라 잰 횟수가 된다
+  const complete = [...byFlow.values()].filter((r) => COLUMNS.every((e) => r[e] != null))
+  if (complete.length >= 2) {
+    const sum = { appium: 0, maestro: 0, adb: 0 }
+    for (const r of complete) for (const e of COLUMNS) sum[e] += r[e]
+    const fastest = COLUMNS.reduce((a, b) => (sum[a] <= sum[b] ? a : b))
+    const slowest = COLUMNS.reduce((a, b) => (sum[a] >= sum[b] ? a : b))
+    const tr = document.createElement('tr')
+    const name = document.createElement('td')
+    name.className = 'name'
+    name.textContent = `${c.totalLabel} · ${complete.length}`
+    tr.append(name)
+    for (const e of COLUMNS) {
+      const td = document.createElement('td')
+      td.className = 'cell'
+      td.append(timingCell(sum[e], sum[slowest], e === fastest))
+      tr.append(td)
+    }
+    const verdict = document.createElement('td')
+    verdict.className = 'verdict'
+    const b = document.createElement('b')
+    b.textContent = engineLabel(fastest)
+    verdict.append(b, ` · ${(sum[slowest] / Math.max(1, sum[fastest])).toFixed(1)}${c.timesLabel}`)
+    tr.append(verdict)
+    foot.append(tr)
+    foot.hidden = false
+  }
+}
+
+function timingCell(ms, max, win) {
+  const wrap = document.createElement('div')
+  wrap.className = `tcell${win ? ' win' : ''}${ms == null ? ' none' : ''}`
+  const t = document.createElement('span')
+  t.className = 't'
+  t.textContent = ms == null ? '—' : sec(ms)
+  const bar = document.createElement('span')
+  bar.className = 'bar'
+  const fill = document.createElement('i')
+  fill.style.setProperty('--w', ms == null ? '0%' : `${Math.max(4, Math.round((ms / Math.max(1, max)) * 100))}%`)
+  bar.append(fill)
+  wrap.append(t, bar)
+  return wrap
 }
 
 const sec = (ms) => `${(ms / 1000).toFixed(1)}초`
-
-function diff(row, fastest, known) {
-  const slowest = known.reduce((a, b) => (row[a] >= row[b] ? a : b))
-  const times = row[slowest] / Math.max(1, row[fastest])
-  return `${engineLabel(fastest)} · ${times.toFixed(1)}배`
-}
 
 // ── 웹소켓 ────────────────────────────────────────────────────────────────
 
@@ -408,6 +561,7 @@ function handle(msg) {
     case 'run-start':
       state.running = true
       state.lastEngine = msg.engine
+      beginRun(msg)
       $('log').replaceChildren()
       $('log-engine').textContent = `${msg.name} · ${engineLabel(msg.engine)}`
       $('diagnose-panel').hidden = true
@@ -419,16 +573,16 @@ function handle(msg) {
       appendLog(msg.line, msg.level)
       break
     case 'run-step':
-      appendLog(`${msg.index + 1}/${msg.total} ${msg.label} · ${msg.ms}ms`, 'step')
+      addStep(msg)
+      appendLog(`${msg.index + 1}/${msg.total} ${msg.label} · ${msg.ms}ms`, msg.ok ? 'step' : 'err')
       break
-    case 'run-end':
+    case 'run-end': {
       state.running = false
-      setStatus(msg.passed ? 'passed' : 'failed')
+      const kind = msg.passed ? 'passed' : msg.canceled ? 'canceled' : 'failed'
+      endRun(msg, kind)
+      setStatus(kind)
       markFlow(msg.flowId, msg.passed ? 'passed' : 'failed')
-      appendLog(
-        `${msg.passed ? '통과' : msg.canceled ? '중지' : '실패'} · ${engineLabel(msg.engine)} · ${sec(msg.ms)}`,
-        msg.passed ? 'ok' : 'err',
-      )
+      appendLog(`${statusText(kind)} · ${engineLabel(msg.engine)} · ${sec(msg.ms)}`, msg.passed ? 'ok' : 'err')
       state.timings.push({
         flowId: msg.flowId,
         name: msg.name,
@@ -437,19 +591,21 @@ function handle(msg) {
         passed: msg.passed,
       })
       renderTimings()
+      renderFlowLast()
       syncRunning()
       if (!msg.passed && !msg.canceled) void diagnose()
       break
+    }
     case 'compare':
       appendLog(
-        `견주기 — ${msg.results
-          .map((r) => `${engineLabel(r.engine)} ${r.ms ? sec(r.ms) : '실패'}`)
+        `${state.copy.ui.compareButton} — ${msg.results
+          .map((r) => `${engineLabel(r.engine)} ${r.ms ? sec(r.ms) : state.copy.ui.statusFailed}`)
           .join(' · ')}`,
         'ok',
       )
       break
     case 'evidence':
-      appendLog(`증적을 남겼어요 — 엑셀${msg.artifact.hasVideo ? '·녹화' : ''}`, 'ok')
+      appendLog(`${state.copy.ui.evidenceEyebrow} — ${state.copy.ui.evidenceXlsx}${msg.artifact.hasVideo ? `·${state.copy.ui.evidenceVideo}` : ''}`, 'ok')
       void loadRuns()
       break
     case 'ping':
@@ -457,8 +613,111 @@ function handle(msg) {
   }
 }
 
-const ENGINE_LABELS = { maestro: 'Maestro CLI', appium: 'Appium', adb: 'adb 직접' }
-const engineLabel = (e) => ENGINE_LABELS[e] ?? e
+const engineLabel = (e) => state.copy?.ui.engines?.[e]?.name ?? e
+
+function statusText(kind) {
+  const c = state.copy.ui
+  return { running: c.statusRunning, passed: c.statusPassed, failed: c.statusFailed, canceled: c.statusCanceled, idle: c.statusIdle }[kind] ?? c.statusIdle
+}
+
+// ── 실행 결과 — 단계 목록·진행 막대·걸린 시간 ─────────────────────────────
+// run-start 가 판을 비우고, run-step 이 한 줄씩 채우고, run-end 가 매듭짓는다.
+// 걸린 시간은 서버 시각이 아니라 **여기서 센다** — 시계가 어긋난 브라우저에서 음수가
+// 뜨는 것보다 0.1초 틀리는 편이 낫고, 마지막 값은 어차피 서버가 준 ms 로 덮는다.
+
+let elapsedTimer = null
+
+function beginRun(msg) {
+  state.run = { name: msg.name, engine: msg.engine, total: msg.steps, steps: [], startedAt: Date.now(), done: false }
+  $('result-title').textContent = msg.name
+  $('result-engine').textContent = engineLabel(msg.engine)
+  $('result-empty').hidden = true
+  $('steps').replaceChildren()
+  const bar = $('progress')
+  bar.hidden = false
+  bar.className = `progress${msg.steps ? '' : ' indeterminate'}`
+  bar.firstElementChild.style.width = '0%'
+  addRunningStep()
+  clearInterval(elapsedTimer)
+  elapsedTimer = setInterval(() => {
+    if (state.run && !state.run.done) $('result-elapsed').textContent = sec(Date.now() - state.run.startedAt)
+  }, 100)
+  $('result-elapsed').textContent = sec(0)
+}
+
+/** 다음 단계가 도는 동안 맨 아래에 서 있는 줄. 단계가 오면 그 줄이 그 단계가 된다 */
+function addRunningStep() {
+  const c = state.copy.ui
+  const li = document.createElement('li')
+  li.className = 'step step--run'
+  li.dataset.pending = '1'
+  const mark = document.createElement('span')
+  mark.className = 'step-mark'
+  const label = document.createElement('span')
+  label.className = 'step-label'
+  label.textContent = c.stepRunning
+  const ms = document.createElement('span')
+  ms.className = 'step-ms'
+  li.append(mark, label, ms)
+  const list = $('steps')
+  list.append(li)
+  // 목록 안에서만 구른다. 페이지를 끌어내리면 [실행] 을 누른 자리가 화면에서 사라진다
+  list.scrollTop = list.scrollHeight
+}
+
+function addStep(msg) {
+  if (!state.run) return
+  state.run.steps.push(msg)
+  const list = $('steps')
+  const li = list.querySelector('[data-pending]') ?? document.createElement('li')
+  delete li.dataset.pending
+  li.className = `step ${msg.ok ? 'step--ok' : 'step--fail'}`
+  li.replaceChildren()
+  const mark = document.createElement('span')
+  mark.className = 'step-mark'
+  mark.textContent = msg.ok ? '✓' : '✕'
+  const label = document.createElement('span')
+  label.className = 'step-label'
+  const idx = document.createElement('b')
+  idx.textContent = String(msg.index + 1).padStart(2, '0')
+  label.append(idx, msg.label)
+  label.title = msg.label
+  const ms = document.createElement('span')
+  ms.className = 'step-ms'
+  ms.textContent = `${msg.ms}ms`
+  li.append(mark, label, ms)
+  if (!li.isConnected) list.append(li)
+
+  const total = msg.total || state.run.total
+  if (total) {
+    $('progress').className = 'progress'
+    $('progress').firstElementChild.style.width = `${Math.round(((msg.index + 1) / total) * 100)}%`
+  }
+  // 아직 남았고 이 단계가 통과했으면 다음 줄을 세운다
+  if (msg.ok && (!total || msg.index + 1 < total)) addRunningStep()
+  else list.scrollTop = list.scrollHeight
+}
+
+function endRun(msg, kind) {
+  clearInterval(elapsedTimer)
+  if (!state.run) return
+  state.run.done = true
+  $('result-elapsed').textContent = sec(msg.ms)
+  // 도는 중이던 줄이 남아 있으면(중지·Maestro 실패처럼 단계 이벤트 없이 끝난 판) 그 줄을 결과로 바꾼다
+  const pending = $('steps').querySelector('[data-pending]')
+  if (pending) {
+    if (kind === 'passed') pending.remove()
+    else {
+      delete pending.dataset.pending
+      pending.className = `step ${kind === 'failed' ? 'step--fail' : ''}`
+      pending.querySelector('.step-mark').textContent = kind === 'failed' ? '✕' : '–'
+      pending.querySelector('.step-label').textContent = statusText(kind)
+    }
+  }
+  const bar = $('progress')
+  bar.className = `progress ${kind === 'passed' ? 'passed' : kind === 'failed' ? 'failed' : ''}`
+  bar.firstElementChild.style.width = kind === 'passed' ? '100%' : bar.firstElementChild.style.width || '100%'
+}
 
 // ── 상태 그리기 ───────────────────────────────────────────────────────────
 
@@ -476,23 +735,28 @@ function applySize(size) {
 }
 
 function setDevice(online) {
+  const c = state.copy.ui
   state.deviceOnline = online
   $('phone').classList.toggle('live', online)
   const pill = $('device-pill')
-  pill.textContent = online ? '기기 켜짐' : '기기 준비 중'
-  pill.className = `pill ${online ? 'on' : 'off'}`
+  pill.lastElementChild.textContent = online ? c.deviceOn : c.deviceBooting
+  pill.className = `pill pill--dot ${online ? 'on' : 'off'}`
 }
 
 function setViewers(n) {
-  $('viewers').textContent = `보는 사람 ${n}`
+  $('viewers').textContent = `${state.copy.ui.viewersLabel} ${n}`
 }
 
+/** 머리의 실행 핀과 결과 판의 상태 표시를 같이 바꾼다. 둘이 다른 말을 하면 안 된다 */
 function setStatus(kind) {
-  const c = state.copy.ui
-  const el = $('run-status')
-  const text = { running: c.statusRunning, passed: c.statusPassed, failed: c.statusFailed, idle: c.statusIdle }
-  el.textContent = text[kind] ?? c.statusIdle
-  el.className = `status ${kind === 'idle' ? '' : kind}`
+  const text = statusText(kind)
+  const cls = kind === 'idle' ? '' : kind
+  const el = $('result-status')
+  el.textContent = text
+  el.className = `status ${cls}`
+  const pill = $('run-status')
+  pill.textContent = text
+  pill.className = `pill pill--status ${cls}`
 }
 
 function markFlow(flowId, kind) {
@@ -537,25 +801,27 @@ function syncControl() {
     lock.hidden = true
   }
 
+  $('phone').classList.toggle('mine', mine())
   $('claim').hidden = mine()
   $('release').hidden = !mine()
   $('claim').disabled = runnerBusy
-  document.querySelectorAll('.btn-key').forEach((b) => (b.disabled = !mine()))
+  document.querySelectorAll('.key').forEach((b) => (b.disabled = !mine()))
   $('type-send').disabled = !mine()
   $('type-input').disabled = !mine()
 }
 
 function syncRunning() {
   $('stop').disabled = !state.running
-  document.querySelectorAll('.flow .btn').forEach((b) => (b.disabled = state.running))
+  document.querySelectorAll('.flow-actions .btn').forEach((b) => (b.disabled = state.running))
   $('editor-run').disabled = state.running
-  if (!state.running && $('run-status').textContent === state.copy.ui.statusRunning) setStatus('idle')
+  if (!state.running && $('run-status').classList.contains('running')) setStatus('idle')
 }
 
 function appendLog(line, level) {
   const el = $('log')
   const span = document.createElement('span')
-  if (level && level !== 'info') span.className = level
+  // 단계 목록의 .step 과 이름이 겹치지 않게 lv- 를 붙인다 — 겹치면 로그 줄이 단계 칸처럼 그려진다
+  if (level && level !== 'info') span.className = `lv-${level}`
   span.textContent = `${line}\n`
   el.append(span)
   // 로그가 길어지면 앞에서 버린다. 브라우저를 며칠 열어 두는 사람이 있다
@@ -640,7 +906,7 @@ $('release').onclick = () => send({ t: 'release' })
 $('stop').onclick = () => post('/api/stop', {})
 $('restart-app').onclick = () => post('/api/app/restart', {})
 
-document.querySelectorAll('.btn-key').forEach((b) => {
+document.querySelectorAll('.key').forEach((b) => {
   b.onclick = () => send({ t: 'key', name: b.dataset.key })
 })
 
@@ -664,12 +930,12 @@ async function post(path, body) {
     body: JSON.stringify(body),
   })
   const data = await res.json().catch(() => ({}))
-  if (!res.ok) flash(data.error ?? `실패 (${res.status})`)
+  if (!res.ok) flash(data.error ?? `${state.copy.ui.statusFailed} (${res.status})`)
   return data
 }
 
 // ── 시나리오 편집기 ──────────────────────────────────────────────────────
-// 말로 만들거나 · 명령 단추로 쌓거나 · 화면 요소를 집어 오거나 — 셋 다 아래 yaml
+// 불러오거나 · 명령 단추로 쌓거나 · 화면 요소를 집어 오거나 — 셋 다 아래 yaml
 // 한 칸으로 모인다. 파일로 저장하지는 않는다(공개 데모라 아무나 쌓을 수 있다).
 
 /** 명령 단추. 값은 커서 자리에 그대로 끼워지는 yaml 조각이다 */
@@ -704,7 +970,7 @@ function renderCommands() {
   box.replaceChildren()
   for (const [label, snippet] of COMMANDS) {
     const b = document.createElement('button')
-    b.className = 'btn btn-key'
+    b.className = 'btn btn-sm'
     b.textContent = label
     b.title = snippet
     b.onclick = () => insertLine(snippet)
@@ -751,8 +1017,9 @@ function insertLine(snippet) {
 }
 
 async function loadElements() {
+  const c = state.copy.ui
   const list = $('elements')
-  list.replaceChildren(li(state.copy.ui.elementsLoading))
+  list.replaceChildren(li(c.elementsLoading))
   const res = await fetch(`${BASE}/api/screen/elements`, { cache: 'no-store' })
   const data = await res.json().catch(() => ({ texts: [], ids: [] }))
   list.replaceChildren()
@@ -761,7 +1028,7 @@ async function loadElements() {
     ...(data.ids ?? []).map((v) => ({ kind: 'id', value: v })),
   ]
   if (rows.length === 0) {
-    list.append(li(state.copy.ui.elementsEmpty))
+    list.append(li(c.elementsEmpty))
     return
   }
   for (const row of rows) {
@@ -769,15 +1036,15 @@ async function loadElements() {
     const code = document.createElement('code')
     code.textContent = row.kind === 'id' ? `id: ${row.value}` : row.value
     const tap = document.createElement('button')
-    tap.className = 'btn btn-key'
-    tap.textContent = '탭'
+    tap.className = 'btn btn-sm'
+    tap.textContent = c.elementsTap
     tap.onclick = () =>
       insertLine(row.kind === 'id' ? `- tapOn:\n    id: "${row.value}"` : `- tapOn: "${row.value}"`)
     el.append(code, tap)
     if (row.kind === 'text') {
       const check = document.createElement('button')
-      check.className = 'btn btn-key'
-      check.textContent = '확인'
+      check.className = 'btn btn-sm'
+      check.textContent = c.elementsCheck
       check.onclick = () => insertLine(`- assertVisible: "${row.value}"`)
       el.append(check)
     }
@@ -800,7 +1067,7 @@ $('editor-run').onclick = () => {
     flash(state.copy.ui.invalidYaml)
     return
   }
-  post('/api/run-adhoc', { name: '편집기 시나리오', yaml, engine: engine(), record: recording() })
+  post('/api/run-adhoc', { name: state.copy.ui.editorTitle, yaml, engine: engine(), record: recording() })
 }
 
 // ── AI 와 시나리오 짜기 ──────────────────────────────────────────────────
@@ -858,7 +1125,7 @@ function flowCard(yaml) {
   row.className = 'row'
 
   const run = document.createElement('button')
-  run.className = 'btn btn-primary btn-key'
+  run.className = 'btn btn-primary btn-sm'
   run.textContent = c.chatRun
   run.onclick = () => {
     // 돌린 것을 편집기에도 넣어 둔다. 실패했을 때 사람이 손대는 자리가 거기다
@@ -867,7 +1134,7 @@ function flowCard(yaml) {
   }
 
   const open = document.createElement('button')
-  open.className = 'btn btn-key'
+  open.className = 'btn btn-sm'
   open.textContent = c.chatOpenEditor
   open.onclick = () => {
     $('yaml').value = yaml
@@ -891,7 +1158,7 @@ function renderChoices() {
   if (chat.busy || !last || last.role !== 'assistant') return
   for (const label of last.choices ?? []) {
     const b = document.createElement('button')
-    b.className = 'btn btn-key choice'
+    b.className = 'btn btn-sm choice'
     b.textContent = label
     b.onclick = () => void sendChat(label)
     box.append(b)
@@ -953,23 +1220,29 @@ $('chat-reset').onclick = greet
 // ── 실패 원인 ─────────────────────────────────────────────────────────────
 
 async function diagnose() {
+  const c = state.copy.ui
   const panel = $('diagnose-panel')
   panel.hidden = false
-  $('diagnose-state').textContent = state.copy.ui.diagnoseThinking
+  $('diagnose-state').textContent = c.diagnoseThinking
   $('diagnose').textContent = ''
   const data = await post('/api/ai/diagnose', {})
   $('diagnose-state').textContent = ''
   if (!data.ok) {
-    $('diagnose').textContent = data.error ?? '원인을 보지 못했어요'
+    $('diagnose').textContent = data.error ?? c.diagnoseError
     return
   }
-  // **모델이 준 글을 HTML 로 해석하지 않는다.** `**굵게**` 만 우리가 바꿔 준다
+  // **모델이 준 글을 HTML 로 해석하지 않는다.** `**굵게**` 와 `` `코드` `` 둘만 우리가 바꿔 준다 —
+  // 원인 요약에는 명령 이름(inputText·tapOn)이 자주 섞이는데, 본문과 같은 글꼴이면 안 읽힌다
   const frag = document.createDocumentFragment()
-  for (const chunk of data.text.split(/(\*\*[^*]+\*\*)/)) {
-    if (chunk.startsWith('**') && chunk.endsWith('**')) {
+  for (const chunk of data.text.split(/(\*\*[^*]+\*\*|`[^`\n]+`)/)) {
+    if (chunk.startsWith('**') && chunk.endsWith('**') && chunk.length > 4) {
       const b = document.createElement('strong')
       b.textContent = chunk.slice(2, -2)
       frag.append(b)
+    } else if (chunk.startsWith('`') && chunk.endsWith('`') && chunk.length > 2) {
+      const code = document.createElement('code')
+      code.textContent = chunk.slice(1, -1)
+      frag.append(code)
     } else {
       frag.append(document.createTextNode(chunk))
     }

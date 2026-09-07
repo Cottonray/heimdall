@@ -15,7 +15,7 @@
 // 그러면 실패가 앱 탓인지 겹친 탓인지 구분할 수 없는 로그만 남는다.
 
 import { spawn, type ChildProcess } from 'node:child_process'
-import { mkdtemp, writeFile, rm } from 'node:fs/promises'
+import { mkdtemp, readFile, writeFile, rm } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import path from 'node:path'
 import * as appium from './appium.ts'
@@ -107,6 +107,24 @@ export type Timing = {
     at: number
 }
 const history: Timing[] = []
+
+/**
+ * 걸린 시간은 **파일로도 남긴다** (2026-09-07). 메모리에만 두면 컨테이너를 갈아끼울 때마다
+ * 비교 표가 통째로 비고, 그 표가 이 데모의 요점이라 배포 직후 열어 본 사람은 빈 화면을 본다.
+ * 증적과 같은 볼륨(runs)에 한 파일로 둔다 — recorder.list() 는 run.json 이 없는 항목을
+ * 건너뛰므로 이 파일이 증적 목록에 섞이지 않고, prune 도 runId 만 지운다.
+ */
+const TIMINGS_FILE = path.join(process.env.AIQA_RUNS_DIR ?? '/opt/aiqa/runs', 'timings.json')
+void readFile(TIMINGS_FILE, 'utf8')
+    .then((raw) => {
+        const saved = JSON.parse(raw) as Timing[]
+        if (Array.isArray(saved)) history.unshift(...saved.slice(-200))
+    })
+    .catch(() => {})
+function saveTimings() {
+    writeFile(TIMINGS_FILE, JSON.stringify(history)).catch(() => {})
+}
+
 export function timings() {
     // 시나리오 여덟 × 갈래 셋이면 한 바퀴가 24건이다. 40 으로 잘라 두면 한 바퀴를
     // 다 돌린 직후에도 맨 앞 몇 건이 이미 잘려 나가 표에 빈칸이 생긴다
@@ -246,6 +264,7 @@ async function begin(
         current = null
         history.push({ flowId: flow.id, name: flow.name, engine, ms, passed: lastPassed, canceled, at: startedAt })
         if (history.length > 200) history.splice(0, history.length - 200)
+        saveTimings()
         listener({
             type: 'run-end',
             runId,
