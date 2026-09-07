@@ -96,9 +96,7 @@ textarea {
   flex-wrap: wrap;
   width: min(var(--shell), calc(100% - 40px));
   margin: 0 auto;
-  /* 오른쪽 여백은 통합 로그인 칩 자리다 (fixed · 오른쪽 위, 펼치면 130px 남짓).
-     좁게 잡으면 "데모 갤러리" 핀이 칩 밑에 깔린다 — 실제로 그렇게 보였다 */
-  padding: 16px 150px 14px 0;
+  padding: 16px 0 14px;
 }
 
 .brand {
@@ -1667,8 +1665,7 @@ textarea {
 /* 실행 띠 — 탭 줄 바로 위. 통째로 단추라 어디를 눌러도 결과로 간다 */
 .runbar {
   position: fixed;
-  /* 오른쪽은 로그인 칩 자리다 — 칩이 탭 줄 위로 올라와 이 줄과 같은 높이에 선다 */
-  right: 66px;
+  right: 10px;
   bottom: calc(62px + env(safe-area-inset-bottom));
   left: 10px;
   z-index: 41;
@@ -1863,7 +1860,6 @@ textarea {
    데모 사이트는 폰에서 안내 한 장만 내주지만(edge 의 PC 전용 게이트), 데스크톱 모드로
    연 폰이나 아주 좁은 창은 여기로 온다. 폰 화면은 줄이지 않고 둘레를 줄인다. */
 @media (max-width: 620px) {
-  /* 좁은 화면에서는 칩이 오른쪽 아래로 내려간다(widget.js) — 위 여백이 필요 없다 */
   .top {
     width: calc(100% - 28px);
     gap: 8px;
@@ -1881,8 +1877,6 @@ textarea {
   .work {
     width: calc(100% - 28px);
     gap: 12px;
-    /* 로그인 칩이 오른쪽 아래에 떠 있다(/sso/widget.js) — 마지막 판을 덮지 않게 비운다 */
-    padding-bottom: 56px;
   }
 
   .col {
@@ -1942,12 +1936,6 @@ textarea {
     height: 28px;
     padding: 0 10px;
     font-size: 11.5px;
-  }
-
-  /* 로그인 칩이 오른쪽 아래로 내려가는데(widget.js), 그 자리엔 이제 탭 줄이 있다.
-     커스텀 속성은 섀도 DOM 안으로 상속되므로 이 한 줄로 칩이 탭 위로 뜬다 */
-  html {
-    --demo-sso-bottom: calc(60px + env(safe-area-inset-bottom));
   }
 
   /* 비교 표는 폰에서 카드다 — 다섯 칸을 옆으로 굴리면 막대가 뜻을 잃는다.
