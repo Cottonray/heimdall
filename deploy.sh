@@ -27,6 +27,12 @@ build=false
 
 say() { printf '\n\033[1m▶ %s\033[0m\n' "$*"; }
 
+# --- 배포 전 확인 -------------------------------------------------------------
+# deploy.sh 는 git 이 아니라 **이 워크트리를** 그대로 복사한다. main 보다 뒤처진 채 배포하면
+# 남의 작업이 배포판에서 지워진다 (2026-09-07 에 nl2sql 에서 두 번 났다).
+source "$here/../lib/preflight.sh"
+require_main_merged "$here"
+
 # --- 보낼 것 모으기 ----------------------------------------------------------
 payload=$(mktemp -d)
 trap 'rm -rf "$payload"' EXIT
