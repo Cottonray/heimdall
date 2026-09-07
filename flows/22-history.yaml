@@ -1,0 +1,20 @@
+# 판매·구매 내역과 받은 후기 — 나의 골목 숫자를 눌러 내역이 열리고 후기가 보이는지 확인해요.
+appId: com.aidemo.golmok
+---
+- launchApp:
+    clearState: true
+- tapOn:
+    id: "tab_4"
+- tapOn:
+    id: "stat_sales"
+- assertVisible: "라탄 수납 바구니"
+- assertVisible: "거래완료"
+- back
+- tapOn:
+    id: "stat_purchases"
+- assertVisible: "여행 에세이 세 권"
+- assertVisible: "책장넘기는날"
+- back
+- tapOn:
+    id: "menu_4"
+- assertVisible: "시간 약속을 잘 지켜서 편하게 거래했어요."

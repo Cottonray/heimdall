@@ -1,0 +1,24 @@
+# 등록 빈칸 안내 — 사진을 더하고, 제목·가격을 비우면 안내가 뜨고, 나눔으로 채우면 올라가는지 확인해요.
+appId: com.aidemo.golmok
+---
+- launchApp:
+    clearState: true
+- tapOn:
+    id: "sell_fab"
+- tapOn:
+    id: "sell_photo"
+- assertVisible: "사진 1장"
+- tapOn:
+    id: "sell_submit"
+- assertVisible: "물건 이름을 입력해 주세요."
+- tapOn:
+    id: "sell_title"
+- inputText: "캠핑 랜턴"
+- tapOn:
+    id: "sell_submit"
+- assertVisible: "가격을 입력해 주세요."
+- tapOn:
+    id: "sell_free"
+- tapOn:
+    id: "sell_submit"
+- assertVisible: "캠핑 랜턴"

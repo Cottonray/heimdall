@@ -17,6 +17,8 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -47,7 +49,7 @@ fun TopBar(title: String, onBack: () -> Unit, trailing: @Composable () -> Unit =
             verticalAlignment = Alignment.CenterVertically,
         ) {
             IconButton(onClick = onBack, modifier = Modifier.testTag("back")) {
-                Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "뒤로")
+                Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = Copy.misc.back)
             }
             Text(
                 text = title,
@@ -88,9 +90,12 @@ fun Thumb(seed: String, size: Int, corner: Int = 8, fillWidth: Boolean = false) 
     }
 }
 
-/** 목록 한 줄 — 홈·검색 결과가 같은 모양을 쓴다 */
+/**
+ * 목록 한 줄 — 홈·검색 결과·관심목록·판매자 화면이 같은 모양을 쓴다.
+ * [distance] 를 주면 동네 옆에 거리가 붙는다 (홈의 "가까운 순").
+ */
 @Composable
-fun ItemRow(item: Copy.Item, onClick: () -> Unit) {
+fun ItemRow(item: Copy.Item, distance: String? = null, onClick: () -> Unit) {
     Column(modifier = Modifier.fillMaxWidth().clickable(onClick = onClick).testTag("item_${item.id}")) {
         Row(modifier = Modifier.padding(16.dp)) {
             Thumb(item.title, size = 96)
@@ -98,7 +103,8 @@ fun ItemRow(item: Copy.Item, onClick: () -> Unit) {
             Column(modifier = Modifier.weight(1f)) {
                 Text(item.title, style = MaterialTheme.typography.bodyLarge, maxLines = 2, overflow = TextOverflow.Ellipsis)
                 Spacer(Modifier.height(2.dp))
-                Text("${item.town} · ${item.ago}", style = MaterialTheme.typography.labelSmall, color = Sub)
+                val meta = listOfNotNull(item.town, item.ago, distance).joinToString(" · ")
+                Text(meta, style = MaterialTheme.typography.labelSmall, color = Sub)
                 Spacer(Modifier.height(6.dp))
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     if (item.badge.isNotEmpty()) {
@@ -113,8 +119,8 @@ fun ItemRow(item: Copy.Item, onClick: () -> Unit) {
                 }
                 Spacer(Modifier.height(6.dp))
                 Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                    if (item.chatCount > 0) Text("채팅 ${item.chatCount}", style = MaterialTheme.typography.labelSmall, color = Sub)
-                    if (item.likes > 0) Text("관심 ${item.likes}", style = MaterialTheme.typography.labelSmall, color = Sub)
+                    if (item.chatCount > 0) Text(Copy.misc.chatCount.fill("n" to item.chatCount), style = MaterialTheme.typography.labelSmall, color = Sub)
+                    if (item.likes > 0) Text(Copy.misc.likeCount.fill("n" to item.likes), style = MaterialTheme.typography.labelSmall, color = Sub)
                 }
             }
         }
@@ -124,10 +130,11 @@ fun ItemRow(item: Copy.Item, onClick: () -> Unit) {
 
 /** 예약중·거래완료 같은 작은 딱지 */
 @Composable
-fun Badge(text: String) {
-    val done = text.contains("완료")
+fun Badge(text: String, modifier: Modifier = Modifier) {
+    // 거래완료만 회색이다. 딱지 이름은 copy.json 의 badges 가 정한다
+    val done = text == Copy.badges.done
     Box(
-        modifier = Modifier
+        modifier = modifier
             .clip(RoundedCornerShape(4.dp))
             .background(if (done) Color(0xFFEDEDED) else BrandDim)
             .padding(horizontal = 6.dp, vertical = 2.dp),
@@ -141,7 +148,7 @@ fun Badge(text: String) {
     }
 }
 
-/** 눌러서 고르는 칩 한 개 */
+/** 눌러서 고르는 칩 한 개. `id: chip_<글자>` 로 집힌다 */
 @Composable
 fun Chip(text: String, selected: Boolean, onClick: () -> Unit) {
     Box(
@@ -154,6 +161,30 @@ fun Chip(text: String, selected: Boolean, onClick: () -> Unit) {
             .testTag("chip_$text"),
     ) {
         Text(text, style = MaterialTheme.typography.bodyMedium, color = if (selected) Color.White else Ink)
+    }
+}
+
+/** 칩을 한 줄에 여럿. 화면보다 길면 다음 줄로 넘긴다 — 잘린 칩은 시나리오가 못 누른다 */
+@Composable
+fun ChipRow(labels: List<String>, isSelected: (String) -> Boolean, onPick: (String) -> Unit) {
+    val rows = mutableListOf<MutableList<String>>(mutableListOf())
+    var width = 0
+    labels.forEach { label ->
+        // 글자 수로 어림한다. 정확할 필요는 없고 한 줄에 과하게 몰리지만 않으면 된다
+        val w = label.length * 14 + 28
+        if (width + w > 330 && rows.last().isNotEmpty()) {
+            rows.add(mutableListOf())
+            width = 0
+        }
+        rows.last().add(label)
+        width += w + 8
+    }
+    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        rows.forEach { row ->
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                row.forEach { label -> Chip(label, isSelected(label)) { onPick(label) } }
+            }
+        }
     }
 }
 
@@ -188,8 +219,60 @@ fun TempBar(temp: String, label: String) {
 
 /** 목록이 비었을 때 */
 @Composable
-fun EmptyNote(text: String, modifier: Modifier = Modifier) {
+fun EmptyNote(text: String, modifier: Modifier = Modifier, tag: String = "empty_note") {
     Box(modifier = modifier.fillMaxSize().padding(32.dp), contentAlignment = Alignment.Center) {
-        Text(text, color = Sub, style = MaterialTheme.typography.bodyLarge)
+        Text(text, color = Sub, style = MaterialTheme.typography.bodyLarge, modifier = Modifier.testTag(tag))
     }
+}
+
+/** 구역 제목 한 줄 */
+@Composable
+fun SectionTitle(text: String, modifier: Modifier = Modifier) {
+    Text(
+        text,
+        style = MaterialTheme.typography.titleMedium,
+        modifier = modifier.padding(horizontal = 16.dp, vertical = 8.dp),
+    )
+}
+
+/** 빈칸 안내처럼 화면에 남아야 하는 오류 한 줄. 스낵바는 사라지지만 이건 남는다 */
+@Composable
+fun ErrorLine(text: String?, tag: String) {
+    if (text == null) return
+    Text(
+        text,
+        color = Brand,
+        style = MaterialTheme.typography.bodyMedium,
+        modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp).testTag(tag),
+    )
+}
+
+/** 주황 바탕의 주 단추. 화면마다 같은 모양이어야 한다 */
+@Composable
+fun PrimaryButton(text: String, tag: String, modifier: Modifier = Modifier, enabled: Boolean = true, onClick: () -> Unit) {
+    Button(
+        onClick = onClick,
+        enabled = enabled,
+        colors = ButtonDefaults.buttonColors(containerColor = Brand),
+        modifier = modifier.testTag(tag),
+    ) { Text(text, fontWeight = FontWeight.Bold) }
+}
+
+/** 닉네임 · 글 · 시각 — 댓글·후기·거래 후기가 같은 모양을 쓴다 */
+@Composable
+fun NoteRow(nick: String, text: String, ago: String?, tag: String) {
+    Column(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 10.dp).testTag(tag)) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Thumb(nick, size = 28, corner = 14)
+            Spacer(Modifier.width(8.dp))
+            Text(nick, style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.SemiBold)
+            if (ago != null) {
+                Spacer(Modifier.width(6.dp))
+                Text(ago, style = MaterialTheme.typography.labelSmall, color = Sub)
+            }
+        }
+        Spacer(Modifier.height(4.dp))
+        Text(text, style = MaterialTheme.typography.bodyMedium)
+    }
+    HorizontalDivider(color = Line)
 }

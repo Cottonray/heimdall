@@ -1,0 +1,14 @@
+# 판매자 정보 — 상세에서 판매자를 누르면 판매자 화면과 그 사람의 물건이 보이는지 확인해요.
+appId: com.aidemo.golmok
+---
+- launchApp:
+    clearState: true
+- tapOn: "원목 접이식 테이블"
+- tapOn:
+    id: "seller"
+- assertVisible: "판매자 정보"
+- assertVisible: "모퉁이햇살"
+- assertVisible: "판매 중인 물건"
+- assertVisible: "원목 접이식 테이블"
+- tapOn: "원목 접이식 테이블"
+- assertVisible: ".*골목온도.*"

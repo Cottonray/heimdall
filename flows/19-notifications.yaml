@@ -1,0 +1,15 @@
+# 알림 — 종을 눌러 알림 목록을 열고 모두 읽음이 되는지 확인해요.
+appId: com.aidemo.golmok
+---
+- launchApp:
+    clearState: true
+- tapOn:
+    id: "bell"
+- assertVisible: "새 채팅이 왔어요"
+- assertVisible: "새 알림"
+- tapOn:
+    id: "notice_read_all"
+- assertNotVisible: "새 알림"
+- back
+- assertNotVisible:
+    id: "bell_count"

@@ -1,0 +1,22 @@
+# 동네생활 글쓰기 — 말머리를 고르고 글을 올리면 목록 맨 위에 보이는지 확인해요.
+appId: com.aidemo.golmok
+---
+- launchApp:
+    clearState: true
+- tapOn:
+    id: "tab_1"
+- tapOn:
+    id: "post_write"
+- assertVisible: "동네생활 글쓰기"
+- tapOn:
+    id: "chip_동네소식"
+- tapOn:
+    id: "post_title"
+- inputText: "주말 아침 한강 산책 같이 가요"
+- tapOn:
+    id: "post_body_input"
+- inputText: "토요일 여덟 시에 망원 나들목에서 만나요"
+- tapOn:
+    id: "post_submit"
+- assertVisible: "주말 아침 한강 산책 같이 가요"
+- assertVisible: "댓글 0 · 공감 0"

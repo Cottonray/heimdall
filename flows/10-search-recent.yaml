@@ -1,0 +1,17 @@
+# 최근 검색어 — 최근 검색어를 눌러 검색하고, 지우기가 되는지 확인해요.
+appId: com.aidemo.golmok
+---
+- launchApp:
+    clearState: true
+- tapOn:
+    id: "search_open"
+- assertVisible: "최근 검색어"
+- tapOn: "테이블"
+- assertVisible: "1개의 물건"
+- assertVisible: "원목 접이식 테이블"
+- tapOn:
+    id: "search_clear"
+- assertVisible: "최근 검색어"
+- tapOn:
+    id: "search_recent_clear"
+- assertNotVisible: "최근 검색어"

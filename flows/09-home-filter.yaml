@@ -1,0 +1,14 @@
+# 홈 필터 칩 — 나눔만 남기고, 가까운 순으로 정렬해 거리가 붙는지 확인해요.
+appId: com.aidemo.golmok
+---
+- launchApp:
+    clearState: true
+- tapOn:
+    id: "chip_나눔"
+- assertVisible: "몬스테라 화분 나눔"
+- assertNotVisible: "원목 접이식 테이블"
+- tapOn:
+    id: "chip_가까운 순"
+- assertVisible: "원목 접이식 테이블"
+# 가까운 순에서는 동네 옆에 거리가 붙는다 — "망원동 · 12분 전 · 500m" 처럼 한 덩어리다
+- assertVisible: "망원동 · 12분 전 · .*m"

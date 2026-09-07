@@ -1,0 +1,12 @@
+# 게시글 신고 — 사유를 골라 신고하면 신고됨 딱지가 남는지 확인해요.
+appId: com.aidemo.golmok
+---
+- launchApp:
+    clearState: true
+- tapOn: "원목 접이식 테이블"
+- tapOn:
+    id: "report"
+- assertVisible: "거래 금지 물품"
+- tapOn: "거래 금지 물품"
+- tapOn: "신고하기"
+- assertVisible: "신고됨"

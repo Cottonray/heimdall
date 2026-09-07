@@ -1,0 +1,20 @@
+# 동네 인증과 알림 설정 — 인증하면 배지가 붙고, 알림 스위치가 켜짐·꺼짐으로 보이는지 확인해요.
+appId: com.aidemo.golmok
+---
+- launchApp:
+    clearState: true
+- tapOn:
+    id: "tab_4"
+- tapOn:
+    id: "menu_1"
+- tapOn:
+    id: "verify_button"
+- assertVisible: "망원동 인증을 마쳤어요."
+- back
+- assertVisible: "인증됨"
+- tapOn:
+    id: "menu_2"
+- assertVisible: "꺼짐"
+- tapOn:
+    id: "notify_switch_2"
+- assertNotVisible: "꺼짐"

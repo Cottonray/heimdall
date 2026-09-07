@@ -1,0 +1,20 @@
+# 댓글과 공감 — 동네생활 글을 열어 공감하고 댓글을 달면 숫자가 바뀌는지 확인해요.
+appId: com.aidemo.golmok
+---
+- launchApp:
+    clearState: true
+- tapOn:
+    id: "tab_1"
+- tapOn: "자전거 바람 넣을 곳 있나요?"
+- assertVisible: "댓글 2"
+- tapOn:
+    id: "post_like"
+- assertVisible: "공감했어요"
+- assertVisible: "댓글 2 · 공감 4"
+- tapOn:
+    id: "comment_input"
+- inputText: "주유소 옆에도 하나 있어요"
+- tapOn:
+    id: "comment_send"
+- assertVisible: "주유소 옆에도 하나 있어요"
+- assertVisible: "댓글 3"

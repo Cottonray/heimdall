@@ -1,0 +1,17 @@
+# 관심 담기 — 상품 상세에서 관심을 누르면 숫자가 오르고 나의 골목 관심목록에 남는지 확인해요.
+appId: com.aidemo.golmok
+---
+- launchApp:
+    clearState: true
+- tapOn: "원목 접이식 테이블"
+- assertVisible: "관심 12 · 채팅 4"
+- tapOn:
+    id: "like"
+- assertVisible: "관심 13 · 채팅 4"
+- back
+- tapOn:
+    id: "tab_4"
+- tapOn:
+    id: "stat_likes"
+- assertVisible: "관심목록"
+- assertVisible: "원목 접이식 테이블"

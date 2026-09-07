@@ -1,0 +1,14 @@
+# 동네 바꾸기 — 홈에서 동네를 고르면 홈 제목과 나의 골목이 함께 바뀌는지 확인해요.
+appId: com.aidemo.golmok
+---
+- launchApp:
+    clearState: true
+- tapOn:
+    id: "town_select"
+- assertVisible: "동네 고르기"
+- tapOn: "연남동"
+- assertVisible: "연남동"
+- assertNotVisible: "망원동"
+- tapOn:
+    id: "tab_4"
+- assertVisible: "연남동"
