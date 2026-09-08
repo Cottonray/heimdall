@@ -2,16 +2,15 @@
 <html lang="ko">
   <head>
     <meta charset="UTF-8" />
-    <!-- 폰에서는 앱처럼 — 확대가 안 되고(iOS 는 이 메타를 무시하므로 CSS touch-action 과
-         gesturestart 막기가 같이 간다), 폭·높이가 기기 화면에 고정된다 (app.css §앱 껍데기) -->
+    <!-- 확대를 허용하고 모바일에서는 본문만 스크롤한다. -->
     <meta
       name="viewport"
-      content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover"
+      content="width=device-width, initial-scale=1, viewport-fit=cover"
     />
     <meta name="theme-color" content="#f2efe5" />
     <meta
       name="description"
-      content="브라우저에서 안드로이드 앱을 직접 조작하고, 같은 시나리오를 Appium·Maestro CLI·adb 세 방식으로 돌려 견주는 QA 데모예요."
+      content="확인하고 싶은 동작을 말하면 AI가 테스트 시나리오를 직접 작성해요. 실제 안드로이드 기기에서 실행하고 결과를 확인해요."
     />
     <link
       rel="icon"
@@ -20,7 +19,10 @@
     <title>AI QA</title>
     <link rel="stylesheet" href="app.css" />
   </head>
-  <body>
+  <body data-tab="ai">
+    <a class="skip-link" href="#chat-input" id="skip-link"
+      >AI 요청 입력으로 이동</a
+    >
     <!-- ── 머리 — 이름 한 줄과 상태 셋(기기·보는 사람·실행) ───────────────────── -->
     <header class="top">
       <div class="brand">
@@ -31,247 +33,301 @@
         </div>
       </div>
       <div class="top-status">
-        <span class="pill pill--dot" id="device-pill"><i></i><span>기기 확인 중</span></span>
+        <span class="pill pill--dot" id="device-pill"
+          ><i></i><span>기기 확인 중</span></span
+        >
         <span class="pill" id="viewers">보는 사람 —</span>
         <span class="pill pill--status" id="run-status">대기</span>
         <a class="pill pill-link" id="gallery-link" href="/">데모 갤러리</a>
       </div>
     </header>
+    <p class="feedback" id="feedback" role="alert" hidden></p>
 
-    <!-- ── 작업대 — 기기 | 실행·결과·비교 | AI·증적 ──────────────────────────── -->
-    <main class="work">
-      <!-- 왼쪽: 기기. 넓은 화면에서는 붙어 있어서(sticky) 오른쪽을 내려도 폰이 보인다 -->
-      <aside class="col col--device" data-pane="device">
-        <section class="panel device-panel">
-          <div class="panel-head">
-            <div class="head-copy">
-              <span class="eyebrow" id="device-eyebrow">기기</span>
-              <h2 id="device-title">안드로이드 에뮬레이터</h2>
-            </div>
-            <span class="badge" id="control-badge">보기 전용</span>
-          </div>
-
-          <!-- 붙어 있는 기기. 에뮬레이터 하나뿐이면 통째로 숨는다 -->
-          <div class="chips devices" id="devices" hidden></div>
-
-          <!-- 그림이 둘이다. <img> 는 JPEG 길(대체), <canvas> 는 H.264 길(기본) — 영상이
-               풀리기 시작하면 canvas 가 위에 덮인다. 좌표 환산은 둘 다 같은 상자라 img 를 본다 -->
-          <div class="phone" id="phone">
-            <img id="screen" alt="에뮬레이터 화면" draggable="false" />
-            <canvas id="video" aria-hidden="true"></canvas>
-            <div class="phone-off" id="phone-off"><span></span></div>
-            <div class="phone-lock" id="phone-lock" hidden><span></span></div>
-          </div>
-
-          <p class="hint" id="device-hint"></p>
-
-          <!-- [조작] 단추는 없다 (2026-09-07 사용자 지시) — 화면을 누르면 그 손이 바로 잡는다.
-               [반납] 만 남는다: 다 썼으면 다음 사람에게 넘기는 단추 -->
-          <div class="toolbar">
-            <button class="btn btn-primary" id="restart-app">앱 재시작</button>
-            <button class="btn" id="release" hidden>반납</button>
-          </div>
-
-          <div class="keys" role="group" aria-label="하드웨어 키">
-            <button class="key" data-key="back">뒤로</button>
-            <button class="key" data-key="home">홈</button>
-            <button class="key" data-key="recent">최근 앱</button>
-            <button class="key" data-key="enter">엔터</button>
-            <button class="key" data-key="del">지우기</button>
-          </div>
-
-          <div class="row">
-            <input id="type-input" class="text-input" type="text" autocomplete="off" />
-            <button class="btn" id="type-send">입력</button>
-          </div>
-
-          <!-- 규칙 두 줄. 한 번 읽으면 되는 것이라 좁은 화면에서는 접어 둔다 -->
-          <details class="fold fold-inline" data-narrow-fold open>
-            <summary id="rules-title">쓰는 규칙</summary>
-            <p class="note" id="one-device-note"></p>
-            <p class="note" id="public-note"></p>
-          </details>
-        </section>
-      </aside>
-
-      <!-- 가운데: 이 데모가 보여 주려는 것 — 세 방식으로 돌리고 나란히 견준다 -->
-      <section class="col col--main" data-pane="run">
-        <section class="panel">
-          <div class="panel-head">
-            <div class="head-copy">
-              <span class="eyebrow" id="run-eyebrow">테스트 실행</span>
-              <h2 id="scenario-title">시나리오</h2>
-            </div>
-            <span class="hint-inline" id="scenario-hint"></span>
-          </div>
-
-          <!-- 세 방식. **Appium 이 기본이다** (2026-09-05 사용자 지시). 셋 중 실측이 제일
-               빠르고(여덟 시나리오 60.5초 · Maestro 147.2 · adb 91.4) 업계에서 제일 많이
-               쓰는 드라이버라, 처음 열어 본 사람이 만나는 값으로 이쪽이 맞다.
-               이름·설명은 copy.json 의 engines 에서 온다. -->
-          <div class="engines" role="radiogroup" aria-label="실행 방식">
-            <label class="engine" data-engine="appium">
-              <input type="radio" name="engine" value="appium" checked />
-              <span class="engine-name">Appium</span>
-              <span class="engine-why"></span>
-            </label>
-            <label class="engine" data-engine="maestro">
-              <input type="radio" name="engine" value="maestro" />
-              <span class="engine-name">Maestro CLI</span>
-              <span class="engine-why"></span>
-            </label>
-            <label class="engine" data-engine="adb">
-              <input type="radio" name="engine" value="adb" />
-              <span class="engine-name">adb 직접</span>
-              <span class="engine-why"></span>
-            </label>
-          </div>
-
-          <ol class="flows" id="flows"></ol>
-
-          <div class="run-foot">
-            <button class="btn" id="stop" disabled>중지</button>
-            <label class="switch" id="record-switch">
-              <input type="checkbox" id="record" />
-              <i></i>
-              <span id="record-label">화면 녹화</span>
-            </label>
-            <p class="note" id="record-note"></p>
-          </div>
-        </section>
-
-        <!-- 실행 결과 — 단계가 하나씩 쌓이고, 끝나면 통과/실패와 걸린 시간이 남는다.
-             실패하면 그 아래에 AI 의 원인 요약이 붙는다. 원본 로그는 접히는 칸이다. -->
-        <section class="panel result-panel" id="result-panel">
-          <div class="panel-head">
-            <div class="head-copy">
-              <span class="eyebrow" id="result-eyebrow">실행 결과</span>
-              <h2 id="result-title">—</h2>
-            </div>
-            <div class="result-meta">
-              <span class="meta" id="result-engine"></span>
-              <span class="meta mono" id="result-elapsed"></span>
-              <span class="status" id="result-status">대기</span>
-            </div>
-          </div>
-
-          <p class="result-empty" id="result-empty"></p>
-
-          <div class="progress" id="progress" hidden><i></i></div>
-          <ol class="steps" id="steps"></ol>
-
-          <div class="diagnose-box" id="diagnose-panel" hidden>
-            <div class="diagnose-head">
-              <span id="diagnose-title">실패 원인 요약</span>
-              <span class="hint-inline" id="diagnose-state"></span>
-            </div>
-            <div class="diagnose" id="diagnose"></div>
-          </div>
-
-          <details class="fold log-fold" id="log-fold" open>
-            <summary>
-              <span id="log-title">실행 로그</span>
-              <span class="hint-inline" id="log-engine"></span>
-            </summary>
-            <pre class="log" id="log"></pre>
-          </details>
-        </section>
-
-        <!-- 세 방식 비교 — 이 데모의 요점이 이 표다. 같은 시나리오를 세 방식으로 돌린
-             걸린 시간이 나란히 서고, 막대가 같은 줄 안에서 상대 길이를 보여 준다. -->
-        <section class="panel">
-          <div class="panel-head">
-            <div class="head-copy">
-              <span class="eyebrow" id="compare-eyebrow">세 방식 비교</span>
-              <h2 id="timing-title">시나리오별 걸린 시간</h2>
-            </div>
-            <span class="hint-inline" id="timing-hint"></span>
-          </div>
-          <div class="table-wrap">
-            <table class="timings" id="timings">
-              <thead>
-                <tr>
-                  <th id="th-scenario">시나리오</th>
-                  <th>Appium</th>
-                  <th>Maestro CLI</th>
-                  <th>adb 직접</th>
-                  <th id="th-fastest">가장 빠른 쪽</th>
-                </tr>
-              </thead>
-              <tbody id="timings-body"></tbody>
-              <tfoot id="timings-foot" hidden></tfoot>
-            </table>
-          </div>
-        </section>
-
-        <!-- 시나리오 편집기 — 불러오거나, 명령 단추로 쌓거나, 화면 요소를 집어 온다.
-             셋이 한 판에 있는 이유는 결과가 전부 아래 yaml 한 칸으로 모이기 때문이다.
-             보조 도구라 접어 두고, AI 판의 [편집기에서 열기] 가 펼친다. -->
-        <details class="panel fold" id="editor-panel">
-          <summary class="panel-head">
-            <div class="head-copy">
-              <span class="eyebrow" id="editor-eyebrow">편집기</span>
-              <h2 id="editor-title">시나리오 편집기</h2>
-            </div>
-            <span class="hint-inline" id="editor-summary"></span>
-          </summary>
-          <p class="hint" id="editor-hint"></p>
-
-          <div class="row">
-            <label class="field-label" for="load-flow" id="load-label">불러오기</label>
-            <select id="load-flow" class="text-input"></select>
-          </div>
-
-          <div class="sub-head"><span id="commands-label">명령 추가</span><small id="commands-hint"></small></div>
-          <div class="chips" id="commands"></div>
-
-          <div class="sub-head">
-            <span id="elements-label">현재 화면 요소</span>
-            <button class="btn btn-sm" id="elements-refresh">새로고침</button>
-          </div>
-          <p class="hint" id="elements-hint"></p>
-          <ul class="elements" id="elements"></ul>
-
-          <div class="sub-head"><span id="yaml-label">YAML</span></div>
-          <textarea id="yaml" class="yaml-edit" spellcheck="false"></textarea>
-
-          <div class="row">
-            <button class="btn btn-primary" id="editor-run">실행</button>
-            <button class="btn" id="editor-clear">비우기</button>
-            <span class="note note--inline" id="saved-note"></span>
-          </div>
-        </details>
-      </section>
-
-      <!-- 오른쪽: AI 와 증적 -->
-      <aside class="col col--side">
-        <!-- AI 와 시나리오 짜기. 이름이 AI QA 인데 AI 가 편집기 맨 아래 입력칸 한 줄이라
-             화면 어디에도 보이지 않았다 (2026-09-06 사용자 지적). 오른쪽 맨 위가 그 자리다.
-             한 방에 만들지 않고 **되묻는 대화**다 — "무엇을 확인할 것인가"는 한 줄 지시에
-             늘 빠져 있다. -->
-        <section class="panel chat-panel" data-pane="ai">
+    <!-- AI 요청이 첫 진입점이다. 기기는 대화 옆에서 실행을 보여 준다. -->
+    <main class="work" id="workspace">
+      <div class="col col--primary">
+        <section
+          class="panel chat-panel"
+          data-pane="ai"
+          aria-labelledby="chat-title"
+        >
           <div class="panel-head">
             <div class="head-copy">
               <span class="eyebrow" id="chat-eyebrow">AI</span>
               <h2 id="chat-title">AI 시나리오 설계</h2>
             </div>
-            <span class="hint-inline" id="chat-state"></span>
+            <span class="badge ai-badge" id="ai-badge">AI 작성</span>
           </div>
           <p class="hint" id="chat-hint"></p>
+          <ol class="journey" aria-label="테스트 진행 순서">
+            <li><b>01</b><span id="journey-request">동작 요청</span></li>
+            <li><b>02</b><span id="journey-design">AI 시나리오 작성</span></li>
+            <li><b>03</b><span id="journey-run">실행·결과 확인</span></li>
+          </ol>
 
-          <div class="chat" id="chat" role="log" aria-live="polite"></div>
+          <p id="chat-state" role="status" class="chat-state"></p>
+          <div
+            class="chat"
+            id="chat"
+            role="log"
+            aria-live="polite"
+            aria-label="AI 시나리오 대화"
+            tabindex="0"
+          ></div>
 
           <!-- AI 가 준 보기. 누르면 그대로 다음 말이 된다 -->
           <div class="chips chat-choices" id="chat-choices"></div>
 
-          <div class="row">
-            <input id="chat-input" class="text-input" type="text" autocomplete="off" />
-            <button class="btn btn-primary" id="chat-send">보내기</button>
-            <button class="btn" id="chat-reset">처음부터</button>
+          <div class="composer">
+            <label for="chat-input" id="chat-input-label"
+              >어떤 동작을 확인할까요?</label
+            >
+            <textarea
+              id="chat-input"
+              class="text-input"
+              rows="3"
+              aria-describedby="chat-input-help"
+            ></textarea>
+            <div class="composer-actions">
+              <span class="hint" id="chat-input-help"
+                >Enter 전송 · Shift+Enter 줄바꿈</span
+              >
+              <button class="btn" id="chat-reset">초기화</button>
+              <button class="btn btn-primary" id="chat-send">전송</button>
+            </div>
           </div>
         </section>
 
-        <!-- 증적 — 실행이 끝날 때마다 한 줄씩 쌓인다 -->
+        <section
+          class="col col--main"
+          data-pane="run"
+          aria-label="테스트 실행과 결과"
+        >
+          <section class="panel result-panel" id="result-panel">
+            <div class="panel-head">
+              <div class="head-copy">
+                <span class="eyebrow" id="result-eyebrow">실행 결과</span>
+                <h2 id="result-title">실행을 기다리고 있어요</h2>
+              </div>
+              <div class="result-meta">
+                <span class="meta" id="result-engine"></span>
+                <span class="meta mono" id="result-elapsed"></span>
+                <span class="status" role="status" id="result-status"
+                  >대기</span
+                >
+              </div>
+            </div>
+
+            <p class="result-empty" id="result-empty"></p>
+
+            <div class="progress" id="progress" hidden><i></i></div>
+            <ol class="steps" id="steps"></ol>
+
+            <div class="diagnose-box" id="diagnose-panel" hidden>
+              <div class="diagnose-head">
+                <span id="diagnose-title">실패 원인 요약</span>
+                <span class="hint-inline" id="diagnose-state"></span>
+              </div>
+              <div class="diagnose" id="diagnose"></div>
+            </div>
+
+            <details class="fold log-fold" id="log-fold">
+              <summary>
+                <span id="log-title">실행 로그</span>
+                <span class="hint-inline" id="log-engine"></span>
+              </summary>
+              <pre class="log" id="log"></pre>
+            </details>
+          </section>
+
+          <section class="panel" id="run-settings">
+            <div class="panel-head">
+              <div class="head-copy">
+                <span class="eyebrow" id="run-eyebrow">테스트 실행</span>
+                <h2 id="scenario-title">시나리오</h2>
+              </div>
+              <span class="hint-inline" id="scenario-hint"></span>
+            </div>
+
+            <!-- 세 방식. **Appium 이 기본이다** (2026-09-05 사용자 지시). 셋 중 실측이 제일
+               빠르고(여덟 시나리오 60.5초 · Maestro 147.2 · adb 91.4) 업계에서 제일 많이
+               쓰는 드라이버라, 처음 열어 본 사람이 만나는 값으로 이쪽이 맞다.
+               이름·설명은 copy.json 의 engines 에서 온다. -->
+            <div class="engines" role="radiogroup" aria-label="실행 방식">
+              <label class="engine" data-engine="appium">
+                <input type="radio" name="engine" value="appium" checked />
+                <span class="engine-name">Appium</span>
+                <span class="engine-why"></span>
+              </label>
+              <label class="engine" data-engine="maestro">
+                <input type="radio" name="engine" value="maestro" />
+                <span class="engine-name">Maestro CLI</span>
+                <span class="engine-why"></span>
+              </label>
+              <label class="engine" data-engine="adb">
+                <input type="radio" name="engine" value="adb" />
+                <span class="engine-name">adb 직접</span>
+                <span class="engine-why"></span>
+              </label>
+            </div>
+
+            <details class="fold library" id="library-panel">
+              <summary>
+                <span id="library-title">준비된 시나리오</span
+                ><span class="badge" id="flow-count"></span>
+              </summary>
+              <p class="hint" id="library-hint"></p>
+              <ol class="flows" id="flows"></ol>
+            </details>
+
+            <div class="run-foot">
+              <button class="btn" id="stop" disabled>중지</button>
+              <label class="switch" id="record-switch">
+                <input type="checkbox" id="record" />
+                <i></i>
+                <span id="record-label">화면 녹화</span>
+              </label>
+              <p class="note" id="record-note"></p>
+            </div>
+          </section>
+
+          <!-- 실행 결과 — 단계가 하나씩 쌓이고, 끝나면 통과/실패와 걸린 시간이 남는다.
+             실패하면 그 아래에 AI 의 원인 요약이 붙는다. 원본 로그는 접히는 칸이다. -->
+          <!-- 세 방식 비교 — 같은 시나리오의 실행 시간을 확인한다. 같은 시나리오를 세 방식으로 돌린
+             걸린 시간이 나란히 서고, 막대가 같은 줄 안에서 상대 길이를 보여 준다. -->
+          <section class="panel">
+            <div class="panel-head">
+              <div class="head-copy">
+                <span class="eyebrow" id="compare-eyebrow">세 방식 비교</span>
+                <h2 id="timing-title">시나리오별 걸린 시간</h2>
+              </div>
+              <span class="hint-inline" id="timing-hint"></span>
+            </div>
+            <div class="table-wrap">
+              <table class="timings" id="timings">
+                <thead>
+                  <tr>
+                    <th id="th-scenario">시나리오</th>
+                    <th>Appium</th>
+                    <th>Maestro CLI</th>
+                    <th>adb 직접</th>
+                    <th id="th-fastest">가장 빠른 쪽</th>
+                  </tr>
+                </thead>
+                <tbody id="timings-body"></tbody>
+                <tfoot id="timings-foot" hidden></tfoot>
+              </table>
+            </div>
+          </section>
+
+          <!-- 시나리오 편집기 — 불러오거나, 명령 단추로 쌓거나, 화면 요소를 집어 온다.
+             셋이 한 판에 있는 이유는 결과가 전부 아래 yaml 한 칸으로 모이기 때문이다.
+             보조 도구라 접어 두고, AI 판의 [편집] 가 펼친다. -->
+          <details class="panel fold" id="editor-panel">
+            <summary class="panel-head">
+              <div class="head-copy">
+                <span class="eyebrow" id="editor-eyebrow">편집기</span>
+                <h2 id="editor-title">시나리오 편집기</h2>
+              </div>
+              <span class="hint-inline" id="editor-summary"></span>
+            </summary>
+            <p class="hint" id="editor-hint"></p>
+
+            <div class="row">
+              <label class="field-label" for="load-flow" id="load-label"
+                >불러오기</label
+              >
+              <select id="load-flow" class="text-input"></select>
+            </div>
+
+            <div class="sub-head">
+              <span id="commands-label">명령 추가</span
+              ><small id="commands-hint"></small>
+            </div>
+            <div class="chips" id="commands"></div>
+
+            <div class="sub-head">
+              <span id="elements-label">현재 화면 요소</span>
+              <button class="btn btn-sm" id="elements-refresh">새로고침</button>
+            </div>
+            <p class="hint" id="elements-hint"></p>
+            <ul class="elements" id="elements"></ul>
+
+            <div class="sub-head">
+              <label for="yaml" id="yaml-label">YAML</label>
+            </div>
+            <textarea id="yaml" class="yaml-edit" spellcheck="false"></textarea>
+
+            <div class="row">
+              <button class="btn btn-primary" id="editor-run">실행</button>
+              <button class="btn" id="editor-clear">비우기</button>
+              <span class="note note--inline" id="saved-note"></span>
+            </div>
+          </details>
+        </section>
+      </div>
+      <div class="col col--secondary">
+        <aside class="col col--device" data-pane="device">
+          <section class="panel device-panel">
+            <div class="panel-head">
+              <div class="head-copy">
+                <span class="eyebrow" id="device-eyebrow">기기</span>
+                <h2 id="device-title">안드로이드 에뮬레이터</h2>
+              </div>
+              <span class="badge" id="control-badge">보기 전용</span>
+            </div>
+
+            <!-- 붙어 있는 기기. 에뮬레이터 하나뿐이면 통째로 숨는다 -->
+            <div class="chips devices" id="devices" hidden></div>
+
+            <!-- 그림이 둘이다. <img> 는 JPEG 길(대체), <canvas> 는 H.264 길(기본) — 영상이
+               풀리기 시작하면 canvas 가 위에 덮인다. 좌표 환산은 둘 다 같은 상자라 img 를 본다 -->
+            <div class="phone" id="phone">
+              <img id="screen" alt="에뮬레이터 화면" draggable="false" />
+              <canvas id="video" aria-hidden="true"></canvas>
+              <div class="phone-off" id="phone-off"><span></span></div>
+              <div class="phone-lock" id="phone-lock" hidden><span></span></div>
+            </div>
+
+            <p class="hint" id="device-hint"></p>
+
+            <!-- [조작] 단추는 없다 (2026-09-07 사용자 지시) — 화면을 누르면 그 손이 바로 잡는다.
+               [반납] 만 남는다: 다 썼으면 다음 사람에게 넘기는 단추 -->
+            <div class="toolbar">
+              <button class="btn btn-primary" id="restart-app">
+                앱 재시작
+              </button>
+              <button class="btn" id="release" hidden>반납</button>
+            </div>
+
+            <div class="keys" role="group" aria-label="하드웨어 키">
+              <button class="key" data-key="back">뒤로</button>
+              <button class="key" data-key="home">홈</button>
+              <button class="key" data-key="recent">최근 앱</button>
+              <button class="key" data-key="enter">엔터</button>
+              <button class="key" data-key="del">지우기</button>
+            </div>
+
+            <div class="row">
+              <input
+                id="type-input"
+                aria-label="기기에 입력할 내용"
+                class="text-input"
+                type="text"
+                autocomplete="off"
+              />
+              <button class="btn" id="type-send">입력</button>
+            </div>
+
+            <!-- 규칙 두 줄. 한 번 읽으면 되는 것이라 좁은 화면에서는 접어 둔다 -->
+            <details class="fold fold-inline" data-narrow-fold open>
+              <summary id="rules-title">쓰는 규칙</summary>
+              <p class="note" id="one-device-note"></p>
+              <p class="note" id="public-note"></p>
+            </details>
+          </section>
+        </aside>
+
         <section class="panel" data-pane="evidence">
           <div class="panel-head">
             <div class="head-copy">
@@ -282,34 +338,44 @@
           <p class="hint" id="evidence-hint"></p>
           <ul class="runs" id="runs"></ul>
         </section>
-      </aside>
+      </div>
     </main>
 
-    <!-- ── 폰 — 바닥 탭과 실행 띠 ──────────────────────────────────────────────
-         960px 아래에서는 세 칸이 한 줄로 쌓여 4,000px 짜리 문서가 된다. 폰에서는 그 대신
-         **한 번에 한 칸만** 보여 주고 바닥 탭으로 오간다 (기기 · 실행 · AI · 증적).
-         실행이 도는 동안은 어느 탭에 있든 바닥 띠에 진행이 보이고, 띠를 누르면 실행 탭이다.
-         넓은 화면에서는 둘 다 없다(CSS 가 감춘다) — 세 칸이 나란히 있으니 오갈 게 없다. -->
+    <!-- 폰에서는 AI 작성 · 기기 · 실행·결과 · 실행 기록 중 한 칸을 보여 준다. -->
     <button class="runbar" id="runbar" type="button" hidden>
       <span class="runbar-dot"></span>
       <span class="runbar-text" id="runbar-text"></span>
       <span class="runbar-time" id="runbar-time"></span>
     </button>
     <nav class="tabbar" id="tabbar" aria-label="화면">
+      <button class="tab" type="button" data-tab="ai">
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M12 3l1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8z" />
+          <path
+            d="M18.5 15.5l.8 2.2 2.2.8-2.2.8-.8 2.2-.8-2.2-2.2-.8 2.2-.8z"
+          />
+        </svg>
+        <span id="tab-ai">AI</span>
+      </button>
       <button class="tab" type="button" data-tab="device">
-        <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="7" y="2.5" width="10" height="19" rx="2.5" /><circle cx="12" cy="18" r="1" fill="currentColor" stroke="none" /></svg>
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <rect x="7" y="2.5" width="10" height="19" rx="2.5" />
+          <circle cx="12" cy="18" r="1" fill="currentColor" stroke="none" />
+        </svg>
         <span id="tab-device">기기</span>
       </button>
       <button class="tab" type="button" data-tab="run">
-        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5.5v13l10-6.5z" /></svg>
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M8 5.5v13l10-6.5z" />
+        </svg>
         <span id="tab-run">실행</span>
       </button>
-      <button class="tab" type="button" data-tab="ai">
-        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8z" /><path d="M18.5 15.5l.8 2.2 2.2.8-2.2.8-.8 2.2-.8-2.2-2.2-.8 2.2-.8z" /></svg>
-        <span id="tab-ai">AI</span>
-      </button>
       <button class="tab" type="button" data-tab="evidence">
-        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3.5 6.5a2 2 0 0 1 2-2h4l2 2h7a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2h-13a2 2 0 0 1-2-2z" /></svg>
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <path
+            d="M3.5 6.5a2 2 0 0 1 2-2h4l2 2h7a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2h-13a2 2 0 0 1-2-2z"
+          />
+        </svg>
         <span id="tab-evidence">증적</span>
       </button>
     </nav>
@@ -317,12 +383,10 @@
     <!-- `<details>` 는 열림 여부를 CSS 로 정할 수 없다(속성이지 스타일이 아니다).
          그래서 폭 판정만 여기서 한 줄로 한다 — 좁은 화면에서만 접는다. -->
     <script>
-      if (matchMedia('(max-width: 620px)').matches) {
-        for (const d of document.querySelectorAll('[data-narrow-fold]')) d.open = false
+      if (matchMedia("(max-width: 620px)").matches) {
+        for (const d of document.querySelectorAll("[data-narrow-fold]"))
+          d.open = false;
       }
-      // iOS 사파리는 viewport 의 user-scalable=no 를 무시한다(접근성). 두 손가락 확대는
-      // 여기서, 더블탭 확대는 CSS touch-action 이 막는다
-      document.addEventListener('gesturestart', (e) => e.preventDefault(), { passive: false })
     </script>
     <script src="app.js"></script>
   </body>

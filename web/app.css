@@ -1,6 +1,4 @@
-/* AI QA — QA 작업대. 기기 | 실행·결과·비교 | AI·증적 세 칸.
-   데모 갤러리와 같은 팔레트를 쓴다 — 같은 사이트의 다음 장으로 읽히게 하려는 것이다
-   (infra/homeserver/edge/gallery/index.html 의 :root 값과 같다). */
+/* AI QA — AI 대화가 먼저, 기기 화면과 결과가 뒤따르는 작업대. */
 :root {
   color-scheme: light;
   --ink: #10120f;
@@ -10,18 +8,19 @@
   --line: rgba(16, 18, 15, 0.14);
   --line-soft: rgba(16, 18, 15, 0.08);
   --muted: #696b64;
-  --muted-2: #8f918a;
+  --muted-2: #63665e;
   --acid: #c7ff4a;
-  --blue: #5164ff;
+  --blue: #394acb;
   --coral: #ff7455;
   --coral-deep: #b8402a;
-  --ok: #1f8a53;
+  --ok: #176c40;
   --term: #14161a;
   --term-ink: #e6e6df;
   --mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
   --radius: 14px;
   --radius-sm: 9px;
-  --shadow: 0 1px 2px rgba(16, 18, 15, 0.04), 0 10px 30px rgba(26, 27, 22, 0.06);
+  --shadow:
+    0 1px 2px rgba(16, 18, 15, 0.04), 0 10px 30px rgba(26, 27, 22, 0.06);
   --shell: 1520px;
 }
 
@@ -29,10 +28,9 @@
   box-sizing: border-box;
 }
 
-/* 확대가 안 된다. iOS 는 viewport 메타의 user-scalable 을 무시하므로 여기서 막는다 —
-   두 손가락 확대는 pan-x pan-y 가, 더블탭 확대는 단추의 manipulation 이 막는다 */
+/* 페이지 확대는 허용한다. 직접 조작하는 기기 화면만 제스처를 처리한다. */
 html {
-  touch-action: pan-x pan-y;
+  touch-action: auto;
   overflow-x: hidden;
 }
 
@@ -57,12 +55,25 @@ body {
   min-width: 320px;
   color: var(--ink);
   background:
-    radial-gradient(circle at 10% 0%, rgba(199, 255, 74, 0.16), transparent 22rem),
-    radial-gradient(circle at 92% 12%, rgba(81, 100, 255, 0.1), transparent 26rem),
+    radial-gradient(
+      circle at 10% 0%,
+      rgba(199, 255, 74, 0.16),
+      transparent 22rem
+    ),
+    radial-gradient(
+      circle at 92% 12%,
+      rgba(81, 100, 255, 0.1),
+      transparent 26rem
+    ),
     var(--paper);
-  font-family: Pretendard, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-  font-size: 13.5px;
-  line-height: 1.5;
+  font-family:
+    Pretendard,
+    -apple-system,
+    BlinkMacSystemFont,
+    "Segoe UI",
+    sans-serif;
+  font-size: 16px;
+  line-height: 1.6;
   -webkit-font-smoothing: antialiased;
 }
 
@@ -236,7 +247,7 @@ textarea {
 
 .work {
   display: grid;
-  grid-template-columns: 332px minmax(0, 1fr) 372px;
+  grid-template-columns: minmax(0, 1fr) 340px;
   gap: 16px;
   width: min(var(--shell), calc(100% - 40px));
   margin: 0 auto;
@@ -542,7 +553,10 @@ textarea {
   font-weight: 600;
   cursor: pointer;
   white-space: nowrap;
-  transition: transform 0.08s ease, background 0.15s ease, border-color 0.15s ease;
+  transition:
+    transform 0.08s ease,
+    background 0.15s ease,
+    border-color 0.15s ease;
 }
 
 .btn:hover:not(:disabled) {
@@ -620,7 +634,9 @@ textarea {
   padding: 9px 11px;
   border-radius: 9px;
   cursor: pointer;
-  transition: background 0.15s ease, box-shadow 0.15s ease;
+  transition:
+    background 0.15s ease,
+    box-shadow 0.15s ease;
 }
 
 .engine:hover {
@@ -696,7 +712,9 @@ textarea {
   border: 1px solid var(--line-soft);
   border-radius: 11px;
   background: #fff;
-  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+  transition:
+    border-color 0.15s ease,
+    box-shadow 0.15s ease;
 }
 
 .flow:hover {
@@ -1719,10 +1737,10 @@ textarea {
 
 /* ── 좁은 화면 ────────────────────────────────────────────────────────── */
 
-/* 세 칸이 안 들어가면 오른쪽(AI·증적)을 가운데 칸 아래로 내린다 */
+/* 중간 크기에서도 AI 대화와 기기 화면을 나란히 유지한다. */
 @media (max-width: 1280px) {
   .work {
-    grid-template-columns: 316px minmax(0, 1fr);
+    grid-template-columns: minmax(0, 1fr) 300px;
   }
 
   .col--side {
@@ -2080,5 +2098,594 @@ textarea {
 
   .elements {
     max-height: 150px;
+  }
+}
+
+/* ── AI 작성 중심 작업대 · 2026-09-08 ───────────────────────────────── */
+:focus-visible {
+  outline: 3px solid var(--blue);
+  outline-offset: 3px;
+}
+.skip-link {
+  position: fixed;
+  top: -100px;
+  left: 16px;
+  z-index: 100;
+  padding: 12px 20px;
+  background: var(--ink);
+  color: white;
+  border-radius: 8px;
+}
+.skip-link:focus {
+  top: 12px;
+}
+.work {
+  gap: 24px;
+  max-width: 1360px;
+}
+.top {
+  max-width: 1360px;
+  padding-block: 22px;
+}
+.brand p {
+  font-size: 14px;
+}
+.col {
+  gap: 20px;
+}
+.col--device {
+  position: static;
+  max-height: none;
+  overflow: visible;
+}
+.panel {
+  padding: 24px;
+  border-radius: 20px;
+}
+.panel-head {
+  align-items: center;
+}
+.panel-head h2 {
+  font-size: 20px;
+}
+.eyebrow {
+  font-size: 12px;
+  letter-spacing: 0.04em;
+}
+.hint,
+.hint-inline,
+.note,
+.flow-desc {
+  font-size: 14px;
+  line-height: 1.65;
+}
+.hint-inline {
+  max-width: 300px;
+}
+.btn,
+.btn-sm,
+.key,
+.elements .btn-sm,
+.flow-actions .btn {
+  min-height: 44px;
+  height: auto;
+  padding: 10px 14px;
+  font-size: 14px;
+}
+.text-input {
+  min-height: 48px;
+  font-size: 16px;
+  border-color: var(--muted-2);
+}
+.pill-link {
+  min-height: 44px;
+}
+.fold > summary {
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 14px;
+}
+.fold > summary::after {
+  margin-left: auto;
+}
+.chat-panel {
+  padding: 32px;
+  border: 1px solid rgba(57, 74, 203, 0.25);
+  background: linear-gradient(135deg, #fffdf6 55%, #f0f1ff);
+}
+.chat-panel .panel-head {
+  align-items: flex-start;
+}
+.chat-panel .eyebrow {
+  color: var(--blue);
+  margin-bottom: 12px;
+}
+.chat-panel h2 {
+  font-size: clamp(28px, 3.2vw, 42px);
+  line-height: 1.25;
+  letter-spacing: -0.045em;
+  white-space: pre-line;
+  word-break: keep-all;
+}
+.chat-panel > .hint {
+  margin-block: 16px 22px;
+  max-width: 580px;
+  font-size: 16px;
+}
+.ai-badge {
+  background: var(--acid);
+  color: var(--ink);
+  font-size: 13px;
+  padding: 6px 12px;
+}
+.journey {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px 24px;
+  list-style: none;
+  margin: 0 0 24px;
+  padding: 0;
+}
+.journey li {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  font-size: 13px;
+  font-weight: 650;
+}
+.journey b {
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  border: 1px solid var(--line);
+  border-radius: 50%;
+  font: 12px var(--mono);
+}
+.journey li:nth-child(2) b {
+  background: var(--ink);
+  color: var(--acid);
+  border-color: var(--ink);
+}
+.chat-state {
+  color: var(--blue);
+  font-size: 14px;
+  margin: 0 0 12px;
+}
+.chat-state:empty {
+  display: none;
+}
+.chat {
+  min-height: 160px;
+  max-height: 420px;
+  padding: 20px;
+  border-color: var(--line-soft);
+  background: rgba(255, 255, 255, 0.6);
+  scroll-margin: 20px;
+}
+.msg {
+  max-width: 95%;
+  font-size: 16px;
+  min-width: 0;
+}
+.msg p {
+  padding: 14px 16px;
+  overflow-wrap: anywhere;
+}
+.chat-choices {
+  gap: 8px;
+  margin-block: 16px;
+}
+.choice {
+  white-space: normal;
+  text-align: left;
+}
+.composer {
+  border: 1px solid var(--muted-2);
+  background: #fff;
+  border-radius: 14px;
+  padding: 16px;
+}
+.composer:focus-within {
+  outline: 3px solid var(--blue);
+  outline-offset: 3px;
+}
+.composer label {
+  display: block;
+  font-size: 14px;
+  font-weight: 700;
+  margin-bottom: 8px;
+}
+.composer textarea {
+  display: block;
+  width: 100%;
+  min-height: 80px;
+  height: 80px;
+  padding: 4px 0;
+  border: 0;
+  border-radius: 0;
+  resize: vertical;
+  line-height: 1.6;
+}
+.composer textarea:focus {
+  outline: none;
+}
+.composer textarea::placeholder {
+  color: var(--muted);
+}
+.composer-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+  padding-top: 12px;
+}
+.composer-actions .hint {
+  margin: 0 auto 0 0;
+  font-size: 12px;
+}
+.composer-actions .btn-primary {
+  min-width: 88px;
+}
+.chat-flow {
+  width: 100%;
+  min-width: 0;
+  padding: 16px;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: #fff;
+}
+.chat-flow-title {
+  font-size: 16px;
+}
+.chat-flow .hint {
+  margin: 0;
+}
+.chat-flow pre {
+  max-width: 100%;
+  font-size: 13px;
+}
+.chat-flow > .row .btn-primary {
+  background: var(--blue);
+  border-color: transparent;
+}
+.chat-flow > .row .btn-primary:hover:not(:disabled) {
+  background: #29399f;
+}
+.library {
+  margin-top: 16px;
+  border-top: 1px solid var(--line);
+  padding-top: 12px;
+}
+.library > summary {
+  font-weight: 700;
+}
+.library > .hint {
+  margin-top: 12px;
+}
+.flows {
+  max-height: 460px;
+  overflow-y: auto;
+  padding: 3px;
+}
+.flow {
+  grid-template-columns: 28px minmax(0, 1fr);
+  padding: 14px;
+}
+.flow-name {
+  font-size: 16px;
+}
+.flow-actions {
+  grid-column: 2;
+}
+.flow-last,
+.tag,
+.badge,
+.status {
+  font-size: 12px;
+}
+.engine {
+  min-height: 48px;
+}
+.engine-name {
+  font-size: 14px;
+}
+.engine-why {
+  font-size: 12px;
+}
+.result-empty {
+  font-size: 15px;
+  padding: 24px 0;
+}
+.keys {
+  gap: 4px;
+}
+.key {
+  padding-inline: 3px;
+  font-size: 12px;
+}
+.phone {
+  width: 230px;
+  max-width: 100%;
+  margin-inline: auto;
+}
+.device-panel > .hint {
+  margin-top: 18px;
+}
+.run-foot {
+  gap: 16px;
+}
+.switch {
+  min-height: 44px;
+  font-size: 14px;
+}
+.run {
+  grid-template-columns: auto minmax(0, 1fr);
+  padding: 12px;
+}
+.run-links {
+  grid-column: 2;
+  flex-wrap: wrap;
+}
+.run-name {
+  white-space: normal;
+  font-size: 14px;
+}
+.run-meta {
+  font-size: 12px;
+}
+.run-links .btn {
+  padding-inline: 10px;
+}
+.tab {
+  font-size: 12px;
+}
+.col--primary > .col--main {
+  margin: 0;
+}
+@media (max-width: 960px) {
+  .top {
+    padding-block: 12px;
+  }
+  .work {
+    gap: 0;
+  }
+  .col--primary,
+  .col--secondary {
+    display: contents;
+  }
+  .work > .col > [data-pane] {
+    margin-bottom: 16px;
+  }
+  .chat-panel {
+    padding: 24px;
+  }
+  .chat {
+    min-height: 160px;
+    max-height: 38dvh;
+    height: auto;
+  }
+  .chat-panel h2 {
+    font-size: 32px;
+  }
+  .device-panel {
+    max-width: 480px;
+  }
+  .phone {
+    width: 230px;
+  }
+  .hint-inline {
+    display: block;
+    text-align: left;
+  }
+  .runbar {
+    bottom: calc(66px + env(safe-area-inset-bottom));
+  }
+  .tabbar {
+    background: var(--card);
+  }
+  .tab.is-on {
+    background: var(--ink);
+    color: #fff;
+  }
+  .tab.is-on svg {
+    stroke: var(--acid);
+    fill: none;
+  }
+}
+@media (max-width: 620px) {
+  .work,
+  .top {
+    width: calc(100% - 24px);
+  }
+  .panel {
+    padding: 18px;
+    border-radius: 16px;
+  }
+  .chat-panel h2 {
+    font-size: 29px;
+  }
+  .chat-panel > .hint {
+    font-size: 15px;
+    margin-block: 12px 16px;
+  }
+  .ai-badge {
+    display: none;
+  }
+  .journey {
+    gap: 8px;
+    margin-bottom: 16px;
+  }
+  .journey li {
+    gap: 4px;
+    font-size: 11px;
+  }
+  .journey b {
+    width: 22px;
+    height: 22px;
+    font-size: 10px;
+  }
+  .chat {
+    padding: 12px;
+    min-height: 140px;
+  }
+  .msg {
+    max-width: 100%;
+  }
+  .msg p {
+    padding: 12px;
+  }
+  .chat-choices {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+  }
+  .chat-choices:empty {
+    display: none;
+  }
+  .chat-choices .btn {
+    font-size: 13px;
+    padding: 10px;
+  }
+  .composer {
+    padding: 12px;
+  }
+  .composer-actions .hint {
+    display: none;
+  }
+  .composer-actions {
+    justify-content: flex-end;
+  }
+  .panel-head {
+    flex-wrap: wrap;
+  }
+  .panel-head h2 {
+    font-size: 19px;
+  }
+  .chat-panel h2 {
+    font-size: 29px;
+  }
+  .hint,
+  .note,
+  .flow-desc {
+    font-size: 14px;
+  }
+  .engine-name {
+    font-size: 12px;
+    white-space: normal;
+  }
+  .flow {
+    grid-template-columns: 24px minmax(0, 1fr);
+  }
+  .flow-name {
+    font-size: 15px;
+  }
+  .flow-actions .btn {
+    min-height: 44px;
+    font-size: 14px;
+  }
+  .pill-link {
+    min-height: 44px;
+  }
+  .device-panel > .hint {
+    display: block;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation: none !important;
+    transition: none !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+.feedback {
+  flex: none;
+  width: min(1360px, calc(100% - 24px));
+  margin: 0 auto 12px;
+  padding: 12px;
+  border: 1px solid var(--coral-deep);
+  color: var(--coral-deep);
+  background: var(--card);
+  border-radius: 10px;
+}
+/* 작은 화면에서도 AI 요청과 전송이 한 작업 영역에 들어간다. */
+@media (min-width: 961px) {
+  .col--secondary {
+    position: sticky;
+    top: 16px;
+    max-height: calc(100dvh - 32px);
+    overflow-y: auto;
+    scrollbar-width: thin;
+  }
+  .chat-panel {
+    padding: 24px;
+  }
+  .chat-panel h2 {
+    font-size: clamp(28px, 2.6vw, 36px);
+  }
+  .chat-panel > .hint {
+    margin-block: 12px 16px;
+  }
+  .journey {
+    margin-bottom: 16px;
+  }
+  .chat {
+    min-height: 120px;
+  }
+  .composer textarea {
+    min-height: 60px;
+    height: 60px;
+  }
+}
+@media (max-width: 620px) {
+  body[data-tab="ai"] .chat-panel {
+    display: flex;
+    flex-direction: column;
+    height: calc(100dvh - 178px);
+    min-height: 620px;
+  }
+  .chat-panel .panel-head {
+    flex: none;
+    margin-bottom: 0;
+  }
+  .chat-panel .eyebrow,
+  .chat-panel .journey {
+    display: none;
+  }
+  .chat-panel h2 {
+    font-size: 27px;
+  }
+  .chat-panel > .hint {
+    flex: none;
+    font-size: 14px;
+    margin-block: 8px 12px;
+  }
+  .chat {
+    flex: 1 1 auto;
+    min-height: 100px;
+    max-height: none;
+  }
+  .chat-choices {
+    flex: none;
+    margin-block: 8px;
+  }
+  .composer {
+    flex: none;
+    padding: 10px;
+    margin-top: 8px;
+  }
+  .composer textarea {
+    min-height: 48px;
+    height: 48px;
+  }
+  .composer label {
+    margin-bottom: 4px;
+  }
+  .composer-actions {
+    padding-top: 8px;
   }
 }

@@ -51,6 +51,19 @@ async function loadCopy() {
   document.title = c.title
   text('title', c.title)
   text('tagline', c.tagline)
+  for (const [id, key] of Object.entries({
+    'journey-request': 'journeyRequest',
+    'journey-design': 'journeyDesign',
+    'journey-run': 'journeyRun',
+    'ai-badge': 'aiBadge',
+    'chat-input-label': 'chatInputLabel',
+    'chat-input-help': 'chatInputHelp',
+    'library-title': 'libraryTitle',
+    'library-hint': 'libraryHint',
+    'skip-link': 'skipLink',
+    'result-title': 'resultIdleTitle',
+  }))
+    text(id, c[key])
   text('gallery-link', c.galleryLink)
   $('device-pill').lastElementChild.textContent = c.deviceChecking
 
@@ -66,7 +79,13 @@ async function loadCopy() {
   text('one-device-note', c.oneDeviceNote)
   text('public-note', c.publicNote)
   $('phone-off').firstElementChild.textContent = c.deviceOffline
-  const keys = { back: c.backKey, home: c.homeKey, recent: c.recentKey, enter: c.enterKey, del: c.delKey }
+  const keys = {
+    back: c.backKey,
+    home: c.homeKey,
+    recent: c.recentKey,
+    enter: c.enterKey,
+    del: c.delKey,
+  }
   document.querySelectorAll('.key').forEach((b) => {
     if (keys[b.dataset.key]) b.textContent = keys[b.dataset.key]
   })
@@ -100,7 +119,7 @@ async function loadCopy() {
   text('compare-eyebrow', c.compareEyebrow)
   text('timing-title', c.timingTitle)
   text('timing-hint', c.timingHint)
-  text('th-scenario', c.scenarioTitle)
+  text('th-scenario', c.timingScenarioLabel)
   text('th-fastest', c.fastestLabel)
 
   // AI
@@ -146,6 +165,7 @@ async function loadConfig() {
   const res = await fetch(`${BASE}/api/config`, { cache: 'no-store' })
   const cfg = await res.json()
   state.flows = cfg.flows ?? []
+  $('flow-count').textContent = String(state.flows.length)
   state.timings = cfg.timings ?? []
   state.running = cfg.running
   state.appId = cfg.appId
@@ -333,12 +353,19 @@ function renderFlows() {
     const runBtn = document.createElement('button')
     runBtn.className = 'btn btn-primary'
     runBtn.textContent = c.runButton
-    runBtn.onclick = () => post('/api/run', { flowId: flow.id, engine: engine(), record: recording() })
+    runBtn.setAttribute('aria-label', `${flow.name} ${c.runButton}`)
+    runBtn.onclick = () =>
+      post('/api/run', {
+        flowId: flow.id,
+        engine: engine(),
+        record: recording(),
+      })
 
     // 세 방식을 잇달아 돌려 시간을 견준다. 이 데모의 핵심 단추다
     const cmpBtn = document.createElement('button')
     cmpBtn.className = 'btn'
     cmpBtn.textContent = c.compareButton
+    cmpBtn.setAttribute('aria-label', `${flow.name} ${c.compareButton}`)
     cmpBtn.title = c.compareTooltip
     cmpBtn.onclick = () => post('/api/compare', { flowId: flow.id })
     actions.append(runBtn, cmpBtn)
@@ -575,7 +602,11 @@ const h264 = {
     this.sawKey = true
     try {
       this.decoder.decode(
-        new EncodedVideoChunk({ type: key ? 'key' : 'delta', timestamp: this.ts++ * 1000, data: toAvcc(body) }),
+        new EncodedVideoChunk({
+          type: key ? 'key' : 'delta',
+          timestamp: this.ts++ * 1000,
+          data: toAvcc(body),
+        }),
       )
     } catch (e) {
       this.fail(e)
@@ -621,7 +652,10 @@ const h264 = {
       const support = await VideoDecoder.isConfigSupported(cfg)
       if (!support.supported) throw new Error(`unsupported ${codec}`)
       this.reset()
-      this.ctx = this.canvas.getContext('2d', { alpha: false, desynchronized: true })
+      this.ctx = this.canvas.getContext('2d', {
+        alpha: false,
+        desynchronized: true,
+      })
       this.decoder = new VideoDecoder({
         output: (frame) => this.paint(frame),
         error: (e) => this.fail(e),
@@ -749,7 +783,10 @@ function handle(msg) {
       beginRun(msg)
       // 폰에서 AI 탭의 [바로 실행] 으로 시작했으면 결과가 있는 탭으로 데려간다.
       // 실행 탭에서 눌렀으면 이미 거기고, 기기 탭에서 보고 있었으면 그대로 둔다
-      if (document.body.dataset.tab === 'ai') setTab('run')
+      if (document.body.dataset.tab === 'ai') {
+        setTab('run')
+        if (!NARROW.matches) $('result-panel').scrollIntoView({ block: 'start' })
+      }
       $('log').replaceChildren()
       $('log-engine').textContent = `${msg.name} · ${engineLabel(msg.engine)}`
       $('diagnose-panel').hidden = true
@@ -793,7 +830,10 @@ function handle(msg) {
       )
       break
     case 'evidence':
-      appendLog(`${state.copy.ui.evidenceEyebrow} — ${state.copy.ui.evidenceXlsx}${msg.artifact.hasVideo ? `·${state.copy.ui.evidenceVideo}` : ''}`, 'ok')
+      appendLog(
+        `${state.copy.ui.evidenceEyebrow} — ${state.copy.ui.evidenceXlsx}${msg.artifact.hasVideo ? `·${state.copy.ui.evidenceVideo}` : ''}`,
+        'ok',
+      )
       void loadRuns()
       break
     case 'ping':
@@ -805,7 +845,15 @@ const engineLabel = (e) => state.copy?.ui.engines?.[e]?.name ?? e
 
 function statusText(kind) {
   const c = state.copy.ui
-  return { running: c.statusRunning, passed: c.statusPassed, failed: c.statusFailed, canceled: c.statusCanceled, idle: c.statusIdle }[kind] ?? c.statusIdle
+  return (
+    {
+      running: c.statusRunning,
+      passed: c.statusPassed,
+      failed: c.statusFailed,
+      canceled: c.statusCanceled,
+      idle: c.statusIdle,
+    }[kind] ?? c.statusIdle
+  )
 }
 
 // ── 실행 결과 — 단계 목록·진행 막대·걸린 시간 ─────────────────────────────
@@ -816,7 +864,14 @@ function statusText(kind) {
 let elapsedTimer = null
 
 function beginRun(msg) {
-  state.run = { name: msg.name, engine: msg.engine, total: msg.steps, steps: [], startedAt: Date.now(), done: false }
+  state.run = {
+    name: msg.name,
+    engine: msg.engine,
+    total: msg.steps,
+    steps: [],
+    startedAt: Date.now(),
+    done: false,
+  }
   $('result-title').textContent = msg.name
   $('result-engine').textContent = engineLabel(msg.engine)
   $('result-empty').hidden = true
@@ -958,7 +1013,8 @@ $('runbar').onclick = () => {
 
 // 경과 시간이 띠에도 같이 흐르게 — 결과 판의 숫자를 그대로 베낀다
 setInterval(() => {
-  if (state.run && !state.run.done && !$('runbar').hidden) $('runbar-time').textContent = $('result-elapsed').textContent
+  if (state.run && !state.run.done && !$('runbar').hidden)
+    $('runbar-time').textContent = $('result-elapsed').textContent
 }, 250)
 
 // ── 상태 그리기 ───────────────────────────────────────────────────────────
@@ -1062,6 +1118,7 @@ function syncControl() {
 function syncRunning() {
   $('stop').disabled = !state.running
   document.querySelectorAll('.flow-actions .btn').forEach((b) => (b.disabled = state.running))
+  document.querySelectorAll('[data-ai-run]').forEach((b) => (b.disabled = state.running))
   $('editor-run').disabled = state.running
   if (!state.running && $('run-status').classList.contains('running')) setStatus('idle')
 }
@@ -1080,6 +1137,8 @@ function appendLog(line, level) {
 
 function flash(text) {
   appendLog(`— ${text}`, 'err')
+  $('feedback').textContent = text
+  $('feedback').hidden = false
 }
 
 // ── 손가락질 ──────────────────────────────────────────────────────────────
@@ -1120,7 +1179,14 @@ phone.addEventListener('pointerup', (ev) => {
 
   // 움직였으면 쓸기, 오래 눌렀으면 길게 누르기, 아니면 그냥 탭
   if (moved > 0.04) {
-    send({ t: 'swipe', x1: pressPoint.x, y1: pressPoint.y, x2: to.x, y2: to.y, ms: Math.min(600, Math.max(90, held)) })
+    send({
+      t: 'swipe',
+      x1: pressPoint.x,
+      y1: pressPoint.y,
+      x2: to.x,
+      y2: to.y,
+      ms: Math.min(600, Math.max(90, held)),
+    })
   } else if (held > 500) {
     send({ t: 'longpress', x: pressPoint.x, y: pressPoint.y })
   } else {
@@ -1172,14 +1238,21 @@ function sendTyped() {
 }
 
 async function post(path, body) {
-  const res = await fetch(`${BASE}${path}`, {
-    method: 'POST',
-    headers: { 'content-type': 'application/json' },
-    body: JSON.stringify(body),
-  })
-  const data = await res.json().catch(() => ({}))
-  if (!res.ok) flash(data.error ?? `${state.copy.ui.statusFailed} (${res.status})`)
-  return data
+  $('feedback').hidden = true
+  try {
+    const res = await fetch(`${BASE}${path}`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify(body),
+    })
+    const data = await res.json().catch(() => ({}))
+    if (!res.ok) flash(data.error ?? `${state.copy.ui.statusFailed} (${res.status})`)
+    return data
+  } catch {
+    const error = state.copy.ui.connectionError
+    flash(error)
+    return { ok: false, error }
+  }
 }
 
 // ── 시나리오 편집기 ──────────────────────────────────────────────────────
@@ -1286,8 +1359,7 @@ async function loadElements() {
     const tap = document.createElement('button')
     tap.className = 'btn btn-sm'
     tap.textContent = c.elementsTap
-    tap.onclick = () =>
-      insertLine(row.kind === 'id' ? `- tapOn:\n    id: "${row.value}"` : `- tapOn: "${row.value}"`)
+    tap.onclick = () => insertLine(row.kind === 'id' ? `- tapOn:\n    id: "${row.value}"` : `- tapOn: "${row.value}"`)
     el.append(code, tap)
     if (row.kind === 'text') {
       const check = document.createElement('button')
@@ -1315,7 +1387,12 @@ $('editor-run').onclick = () => {
     flash(state.copy.ui.invalidYaml)
     return
   }
-  post('/api/run-adhoc', { name: state.copy.ui.editorTitle, yaml, engine: engine(), record: recording() })
+  post('/api/run-adhoc', {
+    name: state.copy.ui.editorTitle,
+    yaml,
+    engine: engine(),
+    record: recording(),
+  })
 }
 
 // ── AI 와 시나리오 짜기 ──────────────────────────────────────────────────
@@ -1331,8 +1408,15 @@ const chat = { turns: [], busy: false }
 
 /** 첫 인사. [처음부터] 도 여기로 돌아온다 */
 function greet() {
+  if (chat.busy) return
   const c = state.copy.ui
-  chat.turns = [{ role: 'assistant', text: c.chatGreeting, choices: state.llm ? c.chatStarters ?? [] : [] }]
+  chat.turns = [
+    {
+      role: 'assistant',
+      text: c.chatGreeting,
+      choices: state.llm ? (c.chatStarters ?? []) : [],
+    },
+  ]
   chat.busy = false
   renderChat()
 }
@@ -1341,6 +1425,9 @@ function renderChat() {
   const box = $('chat')
   box.replaceChildren(...chat.turns.map(bubble))
   if (chat.busy) box.append(typingBubble())
+  box.setAttribute('aria-busy', String(chat.busy))
+  $('chat-reset').disabled = chat.busy
+  if (state.llm) $('chat-state').textContent = chat.busy ? state.copy.ui.chatThinking : ''
   box.scrollTop = box.scrollHeight
   renderChoices()
 }
@@ -1369,16 +1456,34 @@ function flowCard(yaml) {
   card.className = 'chat-flow'
   const pre = document.createElement('pre')
   pre.textContent = yaml
+  const title = document.createElement('strong')
+  title.className = 'chat-flow-title'
+  title.textContent = c.chatFlowReady
+  const hint = document.createElement('p')
+  hint.className = 'hint'
+  hint.textContent = c.chatFlowHint
+  const source = document.createElement('details')
+  source.className = 'fold'
+  const summary = document.createElement('summary')
+  summary.textContent = c.chatFlowSource
+  source.append(summary, pre)
   const row = document.createElement('div')
   row.className = 'row'
 
   const run = document.createElement('button')
   run.className = 'btn btn-primary btn-sm'
+  run.dataset.aiRun = 'true'
+  run.disabled = state.running
   run.textContent = c.chatRun
   run.onclick = () => {
     // 돌린 것을 편집기에도 넣어 둔다. 실패했을 때 사람이 손대는 자리가 거기다
     $('yaml').value = yaml
-    post('/api/run-adhoc', { name: c.chatFlowName, yaml, engine: engine(), record: recording() })
+    post('/api/run-adhoc', {
+      name: c.chatFlowName,
+      yaml,
+      engine: engine(),
+      record: recording(),
+    })
   }
 
   const open = document.createElement('button')
@@ -1392,7 +1497,7 @@ function flowCard(yaml) {
   }
 
   row.append(run, open)
-  card.append(pre, row)
+  card.append(title, hint, row, source)
   return card
 }
 
@@ -1455,14 +1560,21 @@ async function sendChat(text) {
       note: data.note ?? null,
     })
   } else {
-    chat.turns.push({ role: 'assistant', text: data.error ?? state.copy.ui.chatError, choices: [] })
+    chat.turns.push({
+      role: 'assistant',
+      text: data.error ?? state.copy.ui.chatError,
+      choices: [],
+    })
   }
   renderChat()
 }
 
 $('chat-send').onclick = () => void sendChat($('chat-input').value)
 $('chat-input').addEventListener('keydown', (ev) => {
-  if (ev.key === 'Enter') void sendChat($('chat-input').value)
+  if (ev.key === 'Enter' && !ev.shiftKey && !ev.isComposing) {
+    ev.preventDefault()
+    void sendChat($('chat-input').value)
+  }
 })
 $('chat-reset').onclick = greet
 
@@ -1504,8 +1616,8 @@ async function diagnose() {
 void (async () => {
   await loadCopy()
   await loadConfig()
-  // 폰의 첫 화면은 기기다 — 폰이 브라우저 안에서 살아 움직이는 것이 이 데모의 첫인상이다
-  setTab('device')
+  // AI 가 직접 시나리오를 작성하는 것이 첫 진입점이다.
+  setTab(state.llm ? 'ai' : 'run')
   setStatus('idle')
   syncControl()
   connect()
