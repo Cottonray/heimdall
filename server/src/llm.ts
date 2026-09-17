@@ -15,7 +15,7 @@
 // 기다려서 Groq 로 갈랐다). 여기서는 저장소 규칙 그대로 OpenRouter 하나만 쓴다
 // (docs/rules.md §LLM 추론 — 제공자 SDK 를 직접 물지 않는다).
 //
-// **추론은 끈다.** deepseek-v4-flash 는 추론 모델이라 켜 두면 생각을 다 만든 뒤에야
+// **추론은 끈다.** deepseek-v4.1-flash 는 추론 모델이라 켜 두면 생각을 다 만든 뒤에야
 // 답이 나오고, 더 나쁜 것은 같은 답을 두 번 이어 붙여 내놓는 판이 있다는 것이다
 // (AICC 에서 실제로 밟았다).
 //
@@ -27,7 +27,7 @@ import { appIdOf, FlowParseError, parse as parseFlow } from './flows.ts'
 
 const KEY = process.env.AIQA_OPENROUTER_API_KEY ?? ''
 const BASE = process.env.AIQA_OPENROUTER_BASE_URL ?? 'https://openrouter.ai/api/v1'
-const MODEL = process.env.AIQA_LLM_MODEL ?? 'deepseek/deepseek-v4-flash'
+const MODEL = process.env.AIQA_LLM_MODEL ?? 'deepseek/deepseek-v4.1-flash'
 
 export function enabled() {
     return KEY.length > 0

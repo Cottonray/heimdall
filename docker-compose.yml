@@ -57,7 +57,7 @@ services:
       # 말로 시나리오 만들기·실패 원인 요약. 키가 없으면 그 둘만 꺼지고 나머지는 돈다
       AIQA_OPENROUTER_API_KEY: ${AIQA_OPENROUTER_API_KEY:-}
       AIQA_OPENROUTER_BASE_URL: ${AIQA_OPENROUTER_BASE_URL:-https://openrouter.ai/api/v1}
-      AIQA_LLM_MODEL: ${AIQA_LLM_MODEL:-deepseek/deepseek-v4-flash}
+      AIQA_LLM_MODEL: ${AIQA_LLM_MODEL:-deepseek/deepseek-v4.1-flash}
     volumes:
       # **자주 바뀌는 것은 굽지 않는다.** 서버 소스·화면·시나리오를 마운트해 두면
       # 문구 하나 고치자고 3GB 이미지를 다시 만들 일이 없다 (AICC 의 web/ 과 같은 판단)
