@@ -15,12 +15,14 @@
 // 그러면 실패가 앱 탓인지 겹친 탓인지 구분할 수 없는 로그만 남는다.
 
 import { spawn, type ChildProcess } from 'node:child_process'
-import { mkdtemp, readFile, writeFile, rm } from 'node:fs/promises'
+import { mkdtemp, writeFile, rm } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import path from 'node:path'
 import * as appium from './appium.ts'
 import * as device from './device.ts'
 import * as flows from './flows.ts'
+import * as timingStore from './timings.ts'
+import type { Timing } from './timings.ts'
 import type { Flow, Selector, Step } from './flows.ts'
 
 export type Engine = 'maestro' | 'adb' | 'appium'
@@ -97,33 +99,18 @@ let lastPassed: boolean | null = null
 let lastEngine: Engine | null = null
 
 /** 갈래별 걸린 시간. 화면이 이 표로 둘을 견준다 */
-export type Timing = {
-    flowId: string
-    name: string
-    engine: Engine
-    ms: number
-    passed: boolean
-    canceled: boolean
-    at: number
-}
+export type { Timing } from './timings.ts'
 const history: Timing[] = []
 
 /**
- * 걸린 시간은 **파일로도 남긴다** (2026-09-07). 메모리에만 두면 컨테이너를 갈아끼울 때마다
- * 비교 표가 통째로 비고, 그 표가 이 데모의 요점이라 배포 직후 열어 본 사람은 빈 화면을 본다.
- * 증적과 같은 볼륨(runs)에 한 파일로 둔다 — recorder.list() 는 run.json 이 없는 항목을
- * 건너뛰므로 이 파일이 증적 목록에 섞이지 않고, prune 도 runId 만 지운다.
+ * 걸린 시간은 **DB(aiqa-db)에도 남긴다** (2026-09-07 파일로 시작, 2026-09-30 Postgres 로).
+ * 메모리에만 두면 컨테이너를 갈아끼울 때마다 비교 표가 통째로 비고, 그 표가 이 데모의 요점이라
+ * 배포 직후 열어 본 사람은 빈 화면을 본다. 읽기·쓰기와 옛 timings.json 옮기기는 timings.ts 에 있다.
  */
-const TIMINGS_FILE = path.join(process.env.AIQA_RUNS_DIR ?? '/opt/aiqa/runs', 'timings.json')
-void readFile(TIMINGS_FILE, 'utf8')
-    .then((raw) => {
-        const saved = JSON.parse(raw) as Timing[]
-        if (Array.isArray(saved)) history.unshift(...saved.slice(-200))
-    })
-    .catch(() => {})
-function saveTimings() {
-    writeFile(TIMINGS_FILE, JSON.stringify(history)).catch(() => {})
-}
+void timingStore.load().then((saved) => {
+    history.unshift(...saved)
+    if (history.length > timingStore.KEEP) history.splice(0, history.length - timingStore.KEEP)
+})
 
 export function timings() {
     // 시나리오 여덟 × 갈래 셋이면 한 바퀴가 24건이다. 40 으로 잘라 두면 한 바퀴를
@@ -262,9 +249,10 @@ async function begin(
         const ms = Date.now() - startedAt
         lastPassed = passed && !canceled
         current = null
-        history.push({ flowId: flow.id, name: flow.name, engine, ms, passed: lastPassed, canceled, at: startedAt })
-        if (history.length > 200) history.splice(0, history.length - 200)
-        saveTimings()
+        const timing: Timing = { flowId: flow.id, name: flow.name, engine, ms, passed: lastPassed, canceled, at: startedAt }
+        history.push(timing)
+        if (history.length > timingStore.KEEP) history.splice(0, history.length - timingStore.KEEP)
+        void timingStore.add(timing)
         listener({
             type: 'run-end',
             runId,

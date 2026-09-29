@@ -40,6 +40,10 @@ trap 'rm -rf "$payload"' EXIT
 mkdir -p "$payload/aiqa"
 cp -R "$here/server" "$here/web" "$here/flows" "$here/sample-app" "$payload/aiqa/"
 cp "$here/Dockerfile" "$here/docker-compose.yml" "$here/entrypoint.sh" "$payload/aiqa/"
+# 로컬에서 yarn install 을 돌려 봤다면 node_modules 가 딸려 간다. 이미지 안에서 새로 깐다
+rm -rf "$payload/aiqa/server/node_modules" "$payload/aiqa/server/.yarn"
+# Yarn 은 저장소가 고정한 판(frontend/.yarnrc.yml 의 yarnPath) 그대로 쓴다. corepack 금지
+cp "$here/../../frontend/.yarn/releases/yarn-4.18.0.cjs" "$payload/aiqa/yarn.cjs"
 # gradle 이 만든 찌꺼기를 들고 가지 않는다 — 빌드는 저쪽 컨테이너 안에서 새로 한다
 rm -rf "$payload/aiqa/sample-app/.gradle" "$payload/aiqa/sample-app/build" "$payload/aiqa/sample-app/app/build"
 
@@ -72,6 +76,19 @@ printf '%s\n' "$env_body" > "$payload/aiqa/.env"
 say "홈서버($host)로 보내는 중"
 COPYFILE_DISABLE=1 tar --no-xattrs -cf - -C "$payload" aiqa \
     | ssh "$host" 'tar -xf - -C ~ && find ~/aiqa -name "._*" -delete && chmod +x ~/aiqa/entrypoint.sh'
+
+# --- DB 비밀번호 (홈서버에만 있다) --------------------------------------------
+# aiqa-db 의 비밀번호는 저장소에도 메인서버에도 없다. 홈서버 ~/aiqa/db.env 에 처음 한 번 만들고,
+# 배포마다 .env(방금 메인서버 것으로 덮였다) 뒤에 덧붙인다. **db.env 를 지우면 안 된다** —
+# Postgres 는 비밀번호를 볼륨이 처음 만들어질 때만 읽어서, 새로 만든 값으로는 붙지 못한다.
+ssh "$host" '
+    cd ~/aiqa
+    if [ ! -f db.env ]; then
+        (umask 077; echo "AIQA_DB_PASSWORD=$(openssl rand -hex 24)" > db.env)
+        echo "  ~/aiqa/db.env 새로 만들었습니다"
+    fi
+    cat db.env >> .env
+'
 
 # --- 굽기 --------------------------------------------------------------------
 if $build; then

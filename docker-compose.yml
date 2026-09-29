@@ -6,6 +6,28 @@ name: aiqa
 # 주소:  https://qa.example/aiqa/  (edge nginx 가 넘긴다)
 
 services:
+  # 시나리오별 걸린 시간 기록 (2026-09-30 timings.json 에서 옮겼다 — docs/rules.md §데이터베이스).
+  # 증적(스크린샷·xlsx)은 파일이 결과물이라 여기 두지 않는다. 비밀번호는 홈서버 ~/aiqa/db.env 에만 있다
+  aiqa-db:
+    image: postgres:16-alpine
+    container_name: aiqa-db
+    restart: unless-stopped
+    mem_limit: 256m
+    environment:
+      POSTGRES_DB: aiqa
+      POSTGRES_USER: aiqa
+      POSTGRES_PASSWORD: ${AIQA_DB_PASSWORD:?AIQA_DB_PASSWORD 가 없어요 — deploy.sh 가 ~/aiqa/db.env 를 만듭니다}
+    volumes:
+      - aiqa-db-data:/var/lib/postgresql/data
+    # edge 에 붙이지 않는다. DB 는 aiqa 말고 아무도 부를 일이 없다
+    networks:
+      - internal
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U aiqa -d aiqa"]
+      interval: 10s
+      timeout: 5s
+      retries: 30
+
   aiqa:
     image: aiqa:${IMAGE_TAG:-latest}
     container_name: aiqa
@@ -14,6 +36,9 @@ services:
     # JVM · Appium(Node) · ffmpeg · 우리 서버 몫이다. 이보다 조이면 시나리오가 도는 동안
     # OOM 으로 기기가 죽는다.
     mem_limit: 8g
+    depends_on:
+      aiqa-db:
+        condition: service_healthy
     # 하드웨어 가속이 없으면 에뮬레이터가 부팅에만 십 분씩 걸린다. `-accel on` 이라
     # 이 장치가 없으면 아예 뜨지 않는다 — 조용히 느려지는 것보다 낫다.
     devices:
@@ -39,6 +64,8 @@ services:
       AIQA_FRAME_SLOW_MS: ${AIQA_FRAME_SLOW_MS:-900}
       # 조작 권한을 놀렸을 때 스스로 놓는 시간
       AIQA_CONTROL_IDLE_MS: ${AIQA_CONTROL_IDLE_MS:-90000}
+      # 시간 기록 (server/src/timings.ts)
+      AIQA_DATABASE_URL: postgres://aiqa:${AIQA_DB_PASSWORD:?}@aiqa-db:5432/aiqa
       # 남겨 둘 증적 실행 수. 공개 데모라 무한히 쌓게 두지 않는다
       AIQA_RUNS_KEEP: ${AIQA_RUNS_KEEP:-30}
       # 영상 길(server/src/stream.ts). 긴 변 상한·fps·비트레이트, 그리고 지연을 가를 때 켜는 시각 기록
@@ -71,6 +98,7 @@ services:
     networks:
       # edge nginx 가 http://aiqa:8080 으로 붙는다
       - edge
+      - internal
     healthcheck:
       # **기기가 아니라 서버를 본다.** 부팅에 1~2분이 걸리는데 그동안 unhealthy 로
       # 재시작하면 영원히 못 뜬다 — 기기 상태는 화면이 알려 준다
@@ -83,8 +111,10 @@ services:
 volumes:
   aiqa-avd:
   aiqa-runs:
+  aiqa-db-data:
 
 networks:
+  internal:
   edge:
     external: true
     name: edge

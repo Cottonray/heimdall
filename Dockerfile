@@ -145,14 +145,19 @@ COPY --from=apk --chown=aiqa:aiqa /src/app/build/outputs/apk/debug/app-debug.apk
 # 한글을 넣어 주는 QA 전용 키보드. 테스트 대상이 아니라 도구라 apk 가 따로다
 # (`adb shell input text` 는 아스키만 넣는다 — sample-app/ime/build.gradle.kts 참고)
 COPY --from=apk --chown=aiqa:aiqa /src/ime/build/outputs/apk/debug/ime-debug.apk /opt/aiqa/qaime.apk
-# **이 스택의 유일한 npm 의존성: exceljs.**
-# 증적 파일에 스크린샷을 셀 안에 박아야 하는데, 그 관계·드로잉 XML 을 손으로 만드는 일이
-# 이 데모 전체보다 커진다 (server/package.json 의 설명 참고).
+# **이 스택의 npm 의존성은 둘: exceljs · postgres.**
+# exceljs — 증적 파일에 스크린샷을 셀 안에 박아야 하는데, 그 관계·드로잉 XML 을 손으로 만드는
+# 일이 이 데모 전체보다 커진다. postgres — 시간 기록을 aiqa-db 에 둔다 (2026-09-30).
+# (server/package.json 의 설명 참고)
 #
 # `/opt/aiqa` 에 깐다 — `server/` 는 읽기 전용으로 마운트되므로 그 아래에 깔면 마운트가
 # 덮어 가린다. Node 는 상위 node_modules 까지 훑으므로 한 칸 위가 안전하다.
-COPY --chown=aiqa:aiqa server/package.json /opt/aiqa/package.json
-RUN cd /opt/aiqa && npm install --omit=dev --no-audit --no-fund && chown -R aiqa:aiqa /opt/aiqa/node_modules
+#
+# 설치는 Yarn 4.18 이다 — deploy.sh 가 frontend/.yarn/releases 의 yarn.cjs 를 빌드 컨텍스트에
+# 넣는다. corepack 은 쓰지 않는다(docs/rules.md). 받은 꾸러미 캐시는 이미지에 남기지 않는다
+COPY --chown=aiqa:aiqa yarn.cjs /tmp/yarn.cjs
+COPY --chown=aiqa:aiqa server/package.json server/yarn.lock server/.yarnrc.yml /opt/aiqa/
+RUN cd /opt/aiqa && node /tmp/yarn.cjs install --immutable && rm -rf /home/aiqa/.yarn /opt/aiqa/.yarn
 
 # 카메라에 물릴 견본 이미지 (신분증 촬영 화면을 자동으로 돌리기 위한 것 — docs/aiqa.md)
 COPY --chown=aiqa:aiqa assets/id-sample.png /opt/aiqa/id-sample.png
