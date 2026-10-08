@@ -34,12 +34,12 @@ export function SessionSidebar({
       <button
         type="button"
         onClick={() => onSelect("")}
-        aria-label="헤임달 기본 페이지"
+        aria-label="heimdall 기본 페이지"
         className="flex items-center gap-3 px-5 py-6 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
       >
         <HeimdallLogo />
         <div>
-          <p className="font-semibold tracking-tight">Heimdall</p>
+          <p className="font-semibold tracking-tight">heimdall</p>
           <p className="text-xs text-muted-foreground">테스트 워크스페이스</p>
         </div>
       </button>

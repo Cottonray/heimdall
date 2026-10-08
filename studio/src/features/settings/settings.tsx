@@ -56,7 +56,7 @@ export function Settings({
           <CardHeader>
             <CardTitle>MCP 연결</CardTitle>
             <CardDescription>
-              AI 도구에서 헤임달의 테스트를 실행해요.
+              AI 도구에서 heimdall의 테스트를 실행해요.
             </CardDescription>
           </CardHeader>
           <CardContent>

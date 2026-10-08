@@ -1,4 +1,4 @@
-# Heimdall design
+# heimdall design
 
 React + shadcn/ui 기반의 데스크톱 QA 작업 공간. 밝은 중성 배경, 흰 카드, JB 블루 주요 액션, 일관된 선과 간격을 사용한다. 왼쪽은 기록 탐색, 중앙은 실제 실행 화면, 오른쪽은 AI 작성, 아래는 타임라인/디버깅/API 검증이다.
 
@@ -14,4 +14,4 @@ React + shadcn/ui 기반의 데스크톱 QA 작업 공간. 밝은 중성 배경,
 
 공식 근거: [shadcn/ui CLI](https://ui.shadcn.com/docs/cli), [shadcn/lint 규칙](https://github.com/shadcn-ui/lint/blob/main/docs/rules.md).
 
-브랜드: Heimdall. 2026-10-08 사용자가 선택한 글자 없는 블루 그라데이션 부엉이를 `src/assets/heimdall.png`에 보관한다. 투명 PNG 원본을 Studio와 쇼룸에서 동일하게 사용한다. 주조색은 로고에 맞춘 `#2667ad`이며 보조·선택 배경도 같은 블루 계열이다. 어두운 테마에서는 `#75ace2`와 짙은 글자로 대비를 확보한다. 입력 테두리와 포커스 색상은 구분된 의미 토큰으로 관리한다.
+브랜드: heimdall. 2026-10-08 사용자가 선택한 글자 없는 블루 그라데이션 부엉이를 `src/assets/heimdall.png`에 보관한다. 투명 PNG 원본을 Studio와 쇼룸에서 동일하게 사용한다. 주조색은 로고에 맞춘 `#2667ad`이며 보조·선택 배경도 같은 블루 계열이다. 어두운 테마에서는 `#75ace2`와 짙은 글자로 대비를 확보한다. 입력 테두리와 포커스 색상은 구분된 의미 토큰으로 관리한다.
