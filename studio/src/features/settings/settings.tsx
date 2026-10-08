@@ -1,3 +1,6 @@
+import { useState } from "react";
+import { ProfileEditor } from "@/features/auth/profile-editor";
+import type { ProfileActionResult } from "@/lib/api";
 import { Download, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -10,22 +13,52 @@ import {
 import { downloadMcp } from "@/features/integrations/mcp";
 import { ThemeControls } from "./theme-controls";
 import type { Theme } from "./use-theme";
-import type { StudioStatus } from "../../../../contracts/studio";
+import type { StudioStatus, User } from "../../../../contracts/studio";
 export function Settings({
+  user,
+  busy,
+  onSaveAvatar,
+  onChangePassword,
   theme,
   onTheme,
   status,
   onRefresh,
 }: {
+  user: User;
+  busy: boolean;
+  onSaveAvatar: (avatar: string | null) => Promise<ProfileActionResult>;
+  onChangePassword: (
+    currentPassword: string,
+    newPassword: string,
+  ) => Promise<ProfileActionResult>;
   theme: Theme;
   onTheme: (theme: Theme) => void;
   status: StudioStatus | null;
   onRefresh: () => void;
 }) {
+  const [pending, setPending] = useState(false);
   return (
     <div className="space-y-6">
       <h1 className="text-2xl font-semibold tracking-tight">설정</h1>
       <div className="grid items-start gap-5 xl:grid-cols-2">
+        <Card>
+          <CardHeader>
+            <CardTitle>프로필</CardTitle>
+            <CardDescription>
+              {user.name} · {user.username}
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <ProfileEditor
+              key={user.id}
+              user={user}
+              locked={busy || pending}
+              onPending={setPending}
+              onSaveAvatar={onSaveAvatar}
+              onChangePassword={onChangePassword}
+            />
+          </CardContent>
+        </Card>
         <Card>
           <CardHeader>
             <CardTitle>화면 테마</CardTitle>

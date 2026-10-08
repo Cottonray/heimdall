@@ -163,8 +163,7 @@ export function App() {
                 user={w.user}
                 busy={w.busy}
                 onLogout={w.store.logout}
-                onSaveAvatar={w.store.saveProfile}
-                onChangePassword={w.store.changePassword}
+                onSettings={() => w.store.navigate("settings")}
               />
             </div>
           </header>
@@ -285,12 +284,18 @@ export function App() {
                       }}
                     />
                   ) : id === "settings" ? (
-                    <Settings
-                      theme={theme}
-                      onTheme={setTheme}
-                      status={w.status}
-                      onRefresh={() => void w.store.refresh()}
-                    />
+                    w.user && (
+                      <Settings
+                        user={w.user}
+                        busy={w.busy}
+                        onSaveAvatar={w.store.saveProfile}
+                        onChangePassword={w.store.changePassword}
+                        theme={theme}
+                        onTheme={setTheme}
+                        status={w.status}
+                        onRefresh={() => void w.store.refresh()}
+                      />
+                    )
                   ) : s ? (
                     <div className="space-y-6">
                       <SessionContent

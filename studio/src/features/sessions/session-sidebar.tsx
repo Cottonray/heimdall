@@ -123,17 +123,6 @@ export function SessionSidebar({
       )}
       <div className="mt-auto flex flex-wrap items-center gap-1 border-t px-3 py-3 md:flex-col md:items-stretch">
         <ThemeControls theme={theme} onTheme={onTheme} />
-        {signedIn && (
-          <Button
-            variant={active === "settings" ? "secondary" : "ghost"}
-            aria-current={active === "settings" ? "page" : undefined}
-            onClick={() => onNavigate("settings")}
-            className="justify-start"
-          >
-            <Settings />
-            설정
-          </Button>
-        )}
       </div>
     </aside>
   );
