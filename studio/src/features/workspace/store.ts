@@ -231,10 +231,12 @@ export class WorkspaceStore {
       this.select(id);
     });
   navigate = (page: Page) => {
-    if (page === "projects" || page === "devices") this.setProjectScope("");
+    if (["projects", "devices", "device-admin", "user-admin"].includes(page))
+      this.setProjectScope("");
     this.select("");
     this.patch(openTab(this.value, page));
-    if (page === "projects" || page === "devices") void this.refresh();
+    if (["projects", "devices", "device-admin", "user-admin"].includes(page))
+      void this.refresh();
   };
   closeTab = (id: string) => {
     const next = closeTab(this.value, id);

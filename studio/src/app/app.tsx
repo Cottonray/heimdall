@@ -1,3 +1,4 @@
+import { UserAdmin } from "@/features/auth/user-admin";
 import { ProjectTestData } from "@/features/projects/test-data";
 import { ScenarioList } from "@/features/scenarios/scenario-list";
 import { NotificationInbox } from "@/features/auth/notification-inbox";
@@ -106,13 +107,16 @@ export function App() {
   const onTab = (id: string) =>
     isPage(id) ? w.store.navigate(id) : w.store.select(id);
   const workspaceVisible =
-    !["projects", "devices"].includes(w.activeTab) && !!w.projectId;
+    !["projects", "devices", "device-admin", "user-admin"].includes(
+      w.activeTab,
+    ) && !!w.projectId;
   return (
     <div className="flex h-dvh flex-col overflow-hidden bg-background text-foreground md:flex-row">
       {w.user && (
         <SessionSidebar
           projectName={!workspaceVisible ? "" : projectName}
           signedIn={!!w.user}
+          admin={w.user?.role === "admin"}
           active={w.activeTab}
           onNavigate={w.store.navigate}
           onRun={() => setNewOpen(true)}
@@ -131,27 +135,31 @@ export function App() {
               <TabsList variant="workspace" aria-label="열린 작업">
                 {(w.user ? visibleTabs : ["projects"]).map((id) => {
                   const label =
-                    id === "test-data"
-                      ? "테스트데이터"
-                      : id === "scenarios"
-                        ? "시나리오"
-                        : id === "board"
-                          ? "워크스페이스"
-                          : id === "domains"
-                            ? "도메인"
-                            : id === "projects"
-                              ? "프로젝트"
-                              : id === "dashboard"
-                                ? "대시보드"
-                                : id === "history"
-                                  ? "테스트 기록"
-                                  : id === "settings" ||
-                                      id === "project-settings"
-                                    ? id === "settings"
-                                      ? "설정"
-                                      : "프로젝트 설정"
-                                    : w.sessions.find((s) => s.id === id)
-                                        ?.name || "테스트";
+                    id === "device-admin"
+                      ? "기기관리"
+                      : id === "user-admin"
+                        ? "사용자 관리"
+                        : id === "test-data"
+                          ? "테스트데이터"
+                          : id === "scenarios"
+                            ? "시나리오"
+                            : id === "board"
+                              ? "워크스페이스"
+                              : id === "domains"
+                                ? "도메인"
+                                : id === "projects"
+                                  ? "프로젝트"
+                                  : id === "dashboard"
+                                    ? "대시보드"
+                                    : id === "history"
+                                      ? "테스트 기록"
+                                      : id === "settings" ||
+                                          id === "project-settings"
+                                        ? id === "settings"
+                                          ? "설정"
+                                          : "프로젝트 설정"
+                                        : w.sessions.find((s) => s.id === id)
+                                            ?.name || "테스트";
                   const Icon =
                     id === "projects"
                       ? Folder
@@ -247,6 +255,18 @@ export function App() {
                         return !w.store.getSnapshot().error;
                       }}
                     />
+                  ) : id === "user-admin" ? (
+                    w.user?.role === "admin" ? (
+                      <UserAdmin />
+                    ) : (
+                      <p>관리자만 이용할 수 있어요.</p>
+                    )
+                  ) : id === "device-admin" ? (
+                    w.user?.role === "admin" ? (
+                      <DeviceFarm active={w.activeTab === id} management />
+                    ) : (
+                      <p>관리자만 이용할 수 있어요.</p>
+                    )
                   ) : id === "devices" ? (
                     <DeviceFarm active={w.activeTab === "devices"} />
                   ) : id === "dashboard" ? (

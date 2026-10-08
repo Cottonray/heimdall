@@ -24,7 +24,13 @@ import {
   type DeviceFilter,
 } from "./device-status";
 
-export function DeviceFarm({ active }: { active: boolean }) {
+export function DeviceFarm({
+  active,
+  management = false,
+}: {
+  active: boolean;
+  management?: boolean;
+}) {
   const [devices, setDevices] = useState<DeviceInfo[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -45,7 +51,9 @@ export function DeviceFarm({ active }: { active: boolean }) {
       /* Storage can be unavailable in private browsing. */
     }
   }, [view]);
-  const [filter, setFilter] = useState<DeviceFilter>("available");
+  const [filter, setFilter] = useState<DeviceFilter>(
+    management ? "all" : "available",
+  );
   useEffect(() => {
     if (!active) return;
     const controller = new AbortController();
@@ -93,7 +101,7 @@ export function DeviceFarm({ active }: { active: boolean }) {
   return (
     <div className="space-y-8">
       <PageHeader
-        title="디바이스팜"
+        title={management ? "기기관리" : "디바이스팜"}
         description={
           error
             ? "기기 상태 확인 불가"

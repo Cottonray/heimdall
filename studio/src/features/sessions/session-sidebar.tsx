@@ -1,4 +1,6 @@
 import {
+  Users,
+  Settings2,
   Play,
   Database,
   ListChecks,
@@ -15,6 +17,7 @@ import type { Theme } from "@/features/settings/use-theme";
 export function SessionSidebar({
   projectName,
   signedIn,
+  admin,
   active,
   onNavigate,
   onRun,
@@ -23,6 +26,7 @@ export function SessionSidebar({
 }: {
   projectName: string;
   signedIn: boolean;
+  admin: boolean;
   active: string;
   onNavigate: (page: Page) => void;
   onRun: () => void;
@@ -66,6 +70,26 @@ export function SessionSidebar({
             <Smartphone />
             디바이스팜
           </Button>
+          {admin && (
+            <>
+              <Button
+                variant={active === "device-admin" ? "secondary" : "ghost"}
+                onClick={() => onNavigate("device-admin")}
+                className="justify-start"
+              >
+                <Settings2 />
+                기기관리
+              </Button>
+              <Button
+                variant={active === "user-admin" ? "secondary" : "ghost"}
+                onClick={() => onNavigate("user-admin")}
+                className="justify-start"
+              >
+                <Users />
+                사용자 관리
+              </Button>
+            </>
+          )}
         </nav>
       )}
       {signedIn && projectName && (

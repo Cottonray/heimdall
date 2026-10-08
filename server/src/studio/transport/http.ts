@@ -5,6 +5,7 @@ import {
 } from "../infrastructure/notifications.ts";
 import {
   authenticate,
+  listUsers,
   login,
   testLogin,
   logout,
@@ -40,7 +41,11 @@ import { dispatch } from "../application/dispatch.ts";
 import { allowed, allowedBrowserOrigin } from "./access.ts";
 import { tools } from "./mcp.ts";
 import { discoverWebViews, openWebView } from "../infrastructure/webviews.ts";
-import { deviceUsage, deviceOwned, ownsDevice } from "../infrastructure/device-lease.ts";
+import {
+  deviceUsage,
+  deviceOwned,
+  ownsDevice,
+} from "../infrastructure/device-lease.ts";
 import { DEVTOOLS_PREFIX, serveDevTools } from "./devtools-assets.ts";
 export async function handle(
   req: IncomingMessage,
@@ -63,6 +68,14 @@ export async function handle(
     const url = new URL(req.url || "/", "http://localhost"),
       id = url.searchParams.get("id") || "";
     const auth = await authenticate(req);
+    if (route === "/api/studio/admin/users") {
+      if (auth?.user.role !== "admin")
+        send(403, { error: "관리자만 이용할 수 있어요" });
+      else if (req.method !== "GET")
+        send(405, { error: "지원하지 않는 요청이에요" });
+      else send(200, await listUsers());
+      return true;
+    }
     if (route === "/api/studio/auth/me") {
       send(200, { user: auth?.user || null });
       return true;

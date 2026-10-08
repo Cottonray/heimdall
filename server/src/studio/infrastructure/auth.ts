@@ -311,3 +311,8 @@ export async function logout(req: IncomingMessage, res: ServerResponse) {
     `${COOKIE}=; Path=/aiqa; HttpOnly; Secure; SameSite=Lax; Max-Age=0`,
   );
 }
+
+export async function listUsers() {
+  await ensureAuth();
+  return await db!`select id, username, name, role from heimdall_users order by username`;
+}

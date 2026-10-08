@@ -1,6 +1,8 @@
 export const pages = [
   "projects",
   "devices",
+  "device-admin",
+  "user-admin",
   "dashboard",
   "history",
   "board",
