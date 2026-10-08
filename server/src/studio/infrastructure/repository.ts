@@ -1,4 +1,5 @@
 import postgres from "postgres";
+import { readSessionBody } from "../domain/serialization.ts";
 import type { Session, PublicSession } from "../domain/types.ts";
 import { sessions, publicSession, compact } from "../domain/session.ts";
 import { publish } from "./events.ts";
@@ -20,7 +21,7 @@ export async function ensureDb() {
 export async function persist(s: Session) {
   s.updated = Date.now();
   await ensureDb();
-  await db!`insert into aiqa_studio (id, body, updated) values (${s.id}, ${JSON.stringify(publicSession(s))}, ${s.updated}) on conflict (id) do update set body=excluded.body, updated=excluded.updated`;
+  await db!`insert into aiqa_studio (id, body, updated) values (${s.id}, ${db!.json(JSON.parse(JSON.stringify(publicSession(s))) as postgres.JSONValue)}, ${s.updated}) on conflict (id) do update set body=excluded.body, updated=excluded.updated`;
   publish(compact(publicSession(s)));
 }
 export async function saved(id: string): Promise<PublicSession> {
@@ -30,7 +31,7 @@ export async function saved(id: string): Promise<PublicSession> {
   const rows = await db!`select body from aiqa_studio where id=${id}`;
   if (!rows[0]) throw new Error("시나리오를 찾지 못했어요");
   return {
-    ...(rows[0].body as PublicSession),
+    ...readSessionBody(rows[0].body),
     state: "closed",
     working: false,
     ai: false,
@@ -42,7 +43,7 @@ export async function listSessions(): Promise<PublicSession[]> {
   const rows =
     await db!`select body from aiqa_studio order by updated desc limit 60`;
   return rows.map((row) => {
-    const body = row.body as PublicSession;
+    const body = readSessionBody(row.body);
     return compact(
       sessions.has(body.id)
         ? publicSession(sessions.get(body.id)!)

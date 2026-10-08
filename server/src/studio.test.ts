@@ -38,3 +38,12 @@ test('export escapes user text and retains failed operations and assertions for 
 })
 
 test('AI assertion aliases keep the expected result rather than searching for undefined',()=>{const a=validateAction({type:'assert',selector:'status',contains:'김테스트님 · 10,000원 · 입력 확인 완료'});assert.equal(a.text,a.contains)})
+
+
+test('persisted JSON objects and transitional string rows preserve saved history', async () => {
+    const {readSessionBody} = await import('./studio/domain/serialization.ts')
+    const body={id:'test-session',steps:[{n:1,ok:false,action:{type:'assert',text:'expected'}}]}
+    assert.deepEqual(readSessionBody(body),body)
+    assert.deepEqual(readSessionBody(JSON.stringify(body)),body)
+    assert.throws(()=>readSessionBody({id:'bad'}))
+})
