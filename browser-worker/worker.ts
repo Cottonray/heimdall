@@ -14,7 +14,7 @@ function checkUrl(value: string) {
 }
 function get(id: string) { const s = sessions.get(id); if (!s) throw new Error('종료된 브라우저예요'); s.at = Date.now(); return s }
 async function observe(page: Page) {
-    return { url: page.url(), title: await page.title(), tree: (await page.locator('body').ariaSnapshot()).slice(0, 18000), elements: await page.locator('input,textarea,button,a,select').evaluateAll(nodes => nodes.slice(0,80).map(el => ({ text: el.textContent?.trim().slice(0,100), selector: el.id ? '#' + CSS.escape(el.id) : undefined, placeholder: el.getAttribute('placeholder'), label: el.getAttribute('aria-label') }))) }
+    return { url: page.url(), title: await page.title(), tree: (await page.locator('body').ariaSnapshot()).slice(0, 18000), elements: await page.locator('input,textarea,button,a,select,[role],[data-testid]').evaluateAll(nodes => nodes.slice(0,80).map(el => ({ text: el.textContent?.trim().slice(0,100), selector: el.id ? '#' + CSS.escape(el.id) : undefined, placeholder: el.getAttribute('placeholder'), label: el.getAttribute('aria-label') }))) }
 }
 async function operate(id: string, a: any) {
     const s = get(id), p = s.page
@@ -41,7 +41,7 @@ async function operate(id: string, a: any) {
         case 'type': await p.keyboard.insertText(String(a.value ?? '')); break
         case 'key': await p.keyboard.press(String(a.key)); break
         case 'scroll': await p.mouse.wheel(0, a.direction === 'up' ? -550 : 550); break
-        case 'assert': await p.getByText(String(a.text), { exact: false }).first().waitFor({ state: 'visible', timeout: 6000 }); break
+        case 'assert': await (a.text ? p.getByText(String(a.text), { exact: false }).first() : locator()).waitFor({ state: 'visible', timeout: 6000 }); break
         case 'api': {
             const r = await s.context.request.get(checkUrl(String(a.url)), { maxRedirects: 0, timeout: 10000 })
             const status = r.status()

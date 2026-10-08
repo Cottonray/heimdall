@@ -36,3 +36,5 @@ test('export escapes user text and retains failed operations and assertions for 
     assert.ok(code.includes('toBeVisible()'))
     assert.ok(code.includes('toContain("accounts")'))
 })
+
+test('AI assertion aliases keep the expected result rather than searching for undefined',()=>{const a=validateAction({type:'assert',selector:'status',contains:'김테스트님 · 10,000원 · 입력 확인 완료'});assert.equal(a.text,a.contains)})
