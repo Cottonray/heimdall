@@ -101,10 +101,7 @@ export function RemoteDevice({
           </div>
           <div className="min-w-0">
             <h1 className="truncate text-lg font-semibold">{name}</h1>
-            <p
-              data-selectable
-              className="truncate text-xs text-muted-foreground"
-            >
+            <p className="truncate text-xs text-muted-foreground">
               {serial}
             </p>
           </div>
