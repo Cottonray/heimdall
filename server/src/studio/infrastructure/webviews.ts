@@ -32,6 +32,15 @@ export function parseTarget(socket: string, value: unknown): Target | null {
     !/^[A-Za-z0-9._-]{1,200}$/.test(row.id)
   )
     return null;
+  if (socket.startsWith("webview_") && typeof row.description === "string") {
+    try {
+      const description = JSON.parse(row.description);
+      // Window attachment is independent of visibility or an attached DevTools client.
+      if (description?.attached === false) return null;
+    } catch {
+      /* Older WebViews may expose a plain-text description. */
+    }
+  }
   if (typeof row.webSocketDebuggerUrl !== "string") return null;
   let websocketPath: string;
   try {

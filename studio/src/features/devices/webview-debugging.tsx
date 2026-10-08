@@ -60,12 +60,14 @@ export function useWebViews(
           setError("");
         }
       } catch (error) {
-        if (!controller.signal.aborted)
+        if (!controller.signal.aborted) {
+          setResult({ targets: [], unavailable: 0 });
           setError(
             error instanceof Error
               ? error.message
               : "웹뷰 목록을 확인하지 못했어요.",
           );
+        }
       } finally {
         pending = false;
         if (!controller.signal.aborted) setLoading(false);
