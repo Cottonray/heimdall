@@ -167,9 +167,11 @@ export function LivePreview({
           </div>
           <p className="flex items-center gap-2 text-xs text-muted-foreground">
             <MousePointer2 className="size-3" />
-            {session.ai
-              ? "사람 개입을 누르면 직접 조작할 수 있어요."
-              : "화면을 누르면 수행한 단계가 자동으로 기록돼요."}
+            {session.state === "closed"
+              ? "저장된 마지막 화면이에요. 재실행으로 다시 시작할 수 있어요."
+              : session.ai
+                ? "사람 개입을 누르면 직접 조작할 수 있어요."
+                : "화면을 누르면 수행한 단계가 자동으로 기록돼요."}
           </p>
         </div>
       </CardFooter>

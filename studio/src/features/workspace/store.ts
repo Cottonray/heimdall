@@ -152,6 +152,7 @@ export class WorkspaceStore {
       this.update(s);
       if (tool === "qa_replay") this.select(s.id);
       if (tool === "qa_observe") await this.loadFrame(s.id);
+      if (tool === "qa_close" || tool === "qa_replay") await this.refresh();
     });
   action = async (action: Action) =>
     this.run(async () => {
