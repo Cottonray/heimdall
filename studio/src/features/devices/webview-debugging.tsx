@@ -29,6 +29,7 @@ export function useWebViews(
   const [loading, setLoading] = useState(false);
   const [loadedSerial, setLoadedSerial] = useState("");
   const [revision, setRevision] = useState(0);
+  const refreshInterval = serial.startsWith("ios:") ? 0 : 3000;
   useEffect(() => {
     if (!connected) return;
     const controller = new AbortController();
@@ -74,19 +75,24 @@ export function useWebViews(
       }
     }
     void refresh();
-    const timer = serial.startsWith("ios:")
-      ? undefined
-      : setInterval(() => void refresh(), 3000);
+    const timer = refreshInterval
+      ? setInterval(() => void refresh(), refreshInterval)
+      : undefined;
     return () => {
       controller.abort();
       clearInterval(timer);
     };
-  }, [serial, connected, revision, onAuthExpired, viewer]);
+  }, [serial, connected, revision, onAuthExpired, viewer, refreshInterval]);
   return {
     ...result,
     error,
     loading,
     initialLoading: loading && loadedSerial !== serial,
+    refreshLabel: !connected
+      ? "일시 정지"
+      : refreshInterval
+        ? `${refreshInterval / 1000}초 자동`
+        : "수동",
     refresh: () => setRevision((n) => n + 1),
   };
 }
@@ -193,12 +199,13 @@ export function WebViewDebugging({
         </div>
         <Button
           variant="outline"
-          size="icon"
-          aria-label="웹뷰 새로고침"
+          size="sm"
+          aria-label={`웹뷰 새로고침 · ${discovery.refreshLabel}`}
           disabled={discovery.loading}
           onClick={discovery.refresh}
         >
           <RefreshCw />
+          {discovery.refreshLabel} · 새로고침
         </Button>
         <Button
           disabled={!target || !canControl || opening || !!discovery.error}
