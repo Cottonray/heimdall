@@ -1,5 +1,10 @@
 import { aiModel, saveAiModel } from "../infrastructure/ai-model.ts";
-import { posts, savePost } from "../infrastructure/community.ts";
+import {
+  posts,
+  savePost,
+  comments,
+  saveComment,
+} from "../infrastructure/community.ts";
 import {
   deviceMetadata,
   saveDeviceMetadata,
@@ -189,8 +194,16 @@ export async function handle(
       send(200, await listTestData(url.searchParams.get("projectId") || ""));
       return true;
     }
-    if (route === "/api/studio/community" && !auth) {
+    if (
+      (route === "/api/studio/community" ||
+        route === "/api/studio/community/comments") &&
+      !auth
+    ) {
       send(401, { error: "로그인이 필요해요" });
+      return true;
+    }
+    if (route === "/api/studio/community/comments" && req.method === "GET") {
+      send(200, await comments(url.searchParams.get("postId") || ""));
       return true;
     }
     if (route === "/api/studio/community" && req.method === "GET") {
@@ -306,6 +319,11 @@ export async function handle(
     if (route === "/api/studio/admin/ai-model") {
       await saveAiModel(data.model);
       send(200, await aiModel());
+      return true;
+    }
+    if (route === "/api/studio/community/comments") {
+      await saveComment(auth!.user, data);
+      send(200, { ok: true });
       return true;
     }
     if (route === "/api/studio/community") {

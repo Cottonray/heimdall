@@ -1,4 +1,4 @@
-import { RefreshControl } from "@/components/refresh-control";
+import { PostComments } from "./post-comments";
 import { useEffect, useState } from "react";
 import { DataTable } from "@/components/data-table";
 import { PageHeader } from "@/components/page-header";
@@ -17,13 +17,7 @@ type Post = {
   created: number;
   updated: number;
 };
-export function Community({
-  user,
-  active = true,
-}: {
-  user: User;
-  active?: boolean;
-}) {
+export function Community({ user }: { user: User; active?: boolean }) {
   const [rows, setRows] = useState<Post[]>([]),
     [revision, setRevision] = useState(0),
     [loading, setLoading] = useState(true),
@@ -84,19 +78,13 @@ export function Community({
           description="질문과 테스트 경험을 함께 나눠요."
           actions={
             <>
-              <RefreshControl
-                storageKey="community"
-                busy={loading}
-                active={active && !reading && !editing}
-                onRefresh={() => setRevision((value) => value + 1)}
-              />
               <Button
                 onClick={() => {
                   setError("");
                   setEditing({ title: "", content: "" });
                 }}
               >
-                작성
+                글 작성
               </Button>
             </>
           }
@@ -181,6 +169,7 @@ export function Community({
               수정
             </Button>
           )}
+          <PostComments key={reading.id} postId={reading.id} user={user} />
         </article>
       )}
       {editing && (
