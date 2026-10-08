@@ -1,5 +1,11 @@
 import { useRef, useState } from "react";
-export function PanelResizeHandle({ targetId }: { targetId: string }) {
+export function PanelResizeHandle({
+  targetId,
+  label = "웹 디버깅 패널 너비",
+}: {
+  targetId: string;
+  label?: string;
+}) {
   const pointer = useRef<number | null>(null);
   const [width, setWidth] = useState(60);
   const resize = (value: number) => {
@@ -11,7 +17,7 @@ export function PanelResizeHandle({ targetId }: { targetId: string }) {
   return (
     <div
       role="slider"
-      aria-label="웹 디버깅 패널 너비"
+      aria-label={label}
       aria-orientation="horizontal"
       aria-valuemin={25}
       aria-valuemax={75}

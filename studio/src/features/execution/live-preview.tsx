@@ -40,8 +40,8 @@ export function LivePreview({
     session.state === "replay" ||
     session.state === "closed";
   return (
-    <Card>
-      <CardHeader>
+    <Card variant="plain" className="h-full rounded-none gap-3 py-3">
+      <CardHeader className="px-3">
         <div className="flex items-center justify-between gap-3">
           <CardTitle>
             <span className="flex items-center gap-2">
@@ -59,16 +59,24 @@ export function LivePreview({
             : session.observation?.url || session.url}
         </p>
       </CardHeader>
-      <CardContent>
-        <div className="flex min-h-80 items-center justify-center overflow-hidden rounded-lg border bg-muted/40">
+      <CardContent className="min-h-0 flex-1 px-3">
+        <div className="flex h-full min-h-48 items-center justify-center overflow-hidden rounded-lg border bg-muted/40">
           {frame ? (
             <PreviewSurface
+              variant="remote"
               aria-label="테스트 화면 조작"
               disabled={disabled}
               onClick={(e) => {
                 const img = e.currentTarget.querySelector("img");
                 if (!img) return;
                 const r = img.getBoundingClientRect();
+                if (
+                  e.clientX < r.left ||
+                  e.clientX > r.right ||
+                  e.clientY < r.top ||
+                  e.clientY > r.bottom
+                )
+                  return;
                 const x = Math.round(
                   ((e.clientX - r.left) / r.width) *
                     (session.engine === "android"
@@ -87,7 +95,7 @@ export function LivePreview({
               <img
                 src={frame}
                 alt="테스트 대상 화면"
-                className="block max-h-preview max-w-full object-contain"
+                className="block h-full max-h-full max-w-full object-contain"
               />
             </PreviewSurface>
           ) : (
@@ -102,7 +110,7 @@ export function LivePreview({
           )}
         </div>
       </CardContent>
-      <CardFooter>
+      <CardFooter className="px-3">
         <div className="w-full space-y-3">
           <div className="flex flex-wrap items-center gap-2">
             <Button

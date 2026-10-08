@@ -1,3 +1,4 @@
+import { PanelResizeHandle } from "@/components/ui/panel-resize-handle";
 import { AiModelAdmin } from "@/features/auth/ai-model-admin";
 import { Community } from "@/features/community/community";
 import { SortableTabsList } from "@/components/ui/sortable-tabs-list";
@@ -31,7 +32,6 @@ import {
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, WorkspaceTab } from "@/components/ui/tabs";
-import { StatusBadge } from "@/components/status-badge";
 import { useWorkspace } from "@/features/workspace/use-workspace";
 import { isPage } from "@/features/workspace/tabs";
 import { SessionSidebar } from "@/features/sessions/session-sidebar";
@@ -46,7 +46,6 @@ import { DebugPanel } from "@/features/debugging/debug-panel";
 import { ExportDialog } from "@/features/scenarios/export-dialog";
 import { api } from "@/lib/api";
 import { APP_ROOT, LOGIN_PATH } from "@/lib/paths";
-import { engines } from "@/lib/labels";
 import type { Session, SessionExport } from "../../../contracts/studio";
 
 export function App() {
@@ -448,12 +447,6 @@ function SessionContent({
     <>
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div>
-          <div className="mb-2 flex items-center gap-2">
-            <span className="text-xs font-medium text-muted-foreground">
-              {engines[s.engine].label}
-            </span>
-            <StatusBadge state={s.state} />
-          </div>
           <h1 className="text-2xl font-semibold tracking-tight">{s.name}</h1>
         </div>
         <div className="flex flex-wrap gap-2">
@@ -504,8 +497,8 @@ function SessionContent({
           </Button>
         </div>
       </div>
-      <div className="grid items-start gap-5 xl:grid-cols-3">
-        <div className="min-w-0 xl:col-span-2">
+      <div className="flex h-[calc(100dvh-12rem)] min-h-[480px] overflow-hidden border rounded-lg">
+        <div className="min-w-0 flex-1 overflow-auto">
           <LivePreview
             session={s}
             frame={active ? w.frame : ""}
@@ -514,20 +507,31 @@ function SessionContent({
             onRefresh={() => w.store.command("qa_observe")}
           />
         </div>
-        <AgentPanel
-          key={s.id}
-          session={s}
-          busy={w.busy}
-          onCommand={w.store.command}
-          onAction={w.store.action}
+        <PanelResizeHandle
+          targetId={"session-tools-" + s.id}
+          label="스튜디오 작업 패널 너비"
         />
+        <aside
+          id={"session-tools-" + s.id}
+          className="w-2/5 min-w-0 overflow-auto"
+        >
+          <DebugPanel
+            key={"debug-" + s.id}
+            session={s}
+            busy={w.busy}
+            onAction={w.store.action}
+            agent={
+              <AgentPanel
+                key={s.id}
+                session={s}
+                busy={w.busy}
+                onCommand={w.store.command}
+                onAction={w.store.action}
+              />
+            }
+          />
+        </aside>
       </div>
-      <DebugPanel
-        key={"debug-" + s.id}
-        session={s}
-        busy={w.busy}
-        onAction={w.store.action}
-      />
     </>
   );
 }

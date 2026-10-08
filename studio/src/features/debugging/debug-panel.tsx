@@ -1,4 +1,4 @@
-import { useId, useState } from "react";
+import { type ReactNode, useId, useState } from "react";
 import {
   Check,
   AlertCircle,
@@ -27,7 +27,9 @@ export function DebugPanel({
   session,
   busy,
   onAction,
+  agent,
 }: {
+  agent?: ReactNode;
   session: Session;
   busy: boolean;
   onAction: (a: Action) => Promise<unknown>;
@@ -38,11 +40,12 @@ export function DebugPanel({
   const [contains, setContains] = useState("QA 테스트 계좌");
   const [status, setStatus] = useState("200");
   return (
-    <Card>
-      <CardContent>
-        <Tabs defaultValue="timeline">
+    <Card variant="plain" className="rounded-none py-3">
+      <CardContent className="px-3">
+        <Tabs defaultValue={agent ? "agent" : "timeline"}>
           <div className="flex flex-wrap items-center justify-between gap-3">
-            <TabsList>
+            <TabsList className="flex flex-wrap h-auto">
+              {agent && <TabsTrigger value="agent">AI 시나리오</TabsTrigger>}
               <TabsTrigger value="timeline">
                 <ListChecks className="size-4" />
                 실행 기록
@@ -62,8 +65,9 @@ export function DebugPanel({
               조작
             </span>
           </div>
+          {agent && <TabsContent value="agent">{agent}</TabsContent>}
           <TabsContent value="timeline">
-            <div className="max-h-80 overflow-auto">
+            <div className="overflow-auto">
               {session.steps.length === 0 ? (
                 <p className="py-10 text-center text-sm text-muted-foreground">
                   첫 번째 동작을 기다리고 있어요.
@@ -119,7 +123,7 @@ export function DebugPanel({
             </div>
           </TabsContent>
           <TabsContent value="debug">
-            <div className="grid gap-4 md:grid-cols-2">
+            <div className="grid gap-4">
               <div>
                 <h3 className="my-3 text-sm font-medium">콘솔 · 네트워크</h3>
                 <pre className="max-h-72 overflow-auto rounded-lg bg-muted p-4 text-xs leading-6">
