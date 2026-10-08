@@ -1,3 +1,5 @@
+import { Moon, Sun, Settings } from "lucide-react";
+import type { Theme } from "@/features/settings/use-theme";
 import { HeimdallLogo } from "@/components/heimdall-logo";
 import { useState } from "react";
 import { Plus, Search, Monitor, Smartphone, Braces, Plug } from "lucide-react";
@@ -13,16 +15,22 @@ export function SessionSidebar({
   onSelect,
   onNew,
   onMcp,
+  theme,
+  onToggleTheme,
+  onSettings,
 }: {
   sessions: Session[];
   selected: string;
   onSelect: (id: string) => void;
   onNew: () => void;
   onMcp: () => void;
+  theme: Theme;
+  onToggleTheme: () => void;
+  onSettings: () => void;
 }) {
   const [search, setSearch] = useState("");
   return (
-    <aside className="flex items-center justify-between border-b bg-sidebar text-sidebar-foreground lg:sticky lg:top-0 lg:h-screen lg:w-64 lg:shrink-0 lg:flex-col lg:items-stretch lg:justify-start lg:border-b-0 lg:border-r">
+    <aside className="flex flex-wrap items-center justify-between border-b bg-sidebar text-sidebar-foreground lg:sticky lg:top-0 lg:h-screen lg:w-64 lg:shrink-0 lg:flex-col lg:flex-nowrap lg:items-stretch lg:justify-start lg:border-b-0 lg:border-r">
       <button
         type="button"
         onClick={() => onSelect("")}
@@ -100,8 +108,35 @@ export function SessionSidebar({
             })}
         </nav>
       </div>
-      <div className="hidden space-y-3 p-5 lg:block lg:border-t">
-        <Button variant="ghost" size="sm" onClick={onMcp}>
+      <div className="flex shrink-0 gap-2 p-3 lg:flex-col lg:border-t lg:p-5">
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={onToggleTheme}
+          aria-label={theme === "dark" ? "라이트 모드" : "다크 모드"}
+          className="justify-start"
+        >
+          {theme === "dark" ? <Sun /> : <Moon />}
+          <span className="hidden lg:inline">
+            {theme === "dark" ? "라이트 모드" : "다크 모드"}
+          </span>
+        </Button>
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={onSettings}
+          aria-label="설정"
+          className="justify-start"
+        >
+          <Settings />
+          <span className="hidden lg:inline">설정</span>
+        </Button>
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={onMcp}
+          className="hidden lg:inline-flex lg:justify-start"
+        >
           <Plug />
           MCP 연결
         </Button>

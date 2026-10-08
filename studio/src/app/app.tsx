@@ -1,3 +1,12 @@
+import { Settings } from "@/features/settings/settings";
+import { useTheme } from "@/features/settings/use-theme";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from "@/components/ui/dialog";
 import { useState } from "react";
 import {
   Download,
@@ -24,6 +33,8 @@ import { engines } from "@/lib/labels";
 import type { SessionExport } from "../../../contracts/studio";
 export function App() {
   const w = useWorkspace();
+  const { theme, setTheme, toggleTheme } = useTheme();
+  const [settingsOpen, setSettingsOpen] = useState(false);
   const [newOpen, setNewOpen] = useState(false);
   const [exported, setExported] = useState<SessionExport | null>(null);
   const s = w.session;
@@ -35,6 +46,9 @@ export function App() {
         onSelect={w.store.select}
         onNew={() => setNewOpen(true)}
         onMcp={downloadMcp}
+        theme={theme}
+        onToggleTheme={toggleTheme}
+        onSettings={() => setSettingsOpen(true)}
       />
       <div className="min-w-0 flex-1">
         <main className="mx-auto max-w-screen-2xl space-y-6 p-5 md:p-8">
@@ -152,6 +166,22 @@ export function App() {
           if (!w.store.getSnapshot().error) setNewOpen(false);
         }}
       />
+      <Dialog open={settingsOpen} onOpenChange={setSettingsOpen}>
+        <DialogContent className="max-h-screen overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>설정</DialogTitle>
+            <DialogDescription>
+              화면 테마와 연결 설정을 관리해요.
+            </DialogDescription>
+          </DialogHeader>
+          <Settings
+            theme={theme}
+            onTheme={setTheme}
+            status={w.status}
+            onRefresh={() => void w.store.refresh()}
+          />
+        </DialogContent>
+      </Dialog>
       <ExportDialog data={exported} onClose={() => setExported(null)} />
     </div>
   );

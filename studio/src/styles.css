@@ -1,5 +1,6 @@
 @import "tailwindcss";
 @import "tw-animate-css";
+@custom-variant dark (&:where(.dark, .dark *));
 @theme inline {
   --font-sans:
     "Pretendard", -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo",
@@ -73,6 +74,22 @@
     transition-duration: 80ms;
     transition-timing-function: ease-out;
   }
+}
+.dark {
+  color-scheme: dark;
+  --background: #101924;
+  --foreground: #edf3fb;
+  --card: #172330;
+  --primary: #42b7ed;
+  --primary-foreground: #092034;
+  --secondary: #233d54;
+  --muted: #223142;
+  --muted-foreground: #a1b2c5;
+  --accent: #25394d;
+  --destructive: #ff8296;
+  --success: #61d6ac;
+  --border: #304156;
+  --sidebar: #14202d;
 }
 @layer base {
   * {
