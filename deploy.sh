@@ -78,6 +78,9 @@ say "홈서버($host)로 보내는 중"
 COPYFILE_DISABLE=1 tar --no-xattrs -cf - -C "$payload" aiqa \
     | ssh "$host" 'tar -xf - -C ~ && find ~/aiqa -name "._*" -delete && chmod +x ~/aiqa/entrypoint.sh'
 
+# tar는 삭제된 파일을 지우지 않는다. 폐기한 구형 콘솔 네 파일만 명시적으로 제거한다.
+ssh "$host" 'rm -f ~/aiqa/web/index.html ~/aiqa/web/app.js ~/aiqa/web/app.css ~/aiqa/web/copy.json'
+
 # --- DB 비밀번호 (홈서버에만 있다) --------------------------------------------
 # aiqa-db 의 비밀번호는 저장소에도 메인서버에도 없다. 홈서버 ~/aiqa/db.env 에 처음 한 번 만들고,
 # 배포마다 .env(방금 메인서버 것으로 덮였다) 뒤에 덧붙인다. **db.env 를 지우면 안 된다** —
@@ -136,12 +139,11 @@ ssh "$host" '
 
 say "바깥 경로 확인"
 ssh "$main" '
-    code=$(curl -sS -o /tmp/aiqa.html -w "%{http_code}" https://qa.example/aiqa/)
-    grep -q "AI QA" /tmp/aiqa.html
+    code=$(curl -sS -o /dev/null -w "%{http_code}" https://qa.example/aiqa/)
     cfg=$(curl -sS -o /dev/null -w "%{http_code}" https://qa.example/aiqa/api/config)
-    printf "  화면=%s  설정=%s\n" "$code" "$cfg"
-    rm -f /tmp/aiqa.html
-    test "$code" = 200 && test "$cfg" = 200
+    studio=$(curl -sS -o /dev/null -w "%{http_code}" https://gateway.example/aiqa/studio/)
+    printf "  구형 화면=%s  구형 API=%s  Studio 로그인=%s\n" "$code" "$cfg" "$studio"
+    test "$code" = 410 && test "$cfg" = 410 && test "$studio" = 302
 '
 
-say "완료 — https://qa.example/aiqa/"
+say "완료 — https://gateway.example/aiqa/studio/"
