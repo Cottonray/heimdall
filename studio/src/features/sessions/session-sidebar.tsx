@@ -23,13 +23,18 @@ export function SessionSidebar({
   const [search, setSearch] = useState("");
   return (
     <aside className="flex items-center justify-between border-b bg-sidebar text-sidebar-foreground lg:sticky lg:top-0 lg:h-screen lg:w-64 lg:shrink-0 lg:flex-col lg:items-stretch lg:justify-start lg:border-b-0 lg:border-r">
-      <div className="flex items-center gap-3 px-5 py-6">
+      <button
+        type="button"
+        onClick={() => onSelect("")}
+        aria-label="헤임달 기본 페이지"
+        className="flex items-center gap-3 px-5 py-6 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+      >
         <HeimdallLogo />
         <div>
           <p className="font-semibold tracking-widest">HEIMDALL</p>
           <p className="text-xs text-muted-foreground">테스트 워크스페이스</p>
         </div>
-      </div>
+      </button>
       <div className="shrink-0 px-4 py-4 lg:pb-5 lg:pt-0">
         <Button onClick={onNew} className="w-full">
           <Plus />새 테스트
