@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -22,6 +22,7 @@ export function JsonDataEditor({
   onChange: (value: string) => void;
   onValidityChange: (valid: boolean) => void;
 }) {
+  const releaseTab = useRef(false);
   const [mode, setMode] = useState("json");
   const [rows, setRows] = useState<Row[]>([]);
   const [rowError, setRowError] = useState("");
@@ -83,6 +84,9 @@ export function JsonDataEditor({
           </TabsTrigger>
         </TabsList>
         <TabsContent value="json">
+          <p className="mb-2 text-xs text-muted-foreground">
+            Tab 들여쓰기 · Shift+Tab 내어쓰기 · Esc 다음 Tab으로 입력창 이동
+          </p>
           <Textarea
             aria-label="추가 데이터 JSON"
             aria-invalid={!!parseError}
@@ -90,6 +94,70 @@ export function JsonDataEditor({
             rows={6}
             maxLength={50000}
             value={value}
+            onKeyDown={(event) => {
+              if (event.key === "Escape") {
+                releaseTab.current = true;
+                event.stopPropagation();
+                return;
+              }
+              if (
+                event.key !== "Tab" ||
+                event.ctrlKey ||
+                event.metaKey ||
+                event.altKey
+              ) {
+                releaseTab.current = false;
+                return;
+              }
+              if (releaseTab.current) {
+                releaseTab.current = false;
+                return;
+              }
+              event.preventDefault();
+              const input = event.currentTarget;
+              const start = input.selectionStart,
+                end = input.selectionEnd;
+              let next: string, nextStart: number, nextEnd: number;
+              if (!event.shiftKey && start === end) {
+                next = value.slice(0, start) + "  " + value.slice(end);
+                nextStart = nextEnd = start + 2;
+              } else {
+                const lineStart = value.lastIndexOf("\n", start - 1) + 1;
+                const blockEnd =
+                  end > start && value[end - 1] === "\n" ? end - 1 : end;
+                const lines = value.slice(lineStart, blockEnd).split("\n");
+                const deltas: number[] = [];
+                const replacement = lines
+                  .map((line) => {
+                    if (!event.shiftKey) {
+                      deltas.push(2);
+                      return "  " + line;
+                    }
+                    const count = line.startsWith("\t")
+                      ? 1
+                      : line.match(/^ {1,2}/)?.[0].length || 0;
+                    deltas.push(-count);
+                    return line.slice(count);
+                  })
+                  .join("\n");
+                next =
+                  value.slice(0, lineStart) +
+                  replacement +
+                  value.slice(blockEnd);
+                nextStart = Math.max(lineStart, start + deltas[0]);
+                nextEnd = Math.max(
+                  nextStart,
+                  end + deltas.reduce((sum, delta) => sum + delta, 0),
+                );
+              }
+              if (next.length > 50000) return;
+              onChange(next);
+              onValidityChange(!jsonError(next));
+              requestAnimationFrame(() => {
+                if (input.isConnected)
+                  input.setSelectionRange(nextStart, nextEnd);
+              });
+            }}
             onChange={(event) => {
               onChange(event.target.value);
               onValidityChange(!jsonError(event.target.value));
