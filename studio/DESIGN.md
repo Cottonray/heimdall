@@ -277,3 +277,5 @@ DataTable의 onRowClick 옵션으로 일반 셀 영역 전체에 행 액션을 �
 
 원격 지연 검증 중 최신 실행 패널의 스타일도 공통 규격으로 옮겼다. Card panel/preview, CardHeader·CardContent·CardFooter compact, SelectTrigger multiline, DialogContent form과 session-panels 높이 토큰을 사용한다. 기존 간격·크기는 유지하고 허용 사례를 디자인 lint 검사에 추가했다.
 - 관리자 앱 관리에서 Android APK(최대 300MB)를 분할 업로드하고 등록 앱을 조회해요. 원격 기기 앱 설치 탭에서 목록·설치 상태를 표시하며 로그인·기기 점유·플랫폼을 서버에서 확인해요. iOS 설치는 아직 제공하지 않아요. 파일은 비공개 studio/apps에 보관하고 관리자만 업로드해요.
+
+- 사이드바 우측 상단 아이콘으로 접고 펼쳐요. 접으면 펼치기 버튼만 남기며 선택 상태를 브라우저에 저장해요.
