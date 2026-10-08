@@ -1,9 +1,17 @@
 import { Item } from "@/components/ui/item";
 import { PageHeader } from "@/components/page-header";
 import { useState, type ReactNode } from "react";
-import { Folder, Plus, ArrowUpRight } from "lucide-react";
+import { Folder, Plus, ArrowUpRight, LayoutGrid, List } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import {
+  Table,
+  TableHeader,
+  TableBody,
+  TableRow,
+  TableHead,
+  TableCell,
+} from "@/components/ui/table";
+import { Input, SearchInput } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
   Dialog,
@@ -29,6 +37,27 @@ export function ProjectList({
 }) {
   const [open, setOpen] = useState(false);
   const [name, setName] = useState("");
+  const [query, setQuery] = useState("");
+  const [view, setView] = useState<"cards" | "list">(() => {
+    try {
+      return localStorage.getItem("heimdall-project-view") === "list"
+        ? "list"
+        : "cards";
+    } catch {
+      return "cards";
+    }
+  });
+  const changeView = (next: "cards" | "list") => {
+    setView(next);
+    try {
+      localStorage.setItem("heimdall-project-view", next);
+    } catch {
+      /* Storage may be unavailable. */
+    }
+  };
+  const filtered = projects.filter((project) =>
+    project.name.toLocaleLowerCase().includes(query.trim().toLocaleLowerCase()),
+  );
   return (
     <div className="space-y-8">
       <PageHeader
@@ -43,24 +72,90 @@ export function ProjectList({
           </>
         }
       />
-      <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
-        {projects.map((project) => (
-          <Item key={project.id} variant="project" size="project" asChild>
-            <button type="button" onClick={() => onEnter(project.id)}>
-              <span className="flex items-center justify-between">
-                <Folder className="size-7 text-primary" />
-                <ArrowUpRight className="size-5 text-muted-foreground group-hover:text-primary" />
-              </span>
-              <span className="mt-8 block truncate text-lg font-semibold">
-                {project.name}
-              </span>
-              <span className="mt-2 block text-sm text-muted-foreground">
-                테스트 {project.tests}개
-              </span>
-            </button>
-          </Item>
-        ))}
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <SearchInput
+          aria-label="프로젝트 이름 검색"
+          placeholder="프로젝트 이름 검색"
+          value={query}
+          onChange={(event) => setQuery(event.target.value)}
+          className="w-full sm:w-80"
+        />
+        <div
+          className="flex items-center gap-1"
+          role="group"
+          aria-label="프로젝트 보기 방식"
+        >
+          <Button
+            size="icon-sm"
+            variant={view === "cards" ? "secondary" : "ghost"}
+            aria-label="카드보기"
+            title="카드보기"
+            aria-pressed={view === "cards"}
+            onClick={() => changeView("cards")}
+          >
+            <LayoutGrid />
+          </Button>
+          <Button
+            size="icon-sm"
+            variant={view === "list" ? "secondary" : "ghost"}
+            aria-label="목록보기"
+            title="목록보기"
+            aria-pressed={view === "list"}
+            onClick={() => changeView("list")}
+          >
+            <List />
+          </Button>
+        </div>
       </div>
+      {!filtered.length ? (
+        <p
+          role="status"
+          className="py-8 text-center text-sm text-muted-foreground"
+        >
+          {query.trim() ? "검색 결과가 없어요." : "등록된 프로젝트가 없어요."}
+        </p>
+      ) : view === "list" ? (
+        <Table variant="bordered">
+          <TableHeader>
+            <TableRow>
+              <TableHead>프로젝트</TableHead>
+              <TableHead>테스트 수</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {filtered.map((project) => (
+              <TableRow key={project.id}>
+                <TableCell>
+                  <Button variant="link" onClick={() => onEnter(project.id)}>
+                    <Folder />
+                    {project.name}
+                  </Button>
+                </TableCell>
+                <TableCell>{project.tests}개</TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      ) : (
+        <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
+          {filtered.map((project) => (
+            <Item key={project.id} variant="project" size="project" asChild>
+              <button type="button" onClick={() => onEnter(project.id)}>
+                <span className="flex items-center justify-between">
+                  <Folder className="size-7 text-primary" />
+                  <ArrowUpRight className="size-5 text-muted-foreground group-hover:text-primary" />
+                </span>
+                <span className="mt-8 block truncate text-lg font-semibold">
+                  {project.name}
+                </span>
+                <span className="mt-2 block text-sm text-muted-foreground">
+                  테스트 {project.tests}개
+                </span>
+              </button>
+            </Item>
+          ))}
+        </div>
+      )}
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent>
           <DialogHeader>
