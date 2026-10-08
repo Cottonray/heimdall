@@ -340,7 +340,7 @@ export function DataTable<T>({
                 {columns.map((column) => (
                   <TableCell
                     key={column.id}
-                    variant={column.onCellClick ? "action" : "default"}
+                    variant={column.onCellClick ? (onRowClick ? "row-action" : "action") : "default"}
                   >
                     {column.onCellClick ? (
                       <>

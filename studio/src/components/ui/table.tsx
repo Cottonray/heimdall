@@ -312,7 +312,7 @@ function TableCell({
   onClick,
   variant = "default",
   ...props
-}: React.ComponentProps<"td"> & { variant?: "default" | "empty" | "action" }) {
+}: React.ComponentProps<"td"> & { variant?: "default" | "empty" | "action" | "row-action" }) {
   return (
     <td
       data-slot="table-cell"
@@ -338,7 +338,8 @@ function TableCell({
       }}
       className={cn(
         "overflow-hidden text-ellipsis p-2 align-middle whitespace-nowrap [&:has([role=checkbox])]:pr-0 [&>[role=checkbox]]:translate-y-[2px]",
-        variant === "action" && "relative text-primary hover:bg-accent/50",
+        (variant === "action" || variant === "row-action") && "relative text-primary",
+        variant === "action" && "hover:bg-accent/50",
         variant === "empty" && "h-24 text-center text-muted-foreground",
         className,
       )}
