@@ -99,6 +99,8 @@ export function App() {
     (id) =>
       id !== "projects" &&
       id !== "devices" &&
+      id !== "device-admin" &&
+      id !== "user-admin" &&
       (isPage(id) || projectSessions.some((s) => s.id === id)),
   );
   const onTab = (id: string) =>
