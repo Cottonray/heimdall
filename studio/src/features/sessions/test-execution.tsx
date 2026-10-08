@@ -23,19 +23,12 @@ export function TestExecution({
   embedded?: boolean;
 }) {
   const fieldId = useId();
-  const [engine, setEngine] = useState<Engine>("web");
   const [name, setName] = useState("이체 입력 확인");
   const [domainId, setDomainId] = useState("");
   const domain = domains.find((d) => d.id === domainId) || domains[0];
   const environment = domain?.environment || "web";
   const selectedEngine: Engine =
-    environment === "app"
-      ? "android"
-      : environment === "api"
-        ? "api"
-        : engine === "mobile-web"
-          ? "mobile-web"
-          : "web";
+    environment === "app" ? "android" : environment === "api" ? "api" : "web";
   return (
     <div className="max-w-2xl space-y-6">
       {!embedded && (
@@ -53,32 +46,6 @@ export function TestExecution({
         }}
         className="space-y-5"
       >
-        <p className="text-sm">
-          환경 · {{ web: "웹", app: "앱", api: "API" }[environment]}
-        </p>
-        {environment === "web" && (
-          <div className="space-y-2">
-            <Label>웹 화면</Label>
-            <div className="flex gap-2" role="group" aria-label="웹 화면">
-              <Button
-                type="button"
-                variant={engine === "web" ? "secondary" : "outline"}
-                aria-pressed={engine === "web"}
-                onClick={() => setEngine("web")}
-              >
-                데스크톱
-              </Button>
-              <Button
-                type="button"
-                variant={engine === "mobile-web" ? "secondary" : "outline"}
-                aria-pressed={engine === "mobile-web"}
-                onClick={() => setEngine("mobile-web")}
-              >
-                모바일
-              </Button>
-            </div>
-          </div>
-        )}
         <div className="space-y-2">
           <Label htmlFor={fieldId + "-name"}>테스트 이름</Label>
           <Input
@@ -99,26 +66,39 @@ export function TestExecution({
             >
               <SelectTrigger
                 id={fieldId + "-domain"}
-                className="w-full"
-                aria-describedby="test-domain-address"
+                className="w-full h-auto min-h-9 whitespace-normal text-left *:data-[slot=select-value]:line-clamp-none"
               >
                 <SelectValue placeholder="등록된 도메인이 없어요" />
               </SelectTrigger>
-              <SelectContent position="popper" align="start">
+              <SelectContent
+                position="popper"
+                align="start"
+                className="w-[var(--radix-select-trigger-width)]"
+              >
                 {domains.map((d) => (
                   <SelectItem key={d.id} value={d.id}>
-                    {d.name}
+                    <span className="min-w-0 whitespace-normal">
+                      <span className="block">
+                        {d.name} ·{" "}
+                        {
+                          { web: "웹", app: "앱", api: "API" }[
+                            d.environment || "web"
+                          ]
+                        }
+                      </span>
+                      <span className="block break-all text-xs text-muted-foreground">
+                        {d.url}
+                      </span>
+                    </span>
                   </SelectItem>
                 ))}
               </SelectContent>
             </Select>
-            <p
-              id="test-domain-address"
-              className="break-all text-xs text-muted-foreground"
-            >
-              {domain?.url ||
-                "관리자가 도메인을 등록해야 테스트를 시작할 수 있어요."}
-            </p>
+            {!domain && (
+              <p className="text-xs text-muted-foreground">
+                관리자가 도메인을 등록해야 테스트를 시작할 수 있어요.
+              </p>
+            )}
           </div>
         }
         <div className="flex justify-end">
