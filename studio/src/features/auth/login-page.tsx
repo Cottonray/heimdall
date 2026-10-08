@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { UserRound, Shield, ArrowRight, Sun, Moon } from "lucide-react";
-import { HeimdallLogo } from "@/components/heimdall-logo";
+import { HeimdallWordmark } from "@/components/heimdall-wordmark";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -29,10 +29,9 @@ export function LoginPage({
       <header className="flex items-center justify-between border-b px-6 py-5">
         <a
           href="/aiqa/studio/"
-          className="flex items-center gap-3 font-semibold tracking-tight"
+          className="flex items-center"
         >
-          <HeimdallLogo />
-          heimdall
+          <HeimdallWordmark />
         </a>
         <Button
           variant="ghost"

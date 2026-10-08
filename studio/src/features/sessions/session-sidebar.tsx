@@ -9,7 +9,7 @@ import {
   Sun,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { HeimdallLogo } from "@/components/heimdall-logo";
+import { HeimdallWordmark } from "@/components/heimdall-wordmark";
 import type { Page } from "@/features/workspace/tabs";
 import type { Theme } from "@/features/settings/use-theme";
 export function SessionSidebar({
@@ -36,10 +36,9 @@ export function SessionSidebar({
           type="button"
           aria-label="heimdall 기본 페이지"
           onClick={() => onNavigate("projects")}
-          className="flex min-w-0 items-center gap-3 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          className="flex min-w-0 items-center text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
         >
-          <HeimdallLogo />
-          <span className="font-semibold tracking-tight">heimdall</span>
+          <HeimdallWordmark />
         </button>
         {signedIn && projectName && (
           <Button onClick={onNew} className="md:w-full">
