@@ -5,22 +5,26 @@ async function ready(projectId: string) {
   await ensureDb();
   await requireProject(projectId);
   schema ??=
-    db!`create table if not exists aiqa_test_data (id text primary key, project_id text not null references aiqa_projects(id), name text not null, content text not null, updated bigint not null)`.catch(
-      (error: unknown) => {
+    db!`create table if not exists aiqa_test_data (id text primary key, project_id text not null references aiqa_projects(id), name text not null, content text not null, updated bigint not null)`
+      .then(async () => {
+        await db!`alter table aiqa_test_data add column if not exists customer_number text not null default '', add column if not exists tags text not null default ''`;
+      })
+      .catch((error: unknown) => {
         schema = undefined;
         throw error;
-      },
-    );
+      });
   await schema;
 }
 export async function listTestData(projectId: string) {
   await ready(projectId);
-  return db!`select id, name, content, updated from aiqa_test_data where project_id=${projectId} order by updated desc`;
+  return db!`select id, name, content, updated, customer_number as "customerNumber", tags from aiqa_test_data where project_id=${projectId} order by updated desc`;
 }
 export async function saveTestData(data: {
   projectId?: unknown;
   id?: unknown;
   name?: unknown;
+  customerNumber?: unknown;
+  tags?: unknown;
   content?: unknown;
   remove?: unknown;
 }) {
@@ -45,9 +49,18 @@ export async function saveTestData(data: {
     data.content.length > 50000
   )
     throw new Error("이름과 JSON 데이터를 확인해 주세요.");
+  const customerNumber = data.customerNumber ?? "";
+  const tags = data.tags ?? "";
+  if (
+    typeof customerNumber !== "string" ||
+    customerNumber.length > 80 ||
+    typeof tags !== "string" ||
+    tags.length > 500
+  )
+    throw new Error("고객번호와 태그를 확인해 주세요.");
   JSON.parse(data.content);
   if (data.id)
-    await db!`update aiqa_test_data set name=${data.name.trim()}, content=${data.content}, updated=${Date.now()} where id=${String(data.id)} and project_id=${data.projectId}`;
+    await db!`update aiqa_test_data set customer_number=${customerNumber.trim()}, tags=${tags.trim()}, name=${data.name.trim()}, content=${data.content}, updated=${Date.now()} where id=${String(data.id)} and project_id=${data.projectId}`;
   else
-    await db!`insert into aiqa_test_data (id, project_id, name, content, updated) values (${randomUUID()}, ${data.projectId}, ${data.name.trim()}, ${data.content}, ${Date.now()})`;
+    await db!`insert into aiqa_test_data (id, project_id, name, content, updated, customer_number, tags) values (${randomUUID()}, ${data.projectId}, ${data.name.trim()}, ${data.content}, ${Date.now()}, ${customerNumber.trim()}, ${tags.trim()})`;
 }

@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { DataTable } from "@/components/data-table";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -13,7 +14,14 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { API } from "@/lib/api";
-type Entry = { id: string; name: string; content: string; updated: number };
+type Entry = {
+  customerNumber: string;
+  tags: string;
+  id: string;
+  name: string;
+  content: string;
+  updated: number;
+};
 export function ProjectTestData({ projectId }: { projectId: string }) {
   const [entries, setEntries] = useState<Entry[]>([]);
   const [editing, setEditing] = useState<Partial<Entry> | null>(null);
@@ -67,7 +75,16 @@ export function ProjectTestData({ projectId }: { projectId: string }) {
     <div className="space-y-6">
       <div className="flex items-center justify-between gap-4">
         <h1 className="text-2xl font-semibold">테스트데이터</h1>
-        <Button onClick={() => setEditing({ name: "", content: "{}" })}>
+        <Button
+          onClick={() =>
+            setEditing({
+              name: "",
+              customerNumber: "",
+              tags: "",
+              content: "{}",
+            })
+          }
+        >
           데이터 추가
         </Button>
       </div>
@@ -81,8 +98,17 @@ export function ProjectTestData({ projectId }: { projectId: string }) {
         caption="프로젝트 테스트데이터"
         getRowId={(e) => e.id}
         getRowLabel={(e) => e.name}
-        searchText={(e) => e.name}
+        searchText={(e) =>
+          `${e.customerNumber || ""} ${e.name} ${e.tags || ""}`
+        }
+        searchPlaceholder="고객번호, 이름 또는 태그 검색"
         columns={[
+          {
+            id: "customerNumber",
+            header: "고객번호",
+            sortValue: (e) => e.customerNumber || "",
+            cell: (e) => e.customerNumber || "—",
+          },
           {
             id: "name",
             header: "이름",
@@ -91,6 +117,24 @@ export function ProjectTestData({ projectId }: { projectId: string }) {
               <Button variant="link" onClick={() => setEditing(e)}>
                 {e.name}
               </Button>
+            ),
+          },
+          {
+            id: "tags",
+            header: "태그",
+            sortValue: (e) => e.tags || "",
+            cell: (e) => (
+              <div className="flex flex-wrap gap-1">
+                {(e.tags || "")
+                  .split(",")
+                  .map((tag) => tag.trim())
+                  .filter(Boolean)
+                  .map((tag, index) => (
+                    <Badge key={index} variant="secondary">
+                      {tag}
+                    </Badge>
+                  ))}
+              </div>
             ),
           },
           {
@@ -115,7 +159,7 @@ export function ProjectTestData({ projectId }: { projectId: string }) {
           <DialogHeader>
             <DialogTitle>테스트데이터</DialogTitle>
             <DialogDescription>
-              프로젝트에서 사용할 JSON 데이터를 저장해요.
+              고객번호·이름·태그와 테스트에 사용할 추가 데이터를 저장해요.
             </DialogDescription>
           </DialogHeader>
           <form
@@ -125,6 +169,17 @@ export function ProjectTestData({ projectId }: { projectId: string }) {
               if (editing) void save(editing);
             }}
           >
+            <div className="space-y-2">
+              <Label htmlFor="test-data-customer">고객번호</Label>
+              <Input
+                id="test-data-customer"
+                maxLength={80}
+                value={editing?.customerNumber || ""}
+                onChange={(e) =>
+                  setEditing({ ...editing, customerNumber: e.target.value })
+                }
+              />
+            </div>
             <div className="space-y-2">
               <Label htmlFor="test-data-name">이름</Label>
               <Input
@@ -138,10 +193,22 @@ export function ProjectTestData({ projectId }: { projectId: string }) {
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="test-data-content">JSON</Label>
+              <Label htmlFor="test-data-tags">태그</Label>
+              <Input
+                id="test-data-tags"
+                maxLength={500}
+                placeholder="쉼표로 구분해 주세요"
+                value={editing?.tags || ""}
+                onChange={(e) =>
+                  setEditing({ ...editing, tags: e.target.value })
+                }
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="test-data-content">추가 데이터 (JSON)</Label>
               <Textarea
                 id="test-data-content"
-                rows={10}
+                rows={4}
                 required
                 maxLength={50000}
                 value={editing?.content || ""}
