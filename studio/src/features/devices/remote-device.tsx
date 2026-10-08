@@ -1,11 +1,6 @@
 import { AppLibrary } from "@/features/apps/app-library";
 import { ErrorToast } from "@/components/error-toast";
-import {
-  Tabs,
-  TabsList,
-  TabsContent,
-  WorkspaceTab,
-} from "@/components/ui/tabs";
+import { Tabs, PanelTabsList, TabsContent } from "@/components/ui/tabs";
 import { PanelResizeHandle } from "@/components/ui/panel-resize-handle";
 import { useEffect, useRef, useState, type PointerEvent } from "react";
 import {
@@ -352,20 +347,14 @@ export function RemoteDevice({
             variant="flush"
             className="min-h-0 flex-1"
           >
-            <TabsList variant="inspector" aria-label="기기 도구">
-              <WorkspaceTab
-                value="web"
-                active={toolTab === "web"}
-                label="웹 디버깅"
-                icon={<Monitor />}
-              />
-              <WorkspaceTab
-                active={toolTab === "apps"}
-                value="apps"
-                label="앱 설치"
-                icon={<Monitor />}
-              />
-            </TabsList>
+            <PanelTabsList
+              value={toolTab}
+              label="기기 도구"
+              items={[
+                { value: "web", label: "웹 디버깅", icon: <Monitor /> },
+                { value: "apps", label: "앱 설치", icon: <Monitor /> },
+              ]}
+            />
             <TabsContent value="web" className="min-h-0 flex-1 overflow-hidden">
               <WebViewDebugging
                 serial={serial}

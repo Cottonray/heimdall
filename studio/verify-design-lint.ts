@@ -118,3 +118,31 @@ assert.equal(valid.warningCount, 0, JSON.stringify(valid.messages));
 console.log(
   "PASS: all 6 shadcn rules, shared-control boundaries and UI exceptions reject regressions; standard variants and tokens pass",
 );
+
+for (const filePath of [
+  "src/features/debugging/lint-contract.tsx",
+  "src/features/devices/lint-contract.tsx",
+]) {
+  for (const name of ["TabsList", "TabsTrigger", "WorkspaceTab"]) {
+    const [result] = await eslint.lintText(
+      render(
+        "<Legacy />",
+        `import { ${name} as Legacy } from "@/components/ui/tabs";`,
+      ),
+      { filePath },
+    );
+    assert.ok(
+      result.messages.some((m) => m.ruleId === "no-restricted-imports"),
+      `${filePath} must reject ${name}, including aliases`,
+    );
+  }
+  const [result] = await eslint.lintText(
+    render(
+      '<PanelTabsList value="web" label="도구" items={[]} />',
+      'import { PanelTabsList } from "@/components/ui/tabs";',
+    ),
+    { filePath },
+  );
+  assert.equal(result.errorCount, 0, JSON.stringify(result.messages));
+}
+console.log("PASS: device and scenario tools require shared PanelTabsList");

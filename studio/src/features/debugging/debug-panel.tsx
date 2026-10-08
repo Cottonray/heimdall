@@ -6,9 +6,10 @@ import {
   Terminal,
   Braces,
   ListChecks,
+  Sparkles,
 } from "lucide-react";
-import { Card, CardContent } from "@/components/ui/card";
-import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { Card } from "@/components/ui/card";
+import { Tabs, PanelTabsList, TabsContent } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -35,36 +36,34 @@ export function DebugPanel({
   onAction: (a: Action) => Promise<unknown>;
 }) {
   const formId = useId();
+  const [tab, setTab] = useState(agent ? "agent" : "timeline");
   const [evidence, setEvidence] = useState<Step | null>(null);
   const [url, setUrl] = useState("http://127.0.0.1:8081/demo/api/accounts");
   const [contains, setContains] = useState("QA 테스트 계좌");
   const [status, setStatus] = useState("200");
   return (
     <Card variant="panel">
-      <CardContent variant="compact">
-        <Tabs defaultValue={agent ? "agent" : "timeline"}>
-          <div className="flex flex-wrap items-center justify-between gap-3">
-            <TabsList className="flex flex-wrap h-auto">
-              {agent && <TabsTrigger value="agent">AI 시나리오</TabsTrigger>}
-              <TabsTrigger value="timeline">
-                <ListChecks className="size-4" />
-                실행 기록
-              </TabsTrigger>
-              <TabsTrigger value="debug">
-                <Terminal className="size-4" />
-                디버깅
-              </TabsTrigger>
-              <TabsTrigger value="api">
-                <Braces className="size-4" />
-                API
-              </TabsTrigger>
-            </TabsList>
-            <span className="text-xs text-muted-foreground">
+      <Tabs variant="flush" value={tab} onValueChange={setTab}>
+        <PanelTabsList
+          value={tab}
+          label="스튜디오 도구"
+          items={[
+            ...(agent
+              ? [{ value: "agent", label: "AI 시나리오", icon: <Sparkles /> }]
+              : []),
+            { value: "timeline", label: "실행 기록", icon: <ListChecks /> },
+            { value: "debug", label: "디버깅", icon: <Terminal /> },
+            { value: "api", label: "API", icon: <Braces /> },
+          ]}
+          trailing={
+            <>
               {session.steps.length}단계 ·{" "}
               {session.steps.filter((s) => s.actor === "Human").length}개 직접
               조작
-            </span>
-          </div>
+            </>
+          }
+        />
+        <div className="p-3">
           {agent && <TabsContent value="agent">{agent}</TabsContent>}
           <TabsContent value="timeline">
             <div className="overflow-auto">
@@ -206,8 +205,8 @@ export function DebugPanel({
               )}
             </form>
           </TabsContent>
-        </Tabs>
-      </CardContent>
+        </div>
+      </Tabs>
       <Dialog
         open={!!evidence}
         onOpenChange={(v) => {

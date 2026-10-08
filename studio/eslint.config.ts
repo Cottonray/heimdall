@@ -11,6 +11,23 @@ export default tseslint.config(
       reportUnusedDisableDirectives: "error",
     },
   },
+  {
+    files: ["src/features/debugging/**/*.tsx", "src/features/devices/**/*.tsx"],
+    rules: {
+      "no-restricted-imports": [
+        "error",
+        {
+          paths: [
+            {
+              name: "@/components/ui/tabs",
+              importNames: ["TabsList", "TabsTrigger", "WorkspaceTab"],
+              message: "작업 패널 탭은 PanelTabsList로 통일하세요.",
+            },
+          ],
+        },
+      ],
+    },
+  },
   js.configs.recommended,
   ...tseslint.configs.recommended,
   {

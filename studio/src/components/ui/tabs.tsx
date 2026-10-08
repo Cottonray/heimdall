@@ -12,7 +12,9 @@ function Tabs({
   orientation = "horizontal",
   variant = "default",
   ...props
-}: React.ComponentProps<typeof TabsPrimitive.Root> & { variant?: "default" | "flush" }) {
+}: React.ComponentProps<typeof TabsPrimitive.Root> & {
+  variant?: "default" | "flush";
+}) {
   return (
     <TabsPrimitive.Root
       data-slot="tabs"
@@ -37,7 +39,8 @@ const tabsListVariants = cva(
         line: "gap-1 bg-transparent",
         workspace:
           "h-12 min-w-0 max-w-full flex-1 justify-start gap-0 overflow-x-auto overflow-y-hidden rounded-none bg-transparent p-0 group-data-[orientation=horizontal]/tabs:h-12",
-        inspector: "h-12 w-full shrink-0 flex-none justify-start gap-0 rounded-none border-b bg-muted/40 p-0 group-data-[orientation=horizontal]/tabs:h-12",
+        inspector:
+          "h-12 w-full shrink-0 flex-none justify-start gap-0 rounded-none border-b bg-muted/40 p-0 group-data-[orientation=horizontal]/tabs:h-12",
         settings:
           "w-40 shrink-0 justify-start gap-2 rounded-none border-r bg-transparent p-0 pr-3 group-data-[orientation=vertical]/tabs:h-full [&_[data-slot=tabs-trigger]]:h-10 [&_[data-slot=tabs-trigger]]:flex-none",
       },
@@ -167,3 +170,38 @@ export {
   WorkspaceTab,
   tabsListVariants,
 };
+
+export function PanelTabsList({
+  value,
+  label,
+  items,
+  trailing,
+}: {
+  value: string;
+  label: string;
+  items: { value: string; label: string; icon: React.ReactNode }[];
+  trailing?: React.ReactNode;
+}) {
+  return (
+    <div className="flex min-w-0 items-center border-b bg-muted/40">
+      <TabsList
+        variant="inspector"
+        aria-label={label}
+        className="min-w-0 flex-1 overflow-x-auto"
+      >
+        {items.map((item) => (
+          <WorkspaceTab
+            key={item.value}
+            {...item}
+            active={value === item.value}
+          />
+        ))}
+      </TabsList>
+      {trailing && (
+        <span className="shrink-0 px-3 text-xs text-muted-foreground">
+          {trailing}
+        </span>
+      )}
+    </div>
+  );
+}
