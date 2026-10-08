@@ -178,6 +178,20 @@ export class WorkspaceStore {
       await api.removeDomain(id);
       await this.refresh();
     });
+  removeSessions = async (rows: { id: string }[]) => {
+    const response = await fetch("/aiqa/api/studio/sessions/delete", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        ids: rows.map((row) => row.id),
+        projectId: this.value.projectId || "default",
+      }),
+    });
+    const result = await response.json();
+    if (!response.ok) throw new Error(result.error || "삭제하지 못했어요.");
+    for (const row of rows) this.closeTab(row.id);
+    await this.refresh();
+  };
   clearError = () => this.patch({ error: "" });
   private fail = (error: unknown) => {
     if (error instanceof ApiError && error.status === 401) this.resetAuth();

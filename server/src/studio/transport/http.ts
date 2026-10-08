@@ -42,6 +42,7 @@ import { get } from "../domain/session.ts";
 import { DIR } from "../infrastructure/config.ts";
 import {
   saved,
+  removeSessions,
   listSessions,
   listProjects,
   createProject,
@@ -323,6 +324,15 @@ export async function handle(
     }
     if (route === "/api/studio/community/comments") {
       await saveComment(auth!.user, data);
+      send(200, { ok: true });
+      return true;
+    }
+    if (route === "/api/studio/sessions/delete") {
+      if (!auth) {
+        send(401, { error: "로그인이 필요해요" });
+        return true;
+      }
+      await removeSessions(data.ids, data.projectId);
       send(200, { ok: true });
       return true;
     }

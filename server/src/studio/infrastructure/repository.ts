@@ -122,3 +122,39 @@ export async function moveSession(id: string, projectId: string) {
   publish(compact(body));
   return compact(body);
 }
+
+export async function removeSessions(ids: unknown, projectId: unknown) {
+  if (
+    !Array.isArray(ids) ||
+    !ids.length ||
+    ids.length > 100 ||
+    ids.some((id) => typeof id !== "string" || !/^[a-f0-9-]{36}$/.test(id)) ||
+    typeof projectId !== "string"
+  )
+    throw new Error("삭제할 항목을 확인해 주세요.");
+  const unique = [...new Set(ids)] as string[];
+  if (
+    unique.some((id) => {
+      const s = sessions.get(id);
+      return s && (s.state !== "closed" || s.working);
+    })
+  )
+    throw new Error("실행 중인 테스트는 종료한 뒤 삭제해 주세요.");
+  await ensureDb();
+  await db!.begin(async (sql) => {
+    const rows =
+      await sql`select id,body from aiqa_studio where id in ${sql(unique)} for update`;
+    if (
+      rows.length !== unique.length ||
+      rows.some(
+        (row) =>
+          (readSessionBody(row.body).projectId || "default") !== projectId,
+      )
+    )
+      throw new Error(
+        "항목이 없거나 프로젝트가 달라요. 목록을 다시 확인해 주세요.",
+      );
+    await sql`delete from aiqa_studio where id in ${sql(unique)}`;
+  });
+  unique.forEach((id) => sessions.delete(id));
+}

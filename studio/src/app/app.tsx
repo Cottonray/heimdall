@@ -315,6 +315,7 @@ export function App() {
                     />
                   ) : id === "history" ? (
                     <SessionHistory
+                      onDelete={w.store.removeSessions}
                       onNew={() => w.store.navigate("execution")}
                       sessions={projectSessions}
                       onSelect={w.store.select}
@@ -326,6 +327,7 @@ export function App() {
                     />
                   ) : id === "scenarios" ? (
                     <ScenarioList
+                      onDelete={w.store.removeSessions}
                       key={w.projectId}
                       sessions={projectSessions}
                       onSelect={w.store.select}

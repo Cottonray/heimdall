@@ -1,3 +1,11 @@
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from "@/components/ui/dialog";
 import { useState, type ReactNode } from "react";
 import {
   ArrowDown,
@@ -60,6 +68,7 @@ type DataTableProps<T> = {
   caption: string;
   emptyMessage?: string;
   selectable?: boolean;
+  onDeleteRows?: (rows: T[]) => Promise<void>;
   onRowClick?: (row: T) => void;
   rowActions?: (
     row: T,
@@ -75,10 +84,14 @@ export function DataTable<T>({
   searchPlaceholder = "검색",
   caption,
   rowActions,
-  selectable = true,
+  onDeleteRows,
+  selectable = !!onDeleteRows,
   onRowClick,
   emptyMessage = "등록된 항목이 없어요.",
 }: DataTableProps<T>) {
+  const [deleting, setDeleting] = useState<T[] | null>(null);
+  const [deleteBusy, setDeleteBusy] = useState(false);
+  const [deleteError, setDeleteError] = useState("");
   const [widths, setWidths] = useState<Record<string, number>>({});
   const [query, setQuery] = useState("");
   const [sort, setSort] = useState<TableSort>(null);
@@ -106,6 +119,65 @@ export function DataTable<T>({
 
   return (
     <div className="space-y-4">
+      <Dialog
+        open={!!deleting}
+        onOpenChange={(open) => {
+          if (!open && !deleteBusy) setDeleting(null);
+        }}
+      >
+        <DialogContent showCloseButton={!deleteBusy}>
+          <DialogHeader>
+            <DialogTitle>선택 항목 삭제</DialogTitle>
+            <DialogDescription>
+              선택한 {deleting?.length || 0}개 항목을 삭제할까요? 삭제한 항목은
+              되돌릴 수 없어요.
+            </DialogDescription>
+          </DialogHeader>
+          <ul className="max-h-48 overflow-y-auto text-sm">
+            {deleting?.map((row) => (
+              <li className="break-words py-1" key={getRowId(row)}>
+                {getRowLabel(row)}
+              </li>
+            ))}
+          </ul>
+          {deleteError && (
+            <p role="alert" className="text-sm text-destructive">
+              {deleteError}
+            </p>
+          )}
+          <DialogFooter>
+            <Button
+              variant="outline"
+              disabled={deleteBusy}
+              onClick={() => setDeleting(null)}
+            >
+              취소
+            </Button>
+            <Button
+              variant="destructive"
+              disabled={deleteBusy || !deleting?.length}
+              onClick={async () => {
+                if (!deleting?.length || !onDeleteRows || deleteBusy) return;
+                setDeleteBusy(true);
+                setDeleteError("");
+                try {
+                  await onDeleteRows(deleting);
+                  setSelectedIds(new Set());
+                  setDeleting(null);
+                } catch (e) {
+                  setDeleteError(
+                    e instanceof Error ? e.message : "삭제하지 못했어요.",
+                  );
+                } finally {
+                  setDeleteBusy(false);
+                }
+              }}
+            >
+              {deleteBusy ? "삭제 중" : "삭제"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
       <div className="flex flex-wrap items-center justify-between gap-3">
         <SearchInput
           className="w-full max-w-sm"
@@ -122,15 +194,21 @@ export function DataTable<T>({
             <span role="status" className="text-sm text-muted-foreground">
               {selected.size}개 선택
             </span>
-            <Button
-              type="button"
-              variant="ghost"
-              size="sm"
-              disabled={selected.size === 0}
-              onClick={() => setSelectedIds(new Set())}
-            >
-              선택 해제
-            </Button>
+            {onDeleteRows && (
+              <Button
+                type="button"
+                variant="destructive"
+                size="sm"
+                onClick={() => {
+                  setDeleteError("");
+                  setDeleting(
+                    data.filter((row) => selected.has(getRowId(row))),
+                  );
+                }}
+              >
+                삭제
+              </Button>
+            )}
           </div>
         )}
       </div>

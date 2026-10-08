@@ -6,10 +6,12 @@ import { engines } from "@/lib/labels";
 import type { Session } from "../../../../contracts/studio";
 export function SessionHistory({
   sessions,
+  onDelete,
   onSelect,
   onNew,
 }: {
   sessions: Session[];
+  onDelete: (rows: Session[]) => Promise<void>;
   onNew: () => void;
   onSelect: (id: string) => void;
 }) {
@@ -22,6 +24,7 @@ export function SessionHistory({
         </Button>
       </div>
       <DataTable
+        onDeleteRows={onDelete}
         data={sessions}
         getRowId={(s) => s.id}
         getRowLabel={(s) => s.name}

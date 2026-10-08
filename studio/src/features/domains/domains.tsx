@@ -75,6 +75,17 @@ export function Domains({
         )}
       </div>
       <DataTable
+        onDeleteRows={
+          admin
+            ? async (rows) => {
+                for (const row of rows)
+                  if (!(await onRemove(row.id)))
+                    throw new Error(
+                      "일부 도메인을 삭제하지 못했어요. 목록을 확인해 주세요.",
+                    );
+              }
+            : undefined
+        }
         rowActions={(domain) => [
           {
             label: "주소 복사",

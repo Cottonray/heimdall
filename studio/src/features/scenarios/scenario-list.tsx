@@ -15,12 +15,14 @@ import { engines } from "@/lib/labels";
 import type { Session, Domain, NewSession } from "../../../../contracts/studio";
 export function ScenarioList({
   sessions,
+  onDelete,
   onSelect,
   onCreate,
   domains,
   busy,
 }: {
   sessions: Session[];
+  onDelete: (rows: Session[]) => Promise<void>;
   onSelect: (id: string) => void;
   onCreate: (value: NewSession) => Promise<unknown>;
   domains: Domain[];
@@ -85,6 +87,7 @@ export function ScenarioList({
         </Dialog>
       </div>
       <DataTable
+        onDeleteRows={onDelete}
         data={sessions.filter((s) => s.steps.length > 0)}
         caption="저장된 시나리오"
         getRowId={(s) => s.id}

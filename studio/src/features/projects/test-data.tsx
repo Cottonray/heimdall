@@ -98,6 +98,23 @@ export function ProjectTestData({ projectId }: { projectId: string }) {
         </p>
       )}
       <DataTable
+        onDeleteRows={async (rows) => {
+          try {
+            for (const row of rows) {
+              const response = await fetch(`${API}/test-data`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ id: row.id, projectId, remove: true }),
+              });
+              if (!response.ok)
+                throw new Error(
+                  "일부 항목을 삭제하지 못했어요. 목록을 확인한 뒤 다시 시도해 주세요.",
+                );
+            }
+          } finally {
+            setRevision((v) => v + 1);
+          }
+        }}
         data={entries}
         caption="프로젝트 테스트데이터"
         getRowId={(e) => e.id}
