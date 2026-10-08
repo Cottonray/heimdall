@@ -109,10 +109,10 @@ export function SessionSidebar({
           개인 QA 환경
         </div>
         <a
-          href="/aiqa/"
+          href="https://qa.example/"
           className="flex items-center justify-between text-xs text-muted-foreground hover:text-foreground"
         >
-          기존 모바일 도구
+          AI 쇼룸
           <ArrowUpRight className="size-3" />
         </a>
       </div>
