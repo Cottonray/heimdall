@@ -1,3 +1,4 @@
+import { isIos, iosControl } from "./ios-bridge.ts";
 import { randomUUID } from "node:crypto";
 import * as control from "../../control.ts";
 import * as device from "../../device.ts";
@@ -13,7 +14,8 @@ const leases = new Map<string, DeviceLease & { connections: number }>();
 
 /** Reserve synchronously before device preparation so simultaneous opens cannot both win. */
 export function reserveDevice(serial: string, owner: string): DeviceLease {
-  if (serial !== device.target())
+  const controller = isIos(serial) ? iosControl(serial) : control;
+  if (!isIos(serial) && serial !== device.target())
     throw new RemoteDeviceError(
       409,
       "이 기기는 아직 원격 제어를 지원하지 않아요",
@@ -29,7 +31,7 @@ export function reserveDevice(serial: string, owner: string): DeviceLease {
     return connection(existing);
   }
   const viewerId = randomUUID();
-  if (!control.claim(viewerId).ok)
+  if (!controller.claim(viewerId).ok)
     throw new RemoteDeviceError(409, "다른 사용자가 기기를 사용 중이에요");
   const lease: DeviceLease & { connections: number } = {
     connections: 1,
@@ -38,7 +40,7 @@ export function reserveDevice(serial: string, owner: string): DeviceLease {
     owner,
     release() {
       leases.delete(viewerId);
-      control.forget(viewerId);
+      controller.forget(viewerId);
     },
   };
   leases.set(viewerId, lease);
@@ -47,19 +49,20 @@ export function reserveDevice(serial: string, owner: string): DeviceLease {
 
 export function ownsDevice(viewerId: string, serial: string, owner: string) {
   const lease = leases.get(viewerId);
-  const holder = control.snapshot();
+  const holder = (isIos(serial) ? iosControl(serial) : control).snapshot();
   return (
     !!lease &&
     lease.owner === owner &&
     lease.serial === serial &&
-    serial === device.target() &&
+    (isIos(serial) || serial === device.target()) &&
     holder.kind === "human" &&
     holder.viewerId === viewerId
   );
 }
 
 export function deviceUsage(serial: string): "available" | "in-use" {
-  return serial === device.target() && control.snapshot().kind !== "none"
+  return (isIos(serial) || serial === device.target()) &&
+    (isIos(serial) ? iosControl(serial) : control).snapshot().kind !== "none"
     ? "in-use"
     : "available";
 }

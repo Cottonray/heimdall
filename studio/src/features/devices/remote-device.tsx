@@ -36,7 +36,7 @@ export function RemoteDevice({
   const remote = useRemoteDevice(serial, onAuthExpired);
   const webviews = useWebViews(
     serial,
-    remote.connection === "ready",
+    remote.connection === "ready" && remote.device?.platform !== "ios",
     onAuthExpired,
   );
   const [text, setText] = useState("");
@@ -50,6 +50,7 @@ export function RemoteDevice({
     clientY: number;
     at: number;
   } | null>(null);
+  const ios = remote.device?.platform === "ios";
   const disabled = !remote.canControl || remote.busy || !remote.frame;
   const name = remote.device?.model || serial;
   useEffect(() => {
@@ -219,7 +220,7 @@ export function RemoteDevice({
                 variant="outline"
                 size="icon"
                 aria-label="뒤로"
-                disabled={disabled}
+                disabled={disabled || ios}
                 onClick={() => void remote.action({ type: "key", key: "back" })}
               >
                 <ArrowLeft />
@@ -237,7 +238,7 @@ export function RemoteDevice({
                 variant="outline"
                 size="icon"
                 aria-label="최근 앱"
-                disabled={disabled}
+                disabled={disabled || ios}
                 onClick={() =>
                   void remote.action({ type: "key", key: "recent" })
                 }
@@ -257,7 +258,7 @@ export function RemoteDevice({
                   size="icon"
                   aria-label={label}
                   title={label}
-                  disabled={disabled}
+                  disabled={disabled || ios}
                   onClick={() => void remote.action({ type: "key", key })}
                 >
                   <Icon />
@@ -348,12 +349,18 @@ export function RemoteDevice({
           className="flex min-h-0 w-3/5 flex-col gap-3 border-l pl-4"
         >
           <h2 className="font-semibold">웹 디버깅</h2>
-          <WebViewDebugging
-            serial={serial}
-            viewerId={remote.viewerId}
-            canControl={remote.canControl}
-            discovery={webviews}
-          />
+          {ios ? (
+            <p className="text-sm text-muted-foreground">
+              iOS 웹 인스펙터는 아직 지원하지 않아요.
+            </p>
+          ) : (
+            <WebViewDebugging
+              serial={serial}
+              viewerId={remote.viewerId}
+              canControl={remote.canControl}
+              discovery={webviews}
+            />
+          )}
         </aside>
       </div>
     </main>

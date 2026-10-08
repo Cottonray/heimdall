@@ -1,3 +1,4 @@
+import { handleAgent } from "../infrastructure/agent-registry.ts";
 import { listTestData, saveTestData } from "../infrastructure/test-data.ts";
 import {
   notifications,
@@ -53,6 +54,10 @@ export async function handle(
   route: string,
 ) {
   if (!route.startsWith("/api/studio")) return false;
+  if (route === "/api/studio/agents/poll") {
+    await handleAgent(req, res);
+    return true;
+  }
   const send = (status: number, body: unknown) => {
     res.writeHead(status, {
       "content-type": "application/json; charset=utf-8",
@@ -68,6 +73,25 @@ export async function handle(
     const url = new URL(req.url || "/", "http://localhost"),
       id = url.searchParams.get("id") || "";
     const auth = await authenticate(req);
+    if (route === "/api/studio/admin/agent-download") {
+      if (auth?.user.role !== "admin")
+        send(403, { error: "관리자만 이용할 수 있어요" });
+      else if (req.method !== "GET") send(405, {});
+      else if (url.searchParams.get("platform") !== "macos")
+        send(404, { error: "아직 제공하지 않는 OS예요" });
+      else {
+        const file = await readFile(
+          "/opt/aiqa/web/studio/assets/heimdall-macos.zip",
+        );
+        res.writeHead(200, {
+          "Content-Type": "application/zip",
+          "Content-Disposition": 'attachment; filename="heimdall-macos.zip"',
+          "Cache-Control": "no-store",
+        });
+        res.end(file);
+      }
+      return true;
+    }
     if (route === "/api/studio/admin/users") {
       if (auth?.user.role !== "admin")
         send(403, { error: "관리자만 이용할 수 있어요" });

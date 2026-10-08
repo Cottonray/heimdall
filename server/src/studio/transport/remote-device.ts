@@ -1,3 +1,4 @@
+import { isIos, iosRequest, iosControl } from "../infrastructure/ios-bridge.ts";
 import { randomUUID } from "node:crypto";
 import type { DeviceLease } from "../infrastructure/device-lease.ts";
 import type { WsConnection } from "../../ws.ts";
@@ -42,6 +43,43 @@ export function connectRemoteDevice(
   deps: Runtime = runtime,
   lease?: DeviceLease,
 ) {
+  if (isIos(remote.device.serial) && deps === runtime) {
+    const serial = remote.device.serial;
+    const clients = new Map<string, ReturnType<typeof setInterval>>();
+    deps = {
+      ...runtime,
+      target: () => serial,
+      control: iosControl(serial),
+      frames: {
+        kick() {},
+        remove(id) {
+          const timer = clients.get(id);
+          if (timer) clearInterval(timer);
+          clients.delete(id);
+        },
+        add(client) {
+          let pending = false;
+          const tick = async () => {
+            if (pending || !client.ws.isOpen) return;
+            pending = true;
+            try {
+              const png = await iosRequest(
+                `/frame?serial=${encodeURIComponent(serial)}`,
+              );
+              if (client.ws.isOpen) client.ws.sendBinary(png);
+            } catch {
+              client.ws.close(1011);
+            } finally {
+              pending = false;
+            }
+          };
+          const timer = setInterval(() => void tick(), 500);
+          clients.set(client.id, timer);
+          void tick();
+        },
+      },
+    };
+  }
   const viewerId = lease?.viewerId || randomUUID();
   const connectionId = randomUUID();
   const serial = remote.device.serial;

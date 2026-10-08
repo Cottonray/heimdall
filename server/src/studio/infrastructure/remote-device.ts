@@ -1,3 +1,4 @@
+import { isIos, iosRequest } from "./ios-bridge.ts";
 import type { DeviceInfo } from "../../../../contracts/studio.ts";
 import * as device from "../../device.ts";
 import {
@@ -27,6 +28,15 @@ export async function prepareRemoteDevice(
     throw new RemoteDeviceError(400, "기기 ID를 확인해 주세요");
   const item = (await inventory()).find((entry) => entry.serial === serial);
   if (!item) throw new RemoteDeviceError(404, "기기를 찾을 수 없어요");
+  if (isIos(serial) && item.ready)
+    return {
+      device: item,
+      size: JSON.parse(
+        (
+          await iosRequest(`/prepare?serial=${encodeURIComponent(serial)}`)
+        ).toString(),
+      ),
+    };
   if (serial !== target())
     throw new RemoteDeviceError(
       409,
@@ -61,6 +71,10 @@ export async function performRemoteAction(
   action: RemoteAction,
   adb: typeof device.adb = device.adb,
 ) {
+  if (isIos(serial)) {
+    await iosRequest(`/action?serial=${encodeURIComponent(serial)}`, action);
+    return;
+  }
   let args: string[];
   let unicode = false;
   switch (action.type) {

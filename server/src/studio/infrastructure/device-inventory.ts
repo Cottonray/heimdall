@@ -1,3 +1,4 @@
+import { iosInventory } from "./ios-bridge.ts";
 import type { DeviceInfo } from "../../../../contracts/studio.ts";
 import * as device from "../../device.ts";
 
@@ -41,7 +42,7 @@ export async function listDeviceInventory(
       ready: false,
     });
   }
-  return Promise.all(
+  const android = await Promise.all(
     inventory.map(async (item) => {
       if (item.state !== "device") return item;
       try {
@@ -65,4 +66,5 @@ export async function listDeviceInventory(
       }
     }),
   );
+  return [...android, ...(await iosInventory())];
 }
