@@ -314,7 +314,6 @@ export function App() {
                   ) : id === "history" ? (
                     <SessionHistory
                       onDelete={w.store.removeSessions}
-                      onNew={() => w.store.navigate("execution")}
                       sessions={projectSessions}
                       onSelect={w.store.select}
                     />

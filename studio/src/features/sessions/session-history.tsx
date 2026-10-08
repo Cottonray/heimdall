@@ -1,5 +1,4 @@
 import { Button } from "@/components/ui/button";
-import { Plus } from "lucide-react";
 import { DataTable } from "@/components/data-table";
 import { StatusBadge } from "@/components/status-badge";
 import { engines } from "@/lib/labels";
@@ -8,20 +7,15 @@ export function SessionHistory({
   sessions,
   onDelete,
   onSelect,
-  onNew,
 }: {
   sessions: Session[];
   onDelete: (rows: Session[]) => Promise<void>;
-  onNew: () => void;
   onSelect: (id: string) => void;
 }) {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between gap-4">
         <h1 className="text-2xl font-semibold tracking-tight">테스트 기록</h1>
-        <Button onClick={onNew}>
-          <Plus />새 테스트
-        </Button>
       </div>
       <DataTable
         onDeleteRows={onDelete}
