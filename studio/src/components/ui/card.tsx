@@ -11,7 +11,7 @@ function Card({
       data-slot="card"
       className={cn(
         "flex flex-col gap-6 rounded-xl border bg-card py-6 text-card-foreground shadow-sm",
-        variant === "panel" && "rounded-none border-0 shadow-none py-3",
+        variant === "panel" && "rounded-none border-0 shadow-none py-0",
         variant === "preview" && "rounded-none border-0 shadow-none gap-3 py-3",
         variant === "plain" && "border-0 shadow-none",
         className,
