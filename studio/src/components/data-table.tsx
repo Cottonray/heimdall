@@ -52,6 +52,7 @@ import {
 export type DataTableColumn<T> = {
   id: string;
   header: string;
+  defaultWidth?: number;
   cell: (row: T) => ReactNode;
   sortValue?: (row: T) => string | number;
   onCellClick?: (row: T) => void;
@@ -217,7 +218,7 @@ export function DataTable<T>({
         fillColumnIndex={columns.length - (selectable ? 0 : 1)}
         columnWidths={[
           ...(selectable ? [40] : []),
-          ...columns.map((column) => widths[column.id]),
+          ...columns.map((column) => widths[column.id] ?? column.defaultWidth),
           ...(rowActions ? [48] : []),
         ]}
       >

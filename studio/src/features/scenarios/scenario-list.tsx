@@ -109,6 +109,7 @@ export function ScenarioList({
           {
             id: "name",
             header: "시나리오",
+            defaultWidth: 520,
             sortValue: (s) => s.name,
             cell: (s) => (
               <Button variant="link" onClick={() => onSelect(s.id)}>
