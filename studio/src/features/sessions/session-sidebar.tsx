@@ -10,7 +10,7 @@ import { Button } from "@/components/ui/button";
 import { HeimdallWordmark } from "@/components/heimdall-wordmark";
 import type { Page } from "@/features/workspace/tabs";
 import { ThemeControls } from "@/features/settings/theme-controls";
-import type { Theme, ResolvedTheme } from "@/features/settings/use-theme";
+import type { Theme } from "@/features/settings/use-theme";
 export function SessionSidebar({
   projectName,
   signedIn,
@@ -18,7 +18,6 @@ export function SessionSidebar({
   onNavigate,
   onNew,
   theme,
-  resolvedTheme,
   onTheme,
 }: {
   projectName: string;
@@ -27,7 +26,6 @@ export function SessionSidebar({
   onNavigate: (page: Page) => void;
   onNew: () => void;
   theme: Theme;
-  resolvedTheme: ResolvedTheme;
   onTheme: (theme: Theme) => void;
 }) {
   return (
@@ -106,11 +104,7 @@ export function SessionSidebar({
         </>
       )}
       <div className="mt-auto flex flex-wrap items-center gap-1 border-t px-3 py-3 md:flex-col md:items-stretch">
-        <ThemeControls
-          theme={theme}
-          resolvedTheme={resolvedTheme}
-          onTheme={onTheme}
-        />
+        <ThemeControls theme={theme} onTheme={onTheme} />
         {signedIn && (
           <Button
             variant={active === "settings" ? "secondary" : "ghost"}

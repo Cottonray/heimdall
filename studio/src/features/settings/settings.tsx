@@ -9,17 +9,15 @@ import {
 } from "@/components/ui/card";
 import { downloadMcp } from "@/features/integrations/mcp";
 import { ThemeControls } from "./theme-controls";
-import type { Theme, ResolvedTheme } from "./use-theme";
+import type { Theme } from "./use-theme";
 import type { StudioStatus } from "../../../../contracts/studio";
 export function Settings({
   theme,
   onTheme,
-  resolvedTheme,
   status,
   onRefresh,
 }: {
   theme: Theme;
-  resolvedTheme: ResolvedTheme;
   onTheme: (theme: Theme) => void;
   status: StudioStatus | null;
   onRefresh: () => void;
@@ -36,11 +34,7 @@ export function Settings({
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <ThemeControls
-              theme={theme}
-              resolvedTheme={resolvedTheme}
-              onTheme={onTheme}
-            />
+            <ThemeControls theme={theme} onTheme={onTheme} />
           </CardContent>
         </Card>
         <Card>

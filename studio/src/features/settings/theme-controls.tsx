@@ -1,44 +1,46 @@
-import { useId } from "react";
-import { Moon } from "lucide-react";
-import { Switch } from "@/components/ui/switch";
-import { Label } from "@/components/ui/label";
-import type { Theme, ResolvedTheme } from "./use-theme";
+import { Monitor, Moon, Sun } from "lucide-react";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import type { Theme } from "./use-theme";
+
 export function ThemeControls({
   theme,
-  resolvedTheme,
   onTheme,
 }: {
   theme: Theme;
-  resolvedTheme: ResolvedTheme;
   onTheme: (theme: Theme) => void;
 }) {
-  const id = useId();
   return (
-    <div className="space-y-1">
-      <div className="flex min-h-9 items-center justify-between gap-3 px-3">
-        <Label htmlFor={id + "-dark"}>
-          <Moon className="size-4" />
+    <Select
+      value={theme}
+      onValueChange={(value) => {
+        if (value === "light" || value === "dark" || value === "system") {
+          onTheme(value);
+        }
+      }}
+    >
+      <SelectTrigger aria-label="화면 테마" className="w-full">
+        <SelectValue />
+      </SelectTrigger>
+      <SelectContent position="popper" align="start">
+        <SelectItem value="light">
+          <Sun />
+          라이트 모드
+        </SelectItem>
+        <SelectItem value="dark">
+          <Moon />
           다크 모드
-        </Label>
-        <Switch
-          id={id + "-dark"}
-          checked={resolvedTheme === "dark"}
-          onCheckedChange={(dark) => onTheme(dark ? "dark" : "light")}
-        />
-      </div>
-      <div className="flex min-h-9 items-center justify-between gap-2 px-3">
-        <Label htmlFor={id + "-system"} variant="subtle">
+        </SelectItem>
+        <SelectItem value="system">
+          <Monitor />
           시스템 설정 따르기
-        </Label>
-        <Switch
-          id={id + "-system"}
-          size="sm"
-          checked={theme === "system"}
-          onCheckedChange={(system) =>
-            onTheme(system ? "system" : resolvedTheme)
-          }
-        />
-      </div>
-    </div>
+        </SelectItem>
+      </SelectContent>
+    </Select>
   );
 }

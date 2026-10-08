@@ -21,19 +21,19 @@ React + shadcn/ui 기반의 QA 워크스페이스. 현재 디자인의 정본은
 | 테스트 목록·최근 테스트 | `Item` | `variant="row" size="row" asChild` |
 | 입력·검색·장문 | `Input`, `SearchInput`, `Textarea` | 검색 아이콘과 입력 여백은 `SearchInput` 내부에서 관리 |
 | 폼 라벨 | `Label` | 기본 또는 `subtle` variant |
-| 테마 전환 | `Switch`, `ThemeControls` | 사이드바와 설정에서 동일한 조작부 |
+| 테마 전환 | `Select`, `ThemeControls` | 사이드바와 설정에서 동일한 조작부 |
 | 카드·상태·탭·대화상자 | `Card`, `Badge`, `Tabs`, `Dialog` | 공통 기본 간격과 의미 variant |
 | 차트·로딩·구분선 | `Chart`, `Skeleton`, `Separator` | 의미 색상 및 레이아웃 속성 |
 | 원격 화면 입력 | `PreviewSurface` | 좌표 보존을 위해 패딩·눌림 축소·disabled 투명도 없음 |
 
 `Item asChild` 내부의 실제 `button`은 의미와 이벤트만 담당한다. 화면 코드에서 버튼 클래스, 기본 HTML 입력·대화상자, 별도 CSS를 작성하지 않는다. 외부 레이아웃은 정적 Tailwind 클래스로 지정하고 공통 컴포넌트의 색·모양·내부 여백은 사용부에서 덮어쓰지 않는다. 새로운 모양이 필요하면 공통 variant를 추가한다.
 
-간격은 Tailwind 기본 스케일, 색은 `background/foreground`, `primary`, `muted`, `border/input/ring`, `success/destructive`, `sidebar` 토큰을 쓴다. 상태는 색뿐 아니라 텍스트로도 전달한다. 아이콘은 Lucide를 사용하고 입력에는 라벨, 아이콘 버튼에는 접근 가능한 이름을 제공한다. Radix가 Dialog/Tabs/Switch의 키보드 및 포커스를 처리한다.
+간격은 Tailwind 기본 스케일, 색은 `background/foreground`, `primary`, `muted`, `border/input/ring`, `success/destructive`, `sidebar` 토큰을 쓴다. 상태는 색뿐 아니라 텍스트로도 전달한다. 아이콘은 Lucide를 사용하고 입력에는 라벨, 아이콘 버튼에는 접근 가능한 이름을 제공한다. Radix가 Dialog/Tabs/Select의 키보드 및 포커스를 처리한다.
 
 ## 테마와 동작
 
-- `다크 모드` 스위치는 현재 표시 상태를 나타낸다. 직접 조작하면 라이트 또는 다크 수동 선택으로 전환한다.
-- `시스템 설정 따르기`를 켜면 OS의 `prefers-color-scheme` 변경을 자동 반영한다. 끄면 현재 표시 테마를 수동 선택으로 유지한다.
+- 하나의 `화면 테마` 드롭다운에서 `라이트 모드`, `다크 모드`, `시스템 설정 따르기`를 선택한다. 사이드바와 설정 화면이 같은 선택을 표시한다.
+- `시스템 설정 따르기`를 선택하면 OS의 `prefers-color-scheme` 변경을 자동 반영한다. 다른 두 옵션은 표시 테마를 직접 지정한다.
 - `heimdall.theme`에 `light`, `dark`, `system` 중 선택을 저장한다. 기존 선택은 보존하며 처음 사용할 때는 라이트다. 로그인 화면에도 선택이 적용된다.
 - 공통 press 토큰으로 클릭 피드백을 제공하고 `prefers-reduced-motion`에서는 생략한다. 원격 화면 좌표 입력에는 축소 효과를 적용하지 않는다.
 - 스크롤바는 숨기되 본문·사이드바·입력창·대화상자의 휠·터치·키보드 스크롤은 유지한다.

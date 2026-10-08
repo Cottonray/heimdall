@@ -34,6 +34,13 @@ const rejected = [
     ),
   ],
   [
+    "shadcn/no-restyle",
+    render(
+      '<SelectTrigger className="p-4" aria-label="화면 테마" />',
+      'import { SelectTrigger } from "@/components/ui/select";',
+    ),
+  ],
+  [
     "shadcn/require-static-classes",
     render(
       "<Button className={appearance}>검사</Button>",
@@ -78,13 +85,15 @@ const accepted = render(
     <SearchInput aria-label="검색" />
     <Switch aria-label="다크 모드" size="sm" checked={false} />
     <Label variant="subtle">시스템 설정 따르기</Label>
+    <SelectTrigger className="w-full" aria-label="화면 테마" />
     <svg><path fill="var(--primary)" /></svg>
   </div>`,
   `import { Button } from "@/components/ui/button";
    import { Item } from "@/components/ui/item";
    import { SearchInput } from "@/components/ui/input";
    import { Switch } from "@/components/ui/switch";
-   import { Label } from "@/components/ui/label";`,
+   import { Label } from "@/components/ui/label";
+   import { SelectTrigger } from "@/components/ui/select";`,
 );
 const [valid] = await eslint.lintText(accepted, { filePath: screenPath });
 assert.equal(valid.errorCount, 0, JSON.stringify(valid.messages));

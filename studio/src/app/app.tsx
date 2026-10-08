@@ -89,7 +89,6 @@ export function App() {
           onNavigate={w.store.navigate}
           onNew={() => setNewOpen(true)}
           theme={theme}
-          resolvedTheme={resolvedTheme}
           onTheme={setTheme}
         />
       }
@@ -239,7 +238,6 @@ export function App() {
                   ) : id === "settings" ? (
                     <Settings
                       theme={theme}
-                      resolvedTheme={resolvedTheme}
                       onTheme={setTheme}
                       status={w.status}
                       onRefresh={() => void w.store.refresh()}
