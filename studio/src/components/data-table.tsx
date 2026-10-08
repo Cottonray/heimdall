@@ -130,6 +130,7 @@ export function DataTable<T>({
       </div>
       <Table
         variant="bordered"
+        fillColumnIndex={columns.length}
         columnWidths={[
           40,
           ...columns.map((column) => widths[column.id]),

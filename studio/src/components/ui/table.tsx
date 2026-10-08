@@ -7,10 +7,12 @@ function Table({
   className,
   variant = "default",
   columnWidths,
+  fillColumnIndex,
   ...props
 }: React.ComponentProps<"table"> & {
   variant?: "default" | "bordered";
   columnWidths?: (number | undefined)[];
+  fillColumnIndex?: number;
 }) {
   const tableRef = React.useRef<HTMLTableElement>(null);
   const resolvedWidths = React.useRef<number[]>([]);
@@ -44,7 +46,12 @@ function Table({
           resolvedWidths.current[index] ??
           (index === 0 ? 40 : defaultWidth),
       );
-      resolvedWidths.current = widths;
+      resolvedWidths.current = [...widths];
+      const fillIndex = fillColumnIndex ?? widths.length - 1;
+      if (fillIndex >= 0 && fillIndex < widths.length) {
+        const total = widths.reduce((sum, width) => sum + width, 0);
+        widths[fillIndex] += Math.max(0, container.clientWidth - total);
+      }
       table.style.width = `${widths.reduce((sum, width) => sum + width, 0)}px`;
       table.querySelectorAll("col").forEach((col, index) => {
         col.style.width = `${widths[index]}px`;
@@ -54,7 +61,7 @@ function Table({
     const observer = new ResizeObserver(update);
     observer.observe(container);
     return () => observer.disconnect();
-  }, [columnWidths]);
+  }, [columnWidths, fillColumnIndex]);
   return (
     <div
       data-slot="table-container"
