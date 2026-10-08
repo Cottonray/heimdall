@@ -38,7 +38,7 @@ import { useWorkspace } from "@/features/workspace/use-workspace";
 import { isPage } from "@/features/workspace/tabs";
 import { SessionSidebar } from "@/features/sessions/session-sidebar";
 import { SessionHistory } from "@/features/sessions/session-history";
-import { NewSessionDialog } from "@/features/sessions/new-session-dialog";
+import { TestExecution } from "@/features/sessions/test-execution";
 import { Dashboard } from "@/features/dashboard/dashboard";
 import { Settings } from "@/features/settings/settings";
 import { useTheme } from "@/features/settings/use-theme";
@@ -54,7 +54,6 @@ import type { Session, SessionExport } from "../../../contracts/studio";
 export function App() {
   const w = useWorkspace();
   const { theme, resolvedTheme, setTheme, toggleTheme } = useTheme();
-  const [newOpen, setNewOpen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [exported, setExported] = useState<SessionExport | null>(null);
   const [remoteDevice] = useState(
@@ -119,7 +118,7 @@ export function App() {
           admin={w.user?.role === "admin"}
           active={w.activeTab}
           onNavigate={w.store.navigate}
-          onRun={() => setNewOpen(true)}
+          onRun={() => w.store.navigate("execution")}
           theme={theme}
           onTheme={setTheme}
         />
@@ -135,31 +134,33 @@ export function App() {
               <TabsList variant="workspace" aria-label="열린 작업">
                 {(w.user ? visibleTabs : ["projects"]).map((id) => {
                   const label =
-                    id === "device-admin"
-                      ? "기기관리"
-                      : id === "user-admin"
-                        ? "사용자 관리"
-                        : id === "test-data"
-                          ? "테스트데이터"
-                          : id === "scenarios"
-                            ? "시나리오"
-                            : id === "board"
-                              ? "워크스페이스"
-                              : id === "domains"
-                                ? "도메인"
-                                : id === "projects"
-                                  ? "프로젝트"
-                                  : id === "dashboard"
-                                    ? "대시보드"
-                                    : id === "history"
-                                      ? "테스트 기록"
-                                      : id === "settings" ||
-                                          id === "project-settings"
-                                        ? id === "settings"
-                                          ? "설정"
-                                          : "프로젝트 설정"
-                                        : w.sessions.find((s) => s.id === id)
-                                            ?.name || "테스트";
+                    id === "execution"
+                      ? "테스트 실행"
+                      : id === "device-admin"
+                        ? "기기관리"
+                        : id === "user-admin"
+                          ? "사용자 관리"
+                          : id === "test-data"
+                            ? "테스트데이터"
+                            : id === "scenarios"
+                              ? "시나리오"
+                              : id === "board"
+                                ? "워크스페이스"
+                                : id === "domains"
+                                  ? "도메인"
+                                  : id === "projects"
+                                    ? "프로젝트"
+                                    : id === "dashboard"
+                                      ? "대시보드"
+                                      : id === "history"
+                                        ? "테스트 기록"
+                                        : id === "settings" ||
+                                            id === "project-settings"
+                                          ? id === "settings"
+                                            ? "설정"
+                                            : "프로젝트 설정"
+                                          : w.sessions.find((s) => s.id === id)
+                                              ?.name || "테스트";
                   const Icon =
                     id === "projects"
                       ? Folder
@@ -274,9 +275,16 @@ export function App() {
                       sessions={w.status?.sessions || []}
                       onSelect={w.store.select}
                     />
+                  ) : id === "execution" ? (
+                    <TestExecution
+                      key={w.projectId}
+                      busy={w.busy}
+                      domains={w.status?.domains || []}
+                      onCreate={w.store.open}
+                    />
                   ) : id === "history" ? (
                     <SessionHistory
-                      onNew={() => setNewOpen(true)}
+                      onNew={() => w.store.navigate("execution")}
                       sessions={projectSessions}
                       onSelect={w.store.select}
                     />
@@ -289,7 +297,7 @@ export function App() {
                     <ScenarioList
                       sessions={projectSessions}
                       onSelect={w.store.select}
-                      onNew={() => setNewOpen(true)}
+                      onNew={() => w.store.navigate("execution")}
                     />
                   ) : id === "board" ? (
                     <Board
@@ -359,7 +367,7 @@ export function App() {
                         w={w}
                         s={s}
                         active={w.activeTab === id}
-                        onNew={() => setNewOpen(true)}
+                        onNew={() => w.store.navigate("execution")}
                         onExport={setExported}
                       />
                     </div>
@@ -374,16 +382,6 @@ export function App() {
           )}
         </main>
       </Tabs>
-      <NewSessionDialog
-        open={newOpen}
-        onOpenChange={setNewOpen}
-        busy={w.busy}
-        domains={w.status?.domains || []}
-        onCreate={async (args) => {
-          await w.store.open(args);
-          if (!w.store.getSnapshot().error) setNewOpen(false);
-        }}
-      />
       {w.user && (
         <Settings
           open={settingsOpen}

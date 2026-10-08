@@ -151,10 +151,10 @@ export function SessionSidebar({
               시나리오
             </Button>
             <Button
-              variant="ghost"
+              variant={active === "execution" ? "secondary" : "ghost"}
+              aria-current={active === "execution" ? "page" : undefined}
               onClick={onRun}
               className="justify-start"
-              aria-haspopup="dialog"
             >
               <Play />
               테스트 실행
