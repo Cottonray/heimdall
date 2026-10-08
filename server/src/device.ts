@@ -437,8 +437,15 @@ export async function dump(maxAgeMs = 0): Promise<UiNode[]> {
     if (maxAgeMs > 0 && c.lastDump && Date.now() - c.lastDump.at <= maxAgeMs) return c.lastDump.nodes
     const r = await adb(['exec-out', 'uiautomator', 'dump', '/dev/tty'], 20_000)
     const xml = r.stdout.toString('utf8')
+    const nodes = parseUiSource(xml)
+    c.lastDump = { nodes, at: Date.now() }
+    return nodes
+}
+
+/** adb uses node tags; Appium uses Android class names for the same attributes. */
+export function parseUiSource(xml: string): UiNode[] {
     const nodes: UiNode[] = []
-    for (const m of xml.matchAll(/<node\s([^>]*?)\/?>/g)) {
+    for (const m of xml.matchAll(/<[A-Za-z_][\w.:-]*\s([^>]*?)\/?>/g)) {
         const attrs = m[1]
         const at = (name: string) => attrs.match(new RegExp(`${name}="([^"]*)"`))?.[1] ?? ''
         const b = at('bounds').match(/\[(-?\d+),(-?\d+)\]\[(-?\d+),(-?\d+)\]/)
@@ -452,7 +459,6 @@ export async function dump(maxAgeMs = 0): Promise<UiNode[]> {
             bounds: { left: Number(b[1]), top: Number(b[2]), right: Number(b[3]), bottom: Number(b[4]) },
         })
     }
-    c.lastDump = { nodes, at: Date.now() }
     return nodes
 }
 

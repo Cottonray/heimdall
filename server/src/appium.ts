@@ -49,6 +49,10 @@ export async function ready(): Promise<boolean> {
     }
 }
 
+export async function source(sessionId: string): Promise<device.UiNode[]> {
+    return device.parseUiSource(String(await call('GET', `/session/${sessionId}/source`)))
+}
+
 // ── 세션 ─────────────────────────────────────────────────────────────────────
 
 /**

@@ -55,7 +55,7 @@ async function saved(id: string) {
 }
 async function observe(s: Session) {
     if (s.engine === 'android') {
-        s.observation = { serial: device.target(), tree: (await device.dump()).map(n => ({ text: n.text, selector: n.id, desc: n.desc, bounds: n.bounds })), ...(await device.screenSize()) }
+        s.observation = { serial: device.target(), tree: (await appium.source(s.appiumId!)).map(n => ({ text: n.text, selector: n.id, desc: n.desc, bounds: n.bounds })), ...(await device.screenSize()) }
     } else s.observation = await worker(`/observe?id=${s.id}`)
     return s.observation
 }
@@ -83,7 +83,7 @@ async function android(s: Session, a: Action) {
     switch (a.type) {
         case 'click': { const el = await find(); if (!el) throw new Error('요소를 찾지 못했어요'); await appium.click(id, el); break }
         case 'point': {
-            const nodes = await device.dump(3000), x = Number(a.x), y = Number(a.y)
+            const nodes = await appium.source(id), x = Number(a.x), y = Number(a.y)
             if (!Number.isFinite(x) || !Number.isFinite(y)) throw new Error('잘못된 좌표예요')
             const n = nodes.filter(n => x >= n.bounds.left && x <= n.bounds.right && y >= n.bounds.top && y <= n.bounds.bottom && (n.id || n.text)).sort((a,b) => (a.bounds.right-a.bounds.left)*(a.bounds.bottom-a.bounds.top)-(b.bounds.right-b.bounds.left)*(b.bounds.bottom-b.bounds.top))[0]
             await appium.clickPoint(id, x, y)

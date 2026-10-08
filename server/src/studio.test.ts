@@ -1,6 +1,14 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
 import { allowed, validateAction, script } from './studio.ts'
+import { parseUiSource } from './device.ts'
+
+test('native UI parsing works for both Appium and adb trees', () => {
+    for (const tag of ['node','android.widget.TextView']) {
+        const n=parseUiSource(`<${tag} text="골목 &amp; QA" resource-id="com.aidemo:id/title" bounds="[0,10][500,50]" clickable="true"/>`)[0]
+        assert.equal(n.text,'골목 & QA'); assert.equal(n.id,'title'); assert.equal(n.bounds.bottom,50)
+    }
+})
 
 test('public demo host and foreign origins cannot operate Studio', () => {
     const req = (host: string, origin?: string, remoteAddress = '172.30.0.2') => ({ headers: { host, origin }, socket: { remoteAddress } }) as any
