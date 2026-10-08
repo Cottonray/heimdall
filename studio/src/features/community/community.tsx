@@ -99,6 +99,7 @@ export function Community({ user }: { user: User; active?: boolean }) {
         ) : (
           <DataTable
             selectable={false}
+            onRowClick={setReading}
             data={rows}
             caption="커뮤니티 게시글"
             getRowId={(r) => r.id}

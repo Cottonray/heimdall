@@ -60,6 +60,7 @@ type DataTableProps<T> = {
   caption: string;
   emptyMessage?: string;
   selectable?: boolean;
+  onRowClick?: (row: T) => void;
   rowActions?: (
     row: T,
   ) => { label: string; onSelect: () => void; disabled?: boolean }[];
@@ -75,6 +76,7 @@ export function DataTable<T>({
   caption,
   rowActions,
   selectable = true,
+  onRowClick,
   emptyMessage = "등록된 항목이 없어요.",
 }: DataTableProps<T>) {
   const [widths, setWidths] = useState<Record<string, number>>({});
@@ -226,6 +228,22 @@ export function DataTable<T>({
             return (
               <TableRow
                 key={id}
+                className={onRowClick ? "cursor-pointer" : undefined}
+                onClick={
+                  onRowClick
+                    ? (event) => {
+                        const target = event.target as HTMLElement;
+                        if (
+                          event.defaultPrevented ||
+                          target.closest(
+                            'button, a, input, select, textarea, [role="menuitem"], [role="checkbox"], [data-row-options]',
+                          )
+                        )
+                          return;
+                        onRowClick(row);
+                      }
+                    : undefined
+                }
                 data-state={
                   selectable && selected.has(id) ? "selected" : undefined
                 }
@@ -271,7 +289,7 @@ export function DataTable<T>({
                   </TableCell>
                 ))}
                 {rowActions && (
-                  <TableCell>
+                  <TableCell data-row-options className="cursor-default">
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
                         <Button
