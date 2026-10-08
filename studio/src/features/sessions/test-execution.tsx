@@ -25,6 +25,15 @@ export function TestExecution({
   const [name, setName] = useState("이체 입력 확인");
   const [domainId, setDomainId] = useState("");
   const domain = domains.find((d) => d.id === domainId) || domains[0];
+  const environment = domain?.environment || "web";
+  const selectedEngine: Engine =
+    environment === "app"
+      ? "android"
+      : environment === "api"
+        ? "api"
+        : engine === "mobile-web"
+          ? "mobile-web"
+          : "web";
   return (
     <div className="max-w-2xl space-y-6">
       <div className="space-y-2">
@@ -36,39 +45,14 @@ export function TestExecution({
       <form
         onSubmit={(e) => {
           e.preventDefault();
-          void onCreate({ engine, name, url: domain?.url });
+          void onCreate({ engine: selectedEngine, name, url: domain?.url });
         }}
         className="space-y-5"
       >
-        <div className="grid grid-cols-3 gap-2">
-          {(["web", "android", "api"] as Engine[]).map((key) => {
-            const Icon =
-              key === "android" || key === "mobile-web"
-                ? Smartphone
-                : key === "api"
-                  ? Braces
-                  : Monitor;
-            return (
-              <Button
-                key={key}
-                variant={
-                  engine === key || (key === "web" && engine === "mobile-web")
-                    ? "default"
-                    : "outline"
-                }
-                onClick={() => setEngine(key)}
-                aria-pressed={
-                  engine === key || (key === "web" && engine === "mobile-web")
-                }
-                type="button"
-              >
-                <Icon />
-                {engines[key].label}
-              </Button>
-            );
-          })}
-        </div>
-        {(engine === "web" || engine === "mobile-web") && (
+        <p className="text-sm">
+          환경 · {{ web: "웹", app: "앱", api: "API" }[environment]}
+        </p>
+        {environment === "web" && (
           <div className="space-y-2">
             <Label>웹 화면</Label>
             <div className="flex gap-2" role="group" aria-label="웹 화면">
@@ -101,7 +85,7 @@ export function TestExecution({
             onChange={(e) => setName(e.target.value)}
           />
         </div>
-        {engine !== "android" && (
+        {
           <div className="space-y-2">
             <Label htmlFor="test-domain">도메인</Label>
             <Select
@@ -132,12 +116,9 @@ export function TestExecution({
                 "관리자가 도메인을 등록해야 테스트를 시작할 수 있어요."}
             </p>
           </div>
-        )}
+        }
         <div className="flex justify-end">
-          <Button
-            type="submit"
-            disabled={busy || (engine !== "android" && !domain)}
-          >
+          <Button type="submit" disabled={busy || !domain}>
             {busy ? "준비 중" : "시작"}
             <ArrowRight />
           </Button>

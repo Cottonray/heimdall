@@ -30,7 +30,7 @@ function ProjectSettingsForm({
   const locked = busy || pending;
   const changed = name.trim() !== project.name;
   return (
-    <div className="grid items-start gap-5 xl:grid-cols-2">
+    <div className="flex flex-col gap-5 [&>*]:w-full">
       <Card>
         <CardHeader>
           <CardTitle>프로젝트 이름</CardTitle>

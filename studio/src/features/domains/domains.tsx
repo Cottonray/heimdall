@@ -1,3 +1,10 @@
+import {
+  Select,
+  SelectTrigger,
+  SelectValue,
+  SelectContent,
+  SelectItem,
+} from "@/components/ui/select";
 import { useState } from "react";
 import { Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -39,6 +46,13 @@ export function Domains({
       cell: (domain) => <span className="font-medium">{domain.name}</span>,
     },
     {
+      id: "environment",
+      header: "환경",
+      cell: (domain) =>
+        ({ web: "웹", app: "앱", api: "API" })[domain.environment || "web"],
+      sortValue: (domain) => domain.environment || "web",
+    },
+    {
       id: "url",
       header: "주소",
       sortValue: (domain) => domain.url,
@@ -71,20 +85,18 @@ export function Domains({
               );
             },
           },
-          ...(admin
-            ? [
-                {
-                  label: "수정",
-                  disabled: busy,
-                  onSelect: () => setEditing(domain),
-                },
-                {
-                  label: "삭제",
-                  disabled: busy,
-                  onSelect: () => setRemoving(domain),
-                },
-              ]
-            : []),
+          ...[
+            {
+              label: "수정",
+              disabled: busy || !admin,
+              onSelect: () => setEditing(domain),
+            },
+            {
+              label: "삭제",
+              disabled: busy || !admin,
+              onSelect: () => setRemoving(domain),
+            },
+          ],
         ]}
         data={domains}
         columns={columns}
@@ -133,6 +145,27 @@ export function Domains({
                   setEditing({ ...editing, name: e.target.value })
                 }
               />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="domain-environment">환경</Label>
+              <Select
+                value={editing?.environment || "web"}
+                onValueChange={(environment) =>
+                  setEditing({
+                    ...editing,
+                    environment: environment as Domain["environment"],
+                  })
+                }
+              >
+                <SelectTrigger id="domain-environment" className="w-full">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="web">웹</SelectItem>
+                  <SelectItem value="app">앱</SelectItem>
+                  <SelectItem value="api">API</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
             <div className="space-y-2">
               <Label htmlFor="domain-url">주소</Label>

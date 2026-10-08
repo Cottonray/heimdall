@@ -7,7 +7,13 @@ export type User = {
   avatarUploadAllowed?: boolean;
   passwordChangeAllowed?: boolean;
 };
-export type Domain = { id: string; name: string; url: string; origin: string };
+export type Domain = {
+  id: string;
+  name: string;
+  url: string;
+  origin: string;
+  environment?: "web" | "app" | "api";
+};
 export type Engine = "web" | "mobile-web" | "api" | "android";
 export type SessionState =
   "opening" | "manual" | "ai" | "replay" | "paused" | "passed" | "closed";
