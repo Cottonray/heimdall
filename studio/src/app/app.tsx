@@ -1,3 +1,4 @@
+import { SortableTabsList } from "@/components/ui/sortable-tabs-list";
 import { UserAdmin } from "@/features/auth/user-admin";
 import { ProjectTestData } from "@/features/projects/test-data";
 import { ScenarioList } from "@/features/scenarios/scenario-list";
@@ -27,12 +28,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import {
-  Tabs,
-  TabsList,
-  TabsContent,
-  WorkspaceTab,
-} from "@/components/ui/tabs";
+import { Tabs, TabsContent, WorkspaceTab } from "@/components/ui/tabs";
 import { StatusBadge } from "@/components/status-badge";
 import { useWorkspace } from "@/features/workspace/use-workspace";
 import { isPage } from "@/features/workspace/tabs";
@@ -131,7 +127,7 @@ export function App() {
         {w.user && (
           <header className="flex shrink-0 flex-wrap items-center justify-between gap-2 border-b bg-sidebar">
             {workspaceVisible && (
-              <TabsList variant="workspace" aria-label="열린 작업">
+              <SortableTabsList order={visibleTabs} onMove={w.store.moveTab}>
                 {(w.user ? visibleTabs : ["projects"]).map((id) => {
                   const label =
                     id === "execution"
@@ -174,6 +170,7 @@ export function App() {
                   return (
                     <WorkspaceTab
                       key={id}
+                      reorderable
                       value={id}
                       label={label}
                       icon={<Icon />}
@@ -186,7 +183,7 @@ export function App() {
                     />
                   );
                 })}
-              </TabsList>
+              </SortableTabsList>
             )}
             <div className="ml-auto flex items-center gap-1 px-3 py-2">
               {w.user && (

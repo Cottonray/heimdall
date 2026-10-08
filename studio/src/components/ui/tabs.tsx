@@ -109,16 +109,20 @@ function WorkspaceTab({
   icon,
   active,
   onClose,
+  reorderable = false,
 }: {
   value: string;
   label: string;
   icon: React.ReactNode;
   active: boolean;
   onClose?: () => void;
+  reorderable?: boolean;
 }) {
   return (
     <div
       data-slot="workspace-tab"
+      data-tab-value={value}
+      draggable={reorderable}
       data-state={active ? "active" : "inactive"}
       className="flex h-12 shrink-0 items-center border-r border-t-2 border-t-transparent text-muted-foreground transition-colors hover:bg-accent/50 data-[state=active]:border-t-primary data-[state=active]:bg-background data-[state=active]:text-foreground"
     >

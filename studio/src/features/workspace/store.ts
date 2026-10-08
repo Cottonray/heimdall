@@ -238,6 +238,15 @@ export class WorkspaceStore {
     if (["projects", "devices", "device-admin", "user-admin"].includes(page))
       void this.refresh();
   };
+  moveTab = (from: string, to: string) => {
+    const tabs = [...this.value.tabs];
+    const source = tabs.indexOf(from),
+      target = tabs.indexOf(to);
+    if (source < 0 || target < 0 || source === target) return;
+    tabs.splice(source, 1);
+    tabs.splice(target, 0, from);
+    this.patch({ tabs });
+  };
   closeTab = (id: string) => {
     const next = closeTab(this.value, id);
     const changed = next.activeTab !== this.value.activeTab;
