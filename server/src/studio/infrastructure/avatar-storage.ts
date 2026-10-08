@@ -292,3 +292,15 @@ export async function getAvatar(key: string) {
     throw new Error("프로필 이미지가 너무 커요");
   return { bytes, mime };
 }
+
+/** Camera uploads share private R2 transport, with a separate bounded key per device. */
+export async function putCameraImage(serial: string, image: AvatarImage) {
+  const config = configuration();
+  if (!config) throw new Error("이미지 저장소가 설정되지 않았어요");
+  const response = await request(
+    "PUT",
+    `${config.prefix}/camera/${digest(serial)}/current`,
+    image,
+  );
+  if (!response.ok) throw new Error("카메라 이미지를 저장하지 못했어요");
+}

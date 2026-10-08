@@ -1,3 +1,4 @@
+import { CameraSettings } from "./camera-settings";
 import { AppLibrary } from "@/features/apps/app-library";
 import { ErrorToast } from "@/components/error-toast";
 import { Tabs, PanelTabsList, TabsContent } from "@/components/ui/tabs";
@@ -59,9 +60,25 @@ export function RemoteDevice({
     active: boolean;
   } | null>(null);
   function mark(x: number, y: number, active: boolean) {
+    const canvas = imageRef.current;
+    if (!canvas || !remote.width || !remote.height) return;
+    const bounds = canvas.getBoundingClientRect();
+    const parent = canvas.parentElement!.getBoundingClientRect();
+    const scale = Math.min(
+      bounds.width / remote.width,
+      bounds.height / remote.height,
+    );
     setTouchMark({
-      x: (100 * x) / remote.width,
-      y: (100 * y) / remote.height,
+      x:
+        bounds.left -
+        parent.left +
+        (bounds.width - remote.width * scale) / 2 +
+        x * scale,
+      y:
+        bounds.top -
+        parent.top +
+        (bounds.height - remote.height * scale) / 2 +
+        y * scale,
       active,
     });
   }
@@ -393,6 +410,7 @@ export function RemoteDevice({
               items={[
                 { value: "web", label: "웹 디버깅", icon: <Monitor /> },
                 { value: "apps", label: "앱 설치", icon: <Monitor /> },
+                { value: "camera", label: "카메라 설정", icon: <Camera /> },
               ]}
             />
             <TabsContent
@@ -415,6 +433,17 @@ export function RemoteDevice({
               <AppLibrary
                 serial={serial}
                 viewerId={remote.viewerId || ""}
+                canControl={remote.canControl}
+              />
+            </TabsContent>
+            <TabsContent
+              forceMount
+              value="camera"
+              className="min-h-0 flex-1 overflow-auto data-[state=inactive]:hidden"
+            >
+              <CameraSettings
+                serial={serial}
+                viewer={remote.viewerId || ""}
                 canControl={remote.canControl}
               />
             </TabsContent>

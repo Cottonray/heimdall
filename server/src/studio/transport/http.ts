@@ -1,4 +1,8 @@
 import {
+  cameraAvailable,
+  applyCameraImage,
+} from "../infrastructure/camera-image.ts";
+import {
   appList,
   appFile,
   beginUpload,
@@ -97,6 +101,18 @@ export async function handle(
     const url = new URL(req.url || "/", "http://localhost"),
       id = url.searchParams.get("id") || "";
     const auth = await authenticate(req);
+    if (route === "/api/studio/camera" && req.method === "GET") {
+      const serial = url.searchParams.get("serial") || "";
+      if (
+        !auth ||
+        !ownsDevice(url.searchParams.get("viewer") || "", serial, auth.hash)
+      ) {
+        send(403, { error: "기기를 점유한 창에서 이용해 주세요." });
+        return true;
+      }
+      send(200, await cameraAvailable(serial));
+      return true;
+    }
     if (route === "/api/studio/apps" && req.method === "GET") {
       if (!auth) {
         send(401, { error: "로그인이 필요해요" });
@@ -461,7 +477,7 @@ export async function handle(
     }
     let body = "";
     const bodyLimit =
-      route === "/api/studio/profile"
+      route === "/api/studio/profile" || route === "/api/studio/camera"
         ? Math.ceil(MAX_AVATAR_BYTES / 3) * 4 + 1024
         : 64000;
     for await (const chunk of req) {
@@ -470,6 +486,17 @@ export async function handle(
         throw new Error("요청이 너무 커요");
     }
     const data = JSON.parse(body || "{}");
+    if (route === "/api/studio/camera") {
+      const serial = url.searchParams.get("serial") || "";
+      const viewer = url.searchParams.get("viewer") || "";
+      const authorized = () => !!auth && ownsDevice(viewer, serial, auth.hash);
+      if (!allowedBrowserOrigin(req) || !authorized()) {
+        send(403, { error: "기기를 점유한 창에서 적용해 주세요." });
+        return true;
+      }
+      send(200, await applyCameraImage(serial, data.image, authorized));
+      return true;
+    }
     if (route === "/api/studio/ios-web-debug" && req.method === "POST") {
       const serial = url.searchParams.get("serial") || "";
       const viewer = url.searchParams.get("viewer") || "";
