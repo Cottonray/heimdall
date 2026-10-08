@@ -21,7 +21,7 @@ React + shadcn/ui 기반의 QA 워크스페이스. 현재 디자인의 정본은
 | 테스트 목록·최근 테스트 | `Item` | `variant="row" size="row" asChild` |
 | 입력·검색·장문 | `Input`, `SearchInput`, `Textarea` | 검색 아이콘과 입력 여백은 `SearchInput` 내부에서 관리 |
 | 폼 라벨 | `Label` | 기본 또는 `subtle` variant |
-| 테마 전환 | `Select`, `ThemeControls` | 사이드바와 설정에서 동일한 조작부 |
+| 테마 전환 | `Select`, `ThemeControls` | 테두리·그림자 없는 `SelectTrigger variant="ghost"`; 사이드바와 설정에서 동일한 조작부 |
 | 카드·상태·탭·대화상자 | `Card`, `Badge`, `Tabs`, `Dialog` | 공통 기본 간격과 의미 variant |
 | 차트·로딩·구분선 | `Chart`, `Skeleton`, `Separator` | 의미 색상 및 레이아웃 속성 |
 | 원격 화면 입력 | `PreviewSurface` | 좌표 보존을 위해 패딩·눌림 축소·disabled 투명도 없음 |

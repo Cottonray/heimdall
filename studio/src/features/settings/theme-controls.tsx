@@ -24,7 +24,7 @@ export function ThemeControls({
         }
       }}
     >
-      <SelectTrigger aria-label="화면 테마" className="w-full">
+      <SelectTrigger variant="ghost" aria-label="화면 테마" className="w-full">
         <SelectValue />
       </SelectTrigger>
       <SelectContent position="popper" align="start">

@@ -85,7 +85,7 @@ const accepted = render(
     <SearchInput aria-label="검색" />
     <Switch aria-label="다크 모드" size="sm" checked={false} />
     <Label variant="subtle">시스템 설정 따르기</Label>
-    <SelectTrigger className="w-full" aria-label="화면 테마" />
+    <SelectTrigger variant="ghost" className="w-full" aria-label="화면 테마" />
     <svg><path fill="var(--primary)" /></svg>
   </div>`,
   `import { Button } from "@/components/ui/button";
