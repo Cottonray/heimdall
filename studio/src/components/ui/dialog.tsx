@@ -61,7 +61,7 @@ function DialogContent({
       <DialogPrimitive.Content
         data-slot="dialog-content"
         className={cn(
-          "fixed top-[50%] left-[50%] z-50 grid w-full max-w-[calc(100%-2rem)] translate-x-[-50%] translate-y-[-50%] gap-4 rounded-lg border bg-background p-6 shadow-lg duration-200 outline-none data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:zoom-out-95 data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:zoom-in-95 sm:max-w-lg",
+          "fixed top-[50%] left-[50%] z-50 grid grid-cols-[minmax(0,1fr)] w-full max-w-[calc(100%-2rem)] translate-x-[-50%] translate-y-[-50%] gap-4 rounded-lg border bg-background p-6 shadow-lg duration-200 outline-none data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:zoom-out-95 data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:zoom-in-95 sm:max-w-lg",
           variant === "settings" &&
             "flex h-[min(38rem,85dvh)] flex-col overflow-hidden sm:max-w-4xl",
           className,
@@ -87,7 +87,10 @@ function DialogHeader({ className, ...props }: React.ComponentProps<"div">) {
   return (
     <div
       data-slot="dialog-header"
-      className={cn("-mx-6 -mt-6 flex shrink-0 flex-col gap-2 rounded-t-lg border-b bg-muted/50 px-6 py-5 pr-12 text-left", className)}
+      className={cn(
+        "-mx-6 -mt-6 flex min-w-0 shrink-0 flex-col gap-2 rounded-t-lg border-b bg-muted/50 px-6 py-5 pr-12 text-left",
+        className,
+      )}
       {...props}
     />
   );

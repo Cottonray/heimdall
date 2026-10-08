@@ -163,7 +163,7 @@ export function DeviceFarm({
                       등록돼요.
                     </DialogDescription>
                   </DialogHeader>
-                  <div className="space-y-4">
+                  <div className="min-w-0 space-y-4">
                     <div className="flex flex-wrap gap-2">
                       <Button asChild variant="outline">
                         <a href={API + "/admin/agent-download?platform=macos"}>
@@ -180,7 +180,7 @@ export function DeviceFarm({
                       Appium이 필요하며 설치 및 등록 방법은 동봉된 README를
                       확인해 주세요.
                     </p>
-                    <pre className="overflow-x-auto rounded-md bg-muted p-3 text-sm">
+                    <pre className="max-w-full overflow-x-auto rounded-md bg-muted p-3 text-sm">
                       <code>
                         heimdall server --master {window.location.origin}
                       </code>
