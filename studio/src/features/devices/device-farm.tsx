@@ -141,21 +141,6 @@ export function DeviceFarm({ active }: { active: boolean }) {
                   target="_blank"
                   rel="noopener noreferrer"
                   aria-label={`${name} 원격 조작 새 창 열기`}
-                  onClick={(event) => {
-                    if (
-                      event.metaKey ||
-                      event.ctrlKey ||
-                      event.shiftKey ||
-                      event.altKey
-                    )
-                      return;
-                    event.preventDefault();
-                    window.open(
-                      remoteUrl,
-                      "_blank",
-                      "popup,width=520,height=920,noopener,noreferrer",
-                    );
-                  }}
                 >
                   <div className="space-y-6">
                     <div className="space-y-3">
