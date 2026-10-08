@@ -66,6 +66,7 @@ export function SortableTabsList({
         );
         if (
           !node ||
+          node.getAttribute("draggable") !== "true" ||
           (event.target as HTMLElement).closest('[data-slot="button"]')
         ) {
           event.preventDefault();

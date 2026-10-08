@@ -104,6 +104,9 @@ export function App() {
     "기본 프로젝트";
   const visibleTabs = w.tabs.filter(
     (id) =>
+      id !== "community" &&
+      id !== "ai-models" &&
+      id !== "settings" &&
       id !== "projects" &&
       id !== "devices" &&
       id !== "device-admin" &&
@@ -192,7 +195,7 @@ export function App() {
                   return (
                     <WorkspaceTab
                       key={id}
-                      reorderable
+                      reorderable={id !== "dashboard"}
                       value={id}
                       label={label}
                       icon={<Icon />}

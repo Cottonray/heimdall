@@ -237,6 +237,7 @@ export class WorkspaceStore {
     this.refreshVersion++;
     this.patch({
       projectId,
+      tabs: projectId ? ["dashboard"] : [],
       status: this.value.status ? { ...this.value.status, sessions: [] } : null,
       loading: true,
       error: "",
@@ -245,6 +246,7 @@ export class WorkspaceStore {
   }
   enterProject = (projectId: string) => {
     this.setProjectScope(projectId);
+    this.patch({ tabs: ["dashboard"] });
     this.navigate("dashboard");
     void this.refresh();
   };
@@ -310,7 +312,11 @@ export class WorkspaceStore {
     )
       this.setProjectScope("");
     this.select("", false);
-    this.patch(openTab(this.value, page));
+    this.patch(
+      this.value.projectId
+        ? openTab(this.value, page)
+        : { tabs: [page], activeTab: page },
+    );
     this.updateRoute();
     if (
       [
@@ -326,6 +332,7 @@ export class WorkspaceStore {
       void this.refresh();
   };
   moveTab = (from: string, to: string) => {
+    if (from === "dashboard" || to === "dashboard") return;
     const tabs = [...this.value.tabs];
     const source = tabs.indexOf(from),
       target = tabs.indexOf(to);
