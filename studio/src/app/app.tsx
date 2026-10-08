@@ -66,12 +66,19 @@ export function App() {
     const deviceQuery = remoteDevice
       ? "?" + new URLSearchParams({ device: remoteDevice })
       : "";
-    if (!w.user) history.replaceState(null, "", LOGIN_PATH + deviceQuery);
+    if (!w.user)
+      history.replaceState(
+        null,
+        "",
+        LOGIN_PATH + (location.search || deviceQuery) + location.hash,
+      );
     else if (location.pathname.endsWith("/login"))
       history.replaceState(
         null,
         "",
-        APP_ROOT + deviceQuery + (w.selectedId ? "#" + w.selectedId : ""),
+        APP_ROOT +
+          (location.search || deviceQuery) +
+          (w.selectedId ? "#" + w.selectedId : ""),
       );
   }, [w.user, w.loading, w.selectedId, remoteDevice]);
   if (!w.loading && !w.user)

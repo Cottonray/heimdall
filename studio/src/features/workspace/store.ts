@@ -27,17 +27,40 @@ type Snapshot = {
   error: string;
   frame: string;
 };
+const projectPages = new Set([
+  "dashboard",
+  "history",
+  "execution",
+  "board",
+  "test-data",
+  "scenarios",
+  "domains",
+  "project-settings",
+]);
+function readProjectRoute() {
+  const params = new URLSearchParams(location.search);
+  const projectId = params.get("project") || "";
+  const page = params.get("page") || "dashboard";
+  return { projectId, page: projectPages.has(page) ? page : "dashboard" };
+}
+const initialRoute = readProjectRoute();
 export class WorkspaceStore {
   private value: Snapshot = {
     sessions: [],
     user: null,
     status: null,
-    projectId: "",
+    projectId: initialRoute.projectId,
     selectedId: location.hash.slice(1),
     tabs: location.hash.slice(1)
       ? ["projects", "dashboard", location.hash.slice(1)]
-      : ["projects"],
-    activeTab: location.hash.slice(1) || "projects",
+      : initialRoute.projectId
+        ? ["projects", "dashboard", initialRoute.page].filter(
+            (id, index, all) => all.indexOf(id) === index,
+          )
+        : ["projects"],
+    activeTab:
+      location.hash.slice(1) ||
+      (initialRoute.projectId ? initialRoute.page : "projects"),
     loading: true,
     busy: false,
     connected: false,
@@ -230,6 +253,35 @@ export class WorkspaceStore {
       this.enterProject(projectId);
       this.select(id);
     });
+  private routing = false;
+  private updateRoute = () => {
+    if (this.routing || new URLSearchParams(location.search).has("device"))
+      return;
+    const url = new URL(location.href);
+    if (this.value.projectId) {
+      url.searchParams.set("project", this.value.projectId);
+      url.searchParams.set(
+        "page",
+        isPage(this.value.activeTab) ? this.value.activeTab : "dashboard",
+      );
+    } else {
+      url.searchParams.delete("project");
+      url.searchParams.delete("page");
+    }
+    url.hash = this.value.selectedId;
+    const next = url.pathname + url.search + url.hash;
+    if (next !== location.pathname + location.search + location.hash)
+      history.pushState(null, "", next);
+  };
+  private restoreRoute = () => {
+    const route = readProjectRoute();
+    this.routing = true;
+    this.setProjectScope(route.projectId);
+    if (location.hash) this.select(location.hash.slice(1));
+    else this.navigate((route.projectId ? route.page : "projects") as Page);
+    this.routing = false;
+    void this.refresh();
+  };
   navigate = (page: Page) => {
     if (
       [
@@ -242,8 +294,9 @@ export class WorkspaceStore {
       ].includes(page)
     )
       this.setProjectScope("");
-    this.select("");
+    this.select("", false);
     this.patch(openTab(this.value, page));
+    this.updateRoute();
     if (
       [
         "projects",
@@ -274,7 +327,7 @@ export class WorkspaceStore {
       else this.select(next.activeTab);
     }
   };
-  select = (id: string) => {
+  select = (id: string, updateRoute = true) => {
     const session = this.value.sessions.find((s) => s.id === id);
     const scopeChanged = session
       ? this.setProjectScope(session.projectId || "default")
@@ -285,7 +338,7 @@ export class WorkspaceStore {
       selectedId: id,
       frame: "",
     });
-    history.replaceState(null, "", location.pathname + (id ? "#" + id : ""));
+    if (updateRoute) this.updateRoute();
     if (this.ws?.readyState === WebSocket.OPEN)
       this.ws.send(JSON.stringify({ type: "watch", id }));
     if (session?.state === "closed") this.showSaved(session);
@@ -441,6 +494,7 @@ export class WorkspaceStore {
   };
   start = () => {
     this.stopped = false;
+    window.addEventListener("popstate", this.restoreRoute);
     void api
       .me()
       .then(async ({ user }) => {
@@ -458,6 +512,7 @@ export class WorkspaceStore {
     this.poll = setInterval(() => void this.refresh(), 15000);
     return () => {
       this.stopped = true;
+      window.removeEventListener("popstate", this.restoreRoute);
       this.refreshVersion++;
       clearTimeout(this.retry);
       clearInterval(this.poll);
