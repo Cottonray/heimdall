@@ -366,3 +366,33 @@ test("reserved viewer releases after 15 seconds without a reply and retains an a
   alive.ws.close();
   assert.equal(deviceUsage(item.serial), "available");
 });
+
+test("live touches execute before up and disconnect releases the pressed finger", async () => {
+  const f = fixture();
+  try {
+    f.input("down", {type: "touch", phase: "down", x: 20, y: 30});
+    await settle();
+    assert.equal(f.performed, 1);
+    f.input("move", {type: "touch", phase: "move", x: 30, y: 40});
+    await settle();
+    assert.equal(f.performed, 2);
+    f.ws.close();
+    await settle();
+    assert.equal(f.performed, 3);
+    assert.equal(control.snapshot().kind, "none");
+  } finally { f.ws.close(); }
+});
+test("touch phase validation, orphan moves, and idle finger cleanup", async () => {
+  assert.throws(() => remoteAction({type: "touch", phase: "shell", x: 0, y: 0}, size));
+  const f = fixture();
+  try {
+    f.input("orphan", {type: "touch", phase: "move", x: 20, y: 30});
+    await settle();
+    assert.equal(f.performed, 0);
+    f.input("down", {type: "touch", phase: "down", x: 20, y: 30});
+    await settle();
+    f.advance(10001);
+    await settle();
+    assert.equal(f.performed, 2);
+  } finally { f.ws.close(); }
+});

@@ -13,6 +13,12 @@ export const REMOTE_KEYS = {
 } as const;
 
 export type RemoteAction =
+  | {
+      type: "touch";
+      phase: "down" | "move" | "up" | "cancel";
+      x: number;
+      y: number;
+    }
   | { type: "tap"; x: number; y: number }
   | {
       type: "swipe";
@@ -36,12 +42,21 @@ function coordinate(value: unknown, limit: number): number {
   return Math.min(limit - 1, Math.round(value));
 }
 
-/** Only the four remote input operations can reach ADB; shell commands never do. */
+/** Only validated remote input operations can reach ADB; shell commands never do. */
 export function remoteAction(value: unknown, size: DisplaySize): RemoteAction {
   if (!value || typeof value !== "object")
     throw new Error("올바른 조작을 선택해 주세요");
   const action = value as Record<string, unknown>;
   switch (action.type) {
+    case "touch":
+      if (!["down", "move", "up", "cancel"].includes(String(action.phase)))
+        throw new Error("터치 상태를 확인해 주세요");
+      return {
+        type: "touch",
+        phase: action.phase as "down" | "move" | "up" | "cancel",
+        x: coordinate(action.x, size.width),
+        y: coordinate(action.y, size.height),
+      };
     case "tap":
       return {
         type: "tap",

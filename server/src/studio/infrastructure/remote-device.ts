@@ -78,6 +78,8 @@ export async function performRemoteAction(
   let args: string[];
   let unicode = false;
   switch (action.type) {
+    case "touch":
+      throw new Error("실시간 입력 연결을 기다려 주세요");
     case "tap":
       args = ["input", "tap", String(action.x), String(action.y)];
       break;

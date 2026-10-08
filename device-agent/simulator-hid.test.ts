@@ -34,3 +34,16 @@ test("text and unsupported navigation stay on the validated Appium path", () => 
   assert.equal(hidEvents({ type: "text", text: "한글" }), undefined);
   assert.equal(hidEvents({ type: "key", key: "back" }), undefined);
 });
+
+test("live touch emits a single pressed point until up or cancel", () => {
+  for (const phase of ["down", "move", "up", "cancel"] as const) {
+    const events = hidEvents({ type: "touch", phase, x: 44, y: 66 })!;
+    assert.equal(events.length, 1);
+    assert.equal(events[0].readDoubleLE(9), 44);
+    assert.equal(events[0].readDoubleLE(18), 66);
+    assert.equal(
+      events[0].at(-1),
+      phase === "down" || phase === "move" ? 0 : 1,
+    );
+  }
+});

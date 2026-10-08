@@ -28,6 +28,13 @@ const point = (x: number, y: number) =>
 const press = (action: Buffer, direction: number) =>
   message(1, Buffer.concat([message(1, action), integer(2, direction)]));
 export function hidEvents(action: RemoteAction): Buffer[] | undefined {
+  if (action.type === "touch")
+    return [
+      press(
+        message(1, message(1, point(action.x, action.y))),
+        action.phase === "up" || action.phase === "cancel" ? 1 : 0,
+      ),
+    ];
   if (action.type === "swipe")
     return [
       message(
@@ -68,6 +75,8 @@ export function grpcFrame(payload: Buffer) {
 /** Simulator-only HID bypasses XCTest's per-command idle/snapshot overhead. */
 export class SimulatorHid {
   private video = new IdbVideo();
+  private heldTouch?: Extract<RemoteAction, { type: "touch" }>;
+  private touchTimeout?: ReturnType<typeof setTimeout>;
   private videoRetryAt = 0;
   private child?: ChildProcess;
   private client?: ClientHttp2Session;
@@ -110,6 +119,19 @@ export class SimulatorHid {
       for (const event of events) request.write(grpcFrame(event));
       request.end();
     });
+    if (action.type === "touch") {
+      clearTimeout(this.touchTimeout);
+      this.heldTouch =
+        action.phase === "up" || action.phase === "cancel" ? undefined : action;
+      if (this.heldTouch) {
+        this.touchTimeout = setTimeout(() => {
+          const held = this.heldTouch;
+          if (held)
+            void this.perform({ ...held, phase: "cancel" }).catch(() => {});
+        }, 15000);
+        this.touchTimeout.unref();
+      }
+    }
     return true;
   }
   async prepare(): Promise<boolean> {
@@ -151,6 +173,7 @@ export class SimulatorHid {
     }
   }
   stop() {
+    clearTimeout(this.touchTimeout);
     this.video.stop();
     this.stopped = true;
     this.client?.destroy();

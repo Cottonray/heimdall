@@ -15,7 +15,7 @@ export function PreviewSurface({
       data-press-feedback="off"
       className={cn(
         "block max-w-full outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-default",
-        variant === "remote" && "h-full max-h-full touch-none",
+        variant === "remote" && "relative h-full max-h-full touch-none",
         className,
       )}
     />

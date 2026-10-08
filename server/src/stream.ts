@@ -398,13 +398,20 @@ function touchMessage(action: number, x: number, y: number): Buffer {
     b.writeInt32BE(Math.max(0, Math.min(s.height - 1, y)), 14)
     b.writeUInt16BE(s.width, 18)
     b.writeUInt16BE(s.height, 20)
-    b.writeUInt16BE(action === ACTION_UP ? 0 : 0xffff, 22) // 압력, u16 고정소수점
+    b.writeUInt16BE(action === ACTION_UP || action === 3 ? 0 : 0xffff, 22) // 압력, u16 고정소수점
     b.writeInt32BE(0, 24) // actionButton
     b.writeInt32BE(0, 28) // buttons
     return b
 }
 
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms))
+
+export function touch(phase: "down" | "move" | "up" | "cancel", x: number, y: number, dev: { width: number; height: number }) {
+    if (!ready()) return false
+    const p = toVideo(x, y, dev)
+    device.invalidateDump()
+    return send(touchMessage(phase === "down" ? ACTION_DOWN : phase === "move" ? ACTION_MOVE : phase === "cancel" ? 3 : ACTION_UP, p.x, p.y))
+}
 
 export async function tap(x: number, y: number, dev: { width: number; height: number }) {
     if (!ready()) return false

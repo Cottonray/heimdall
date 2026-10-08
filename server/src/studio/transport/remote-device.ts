@@ -6,7 +6,11 @@ import type { WsConnection } from "../../ws.ts";
 import * as device from "../../device.ts";
 import * as screen from "../../screen.ts";
 import * as control from "../../control.ts";
-import { displayFromJpeg, remoteAction } from "../domain/remote-device.ts";
+import {
+  displayFromJpeg,
+  remoteAction,
+  type RemoteAction,
+} from "../domain/remote-device.ts";
 import {
   performRemoteAction,
   type RemoteDevice,
@@ -99,6 +103,21 @@ export function connectRemoteDevice(
   let lastCheck = deps.now(),
     lastPing = deps.now();
   let queue = Promise.resolve();
+  let held: Extract<RemoteAction, { type: "touch" }> | undefined;
+  let touchedAt = 0;
+  async function releaseTouch() {
+    const previous = held;
+    held = undefined;
+    if (!previous || deps.target() !== serial) return;
+    const action = { ...previous, phase: "cancel" as const };
+    if (supportsVideo && stream.touch(action.phase, action.x, action.y, size))
+      return;
+    await deps.perform(serial, action);
+  }
+  function releaseLease() {
+    if (!lease) deps.control.forget(viewerId);
+    lease?.release();
+  }
   const send = (message: unknown) => {
     if (ws.isOpen) ws.send(JSON.stringify(message));
   };
@@ -117,6 +136,10 @@ export function connectRemoteDevice(
     if (lease && !deps.control.mayTouch(viewerId)) {
       fail("기기 점유가 종료됐어요. 다시 열어 주세요", 4409);
       return;
+    }
+    if (held && deps.now() - touchedAt > 10000) {
+      touchedAt = deps.now();
+      queue = queue.then(releaseTouch).catch(() => {});
     }
     deps.control.sweep();
     if (!targetUnchanged()) return;
@@ -151,11 +174,13 @@ export function connectRemoteDevice(
       stop();
       deps.frames.remove(connectionId);
       if (video) stream.removeViewer(connectionId);
-      // An already-started ADB command has a 10s bound. Keep its lock until it exits.
-      if (!pending) {
-        if (!lease) deps.control.forget(viewerId);
-        lease?.release();
-      }
+      // Release a held finger before handing the lease to another viewer.
+      if (!pending && !held) releaseLease();
+      else
+        void queue
+          .then(releaseTouch)
+          .catch(() => {})
+          .finally(releaseLease);
     },
     onMessage: (raw) => {
       if (closed) return;
@@ -212,8 +237,24 @@ export function connectRemoteDevice(
                 ? "테스트가 실행 중이에요"
                 : "다른 사용자가 조작 중이에요",
             );
+          if (action.type === "touch") {
+            if (action.phase === "down" && held) await releaseTouch();
+            if (action.phase !== "down" && !held) {
+              reply(true);
+              return;
+            }
+            held = action;
+            touchedAt = deps.now();
+          } else if (held) await releaseTouch();
           let injected = false;
-          if (video && stream.ready() && serial === device.target()) {
+          if (action.type === "touch" && supportsVideo)
+            injected = stream.touch(action.phase, action.x, action.y, size);
+          if (
+            !injected &&
+            video &&
+            stream.ready() &&
+            serial === device.target()
+          ) {
             if (action.type === "tap")
               injected = await stream.tap(action.x, action.y, size);
             else if (action.type === "swipe")
@@ -235,11 +276,17 @@ export function connectRemoteDevice(
               throw new Error("영상 연결을 기다려 주세요");
             await deps.perform(serial, action);
           }
+          if (
+            action.type === "touch" &&
+            (action.phase === "up" || action.phase === "cancel")
+          )
+            held = undefined;
           if (closed || !targetUnchanged()) return;
           deps.frames.kick();
           reply(true);
         })
-        .catch((error: unknown) => {
+        .catch(async (error: unknown) => {
+          await releaseTouch().catch(() => {});
           reply(
             false,
             error instanceof Error ? error.message : "조작을 완료하지 못했어요",
@@ -247,10 +294,6 @@ export function connectRemoteDevice(
         })
         .finally(() => {
           pending -= 1;
-          if (closed && !pending) {
-            if (!lease) deps.control.forget(viewerId);
-            lease?.release();
-          }
         });
     },
   });

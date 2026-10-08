@@ -22,6 +22,7 @@ import { PlatformIcon } from "@/components/platform-icon";
 import { StatusDot } from "@/components/ui/status-dot";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { TouchIndicator } from "@/components/ui/touch-indicator";
 import { PreviewSurface } from "@/components/ui/preview-surface";
 import { useScreenCapture } from "./use-screen-capture";
 import { useRemoteDevice } from "./use-remote-device";
@@ -50,10 +51,40 @@ export function RemoteDevice({
     pointerId: number;
     x: number;
     y: number;
-    clientX: number;
-    clientY: number;
-    at: number;
+    heartbeat: ReturnType<typeof setInterval>;
   } | null>(null);
+  const [touchMark, setTouchMark] = useState<{
+    x: number;
+    y: number;
+    active: boolean;
+  } | null>(null);
+  function mark(x: number, y: number, active: boolean) {
+    setTouchMark({
+      x: (100 * x) / remote.width,
+      y: (100 * y) / remote.height,
+      active,
+    });
+  }
+  function endTouch(phase: "up" | "cancel", end?: { x: number; y: number }) {
+    const held = gesture.current;
+    gesture.current = null;
+    if (!held) return;
+    clearInterval(held.heartbeat);
+    const point = end || held;
+    remote.touch({ type: "touch", phase, x: point.x, y: point.y });
+    mark(point.x, point.y, false);
+  }
+  useEffect(() => {
+    const cancel = () => endTouch("cancel");
+    window.addEventListener("blur", cancel);
+    return () => window.removeEventListener("blur", cancel);
+  });
+  useEffect(
+    () => () => {
+      if (gesture.current) clearInterval(gesture.current.heartbeat);
+    },
+    [],
+  );
   const [toolTab, setToolTab] = useState("web");
   const ios = remote.device?.platform === "ios";
   const disabled = !remote.canControl || remote.busy || !remote.frame;
@@ -138,51 +169,48 @@ export function RemoteDevice({
                 onPointerDown={(event) => {
                   if (event.button !== 0 || gesture.current) return;
                   const start = point(event);
-                  if (!start) return;
+                  if (
+                    !start ||
+                    !remote.touch({ type: "touch", phase: "down", ...start })
+                  )
+                    return;
                   event.preventDefault();
                   event.currentTarget.focus();
                   event.currentTarget.setPointerCapture(event.pointerId);
                   gesture.current = {
                     ...start,
                     pointerId: event.pointerId,
-                    clientX: event.clientX,
-                    clientY: event.clientY,
-                    at: performance.now(),
+                    heartbeat: setInterval(() => {
+                      const held = gesture.current;
+                      if (held)
+                        remote.touch({
+                          type: "touch",
+                          phase: "move",
+                          x: held.x,
+                          y: held.y,
+                        });
+                    }, 1000),
                   };
+                  mark(start.x, start.y, true);
+                }}
+                onPointerMove={(event) => {
+                  const held = gesture.current;
+                  if (!held || held.pointerId !== event.pointerId) return;
+                  const next = point(event, true);
+                  if (!next) return;
+                  held.x = next.x;
+                  held.y = next.y;
+                  remote.touch({ type: "touch", phase: "move", ...next });
+                  mark(next.x, next.y, true);
                 }}
                 onPointerUp={(event) => {
-                  const start = gesture.current;
-                  gesture.current = null;
-                  if (!start || start.pointerId !== event.pointerId) return;
-                  const end = point(event, true);
+                  if (gesture.current?.pointerId !== event.pointerId) return;
+                  endTouch("up", point(event, true) || undefined);
                   if (event.currentTarget.hasPointerCapture(event.pointerId))
                     event.currentTarget.releasePointerCapture(event.pointerId);
-                  if (!end) return;
-                  const ms = Math.round(
-                    Math.max(100, Math.min(2000, performance.now() - start.at)),
-                  );
-                  const moved =
-                    Math.hypot(
-                      event.clientX - start.clientX,
-                      event.clientY - start.clientY,
-                    ) >= 8;
-                  if (moved || ms >= 500)
-                    void remote.action({
-                      type: "swipe",
-                      x1: start.x,
-                      y1: start.y,
-                      x2: end.x,
-                      y2: end.y,
-                      ms,
-                    });
-                  else void remote.action({ type: "tap", x: end.x, y: end.y });
                 }}
-                onPointerCancel={() => {
-                  gesture.current = null;
-                }}
-                onLostPointerCapture={() => {
-                  gesture.current = null;
-                }}
+                onPointerCancel={() => endTouch("cancel")}
+                onLostPointerCapture={() => endTouch("cancel")}
                 onClick={(event) => {
                   if (event.detail === 0 && remote.width && remote.height)
                     void remote.action({
@@ -197,6 +225,7 @@ export function RemoteDevice({
                   aria-label={`${name} 화면`}
                   className="block h-full w-auto max-w-full object-contain"
                 />
+                {touchMark && <TouchIndicator {...touchMark} />}
               </PreviewSurface>
             ) : (
               <div

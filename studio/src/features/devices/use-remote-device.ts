@@ -1,3 +1,4 @@
+import { createTouchInput, type TouchInput } from "./touch-input";
 import { createVideoRenderer } from "./video-decoder";
 import { useEffect, useRef, useState } from "react";
 import type { DeviceInfo } from "../../../../contracts/studio";
@@ -8,6 +9,12 @@ import {
 } from "./remote-control";
 
 export type DeviceAction =
+  | {
+      type: "touch";
+      phase: "down" | "move" | "up" | "cancel";
+      x: number;
+      y: number;
+    }
   | { type: "tap"; x: number; y: number }
   | {
       type: "swipe";
@@ -67,6 +74,7 @@ export function useRemoteDevice(serial: string, onAuthExpired: () => void) {
   const [revision, setRevision] = useState(0);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const socket = useRef<WebSocket | null>(null);
+  const touches = useRef<ReturnType<typeof createTouchInput> | null>(null);
   const pending = useRef<{
     id: string;
     resolve: (ok: boolean) => void;
@@ -90,6 +98,8 @@ export function useRemoteDevice(serial: string, onAuthExpired: () => void) {
       clearTimeout(retry);
       clearTimeout(handshake);
       closeRenderer();
+      touches.current?.stop();
+      touches.current = null;
       const ws = socket.current;
       socket.current = null;
       ws?.close();
@@ -107,6 +117,14 @@ export function useRemoteDevice(serial: string, onAuthExpired: () => void) {
       url.searchParams.set("device", serial);
       const ws = new WebSocket(url);
       socket.current = ws;
+      touches.current = createTouchInput(
+        (requestId, action) =>
+          ws.send(JSON.stringify({ type: "action", requestId, action })),
+        (error) => {
+          setState((previous) => ({ ...previous, error }));
+          ws.close();
+        },
+      );
       ws.binaryType = "arraybuffer";
       let videoTimer: ReturnType<typeof setTimeout> | undefined;
       let frameSeen = false;
@@ -246,6 +264,15 @@ export function useRemoteDevice(serial: string, onAuthExpired: () => void) {
                 error: message.error || "기기를 조작하지 못했어요.",
               }));
             finishAction(message.ok === true && !message.error);
+          } else if (
+            message.type === "reply" &&
+            message.requestId?.startsWith("touch:")
+          ) {
+            touches.current?.reply(
+              message.requestId,
+              message.ok === true,
+              message.error,
+            );
           } else if (message.type === "error") {
             setState((previous) => ({
               ...previous,
@@ -263,6 +290,8 @@ export function useRemoteDevice(serial: string, onAuthExpired: () => void) {
         if (disposed || socket.current !== ws) return;
         clearTimeout(handshake);
         closeRenderer();
+        touches.current?.stop();
+        touches.current = null;
         socket.current = null;
         finishAction(false);
         setState((previous) => ({
@@ -347,6 +376,11 @@ export function useRemoteDevice(serial: string, onAuthExpired: () => void) {
     busy,
     canControl,
     action,
+    touch: (value: TouchInput) =>
+      canControl &&
+      !pending.current &&
+      socket.current?.readyState === WebSocket.OPEN &&
+      touches.current?.push(value) === true,
     reconnect: () => setRevision((value) => value + 1),
   };
 }
