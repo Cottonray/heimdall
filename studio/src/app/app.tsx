@@ -52,6 +52,7 @@ import type { Session, SessionExport } from "../../../contracts/studio";
 export function App() {
   const w = useWorkspace();
   const { theme, resolvedTheme, setTheme, toggleTheme } = useTheme();
+  const [communityRevision, setCommunityRevision] = useState(0);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [exported, setExported] = useState<SessionExport | null>(null);
   const [remoteDevice] = useState(
@@ -134,7 +135,13 @@ export function App() {
           signedIn={!!w.user}
           admin={w.user?.role === "admin"}
           active={w.activeTab}
-          onNavigate={w.store.navigate}
+          onNavigate={(page) => {
+            if (page === "community") {
+              setCommunityRevision((revision) => revision + 1);
+              mainRef.current?.scrollTo({ top: 0 });
+            }
+            w.store.navigate(page);
+          }}
           theme={theme}
           onTheme={setTheme}
         />
@@ -282,7 +289,11 @@ export function App() {
                       }}
                     />
                   ) : id === "community" ? (
-                    <Community user={w.user!} active={w.activeTab === id} />
+                    <Community
+                      key={communityRevision}
+                      user={w.user!}
+                      active={w.activeTab === id}
+                    />
                   ) : id === "app-admin" ? (
                     w.user?.role === "admin" ? (
                       <AppLibrary management />
