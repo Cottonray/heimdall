@@ -99,6 +99,7 @@ export function WebViewDebugging({
 }) {
   const [selected, setSelected] = useState("");
   const [inspector, setInspector] = useState<{
+    instance: string;
     target: string;
     viewer: string;
     src: string;
@@ -117,6 +118,7 @@ export function WebViewDebugging({
       : null;
   async function inspect() {
     if (!target || !canControl) return;
+    setInspector(null);
     setOpening(true);
     setError("");
     try {
@@ -144,7 +146,12 @@ export function WebViewDebugging({
       );
       url.searchParams.set("remoteBase", new URL("./", url).href);
       url.searchParams.set("dockSide", "undocked");
-      setInspector({ target: key(target), viewer: viewerId, src: url.href });
+      setInspector({
+        instance: crypto.randomUUID(),
+        target: key(target),
+        viewer: viewerId,
+        src: url.href,
+      });
     } catch (error) {
       setError(
         error instanceof Error ? error.message : "인스펙터를 열지 못했어요.",
@@ -154,8 +161,8 @@ export function WebViewDebugging({
     }
   }
   return (
-    <div className="flex h-full min-h-0 flex-col gap-3">
-      <div className="flex shrink-0 flex-wrap items-center gap-2">
+    <div className="flex h-full min-h-0 flex-col">
+      <div className="flex shrink-0 flex-wrap items-center gap-2 border-b p-2">
         <div className="min-w-0 flex-1">
           <Select
             value={target ? key(target) : ""}
@@ -228,16 +235,16 @@ export function WebViewDebugging({
       )}
       {current ? (
         <iframe
-          key={current.src}
+          key={current.instance}
           title="Chrome DevTools 웹뷰 인스펙터"
           src={current.src}
-          className="min-h-0 w-full flex-1 rounded-lg border bg-background"
+          className="min-h-0 w-full flex-1 border-0 bg-background"
           referrerPolicy="no-referrer"
         />
       ) : (
         <div
           role="status"
-          className="flex flex-1 items-center justify-center rounded-lg border bg-muted/40 p-6 text-center text-sm text-muted-foreground"
+          className="flex flex-1 items-center justify-center bg-muted/40 p-6 text-center text-sm text-muted-foreground"
         >
           {discovery.targets.length
             ? "웹페이지를 선택하고 인스펙터를 열어 주세요."

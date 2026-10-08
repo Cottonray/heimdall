@@ -1,3 +1,9 @@
+import {
+  Tabs,
+  TabsList,
+  TabsContent,
+  WorkspaceTab,
+} from "@/components/ui/tabs";
 import { PanelResizeHandle } from "@/components/ui/panel-resize-handle";
 import { useEffect, useRef, useState, type PointerEvent } from "react";
 import {
@@ -86,8 +92,8 @@ export function RemoteDevice({
             ? "조작 가능"
             : "보기 전용";
   return (
-    <main className="flex h-dvh flex-col gap-4 overflow-hidden bg-background p-4 text-foreground">
-      <div className="-mx-4 flex shrink-0 items-center justify-between gap-3 border-b px-4 pb-4">
+    <main className="flex h-dvh flex-col overflow-hidden bg-background text-foreground">
+      <div className="flex shrink-0 items-center justify-between gap-3 border-b p-4">
         <div className="flex min-w-0 items-center gap-3">
           <div className="flex shrink-0 items-center gap-2">
             <StatusDot state={remote.connection} label={status} />
@@ -127,8 +133,8 @@ export function RemoteDevice({
           {remote.error}
         </p>
       )}
-      <div className="flex min-h-0 flex-1 gap-4">
-        <div className="flex min-h-0 min-w-0 flex-1 flex-col gap-4">
+      <div className="flex min-h-0 flex-1">
+        <div className="flex min-h-0 min-w-0 flex-1 flex-col gap-4 p-4">
           <div className="flex min-h-0 flex-1 items-center justify-center overflow-hidden rounded-lg border bg-muted/40">
             {remote.frame ? (
               <PreviewSurface
@@ -346,21 +352,36 @@ export function RemoteDevice({
         <aside
           id="web-debugging"
           aria-label="웹 디버깅"
-          className="flex min-h-0 w-3/5 flex-col gap-3 border-l pl-4"
+          className="flex min-h-0 min-w-0 w-3/5 flex-col"
         >
-          <h2 className="font-semibold">웹 디버깅</h2>
-          {ios ? (
-            <p className="text-sm text-muted-foreground">
-              iOS 웹 인스펙터는 아직 지원하지 않아요.
-            </p>
-          ) : (
-            <WebViewDebugging
-              serial={serial}
-              viewerId={remote.viewerId}
-              canControl={remote.canControl}
-              discovery={webviews}
-            />
-          )}
+          <Tabs value="web" className="min-h-0 flex-1 gap-0">
+            <TabsList
+              variant="workspace"
+              className="max-h-12 w-full shrink-0 flex-none border-b bg-muted/40"
+              aria-label="기기 도구"
+            >
+              <WorkspaceTab
+                value="web"
+                label="웹 디버깅"
+                icon={<Monitor />}
+                active
+              />
+            </TabsList>
+            <TabsContent value="web" className="min-h-0 flex-1 overflow-hidden">
+              {ios ? (
+                <p className="text-sm text-muted-foreground">
+                  iOS 웹 인스펙터는 아직 지원하지 않아요.
+                </p>
+              ) : (
+                <WebViewDebugging
+                  serial={serial}
+                  viewerId={remote.viewerId}
+                  canControl={remote.canControl}
+                  discovery={webviews}
+                />
+              )}
+            </TabsContent>
+          </Tabs>
         </aside>
       </div>
     </main>
