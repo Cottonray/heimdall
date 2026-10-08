@@ -33,9 +33,13 @@ say() { printf '\n\033[1m▶ %s\033[0m\n' "$*"; }
 source "$here/../lib/preflight.sh"
 require_main_merged "$here"
 
-# Build only after the full TypeScript/design checks pass.
+# Run regression checks unless explicitly disabled for a user-requested deployment.
 say "React Studio 검증·빌드"
-node --experimental-strip-types "$here/check.ts"
+if [[ ${AIQA_SKIP_REGRESSION_TESTS:-0} == 1 ]]; then
+  node --experimental-strip-types "$here/studio/build.ts"
+else
+  node --experimental-strip-types "$here/check.ts"
+fi
 
 # --- 보낼 것 모으기 ----------------------------------------------------------
 payload=$(mktemp -d)
