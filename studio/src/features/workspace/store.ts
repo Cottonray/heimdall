@@ -404,6 +404,7 @@ export class WorkspaceStore {
       this.update(s);
       this.select(s.id);
       await this.refresh();
+      return s;
     });
   command = async (
     tool: "qa_agent" | "qa_pause" | "qa_close" | "qa_observe" | "qa_replay",

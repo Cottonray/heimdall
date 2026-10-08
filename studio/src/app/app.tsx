@@ -326,9 +326,12 @@ export function App() {
                     />
                   ) : id === "scenarios" ? (
                     <ScenarioList
+                      key={w.projectId}
                       sessions={projectSessions}
                       onSelect={w.store.select}
-                      onNew={() => w.store.navigate("execution")}
+                      onCreate={w.store.open}
+                      domains={w.status?.domains || []}
+                      busy={w.busy}
                     />
                   ) : id === "board" ? (
                     <Board

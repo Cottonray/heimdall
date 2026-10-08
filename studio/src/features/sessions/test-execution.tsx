@@ -5,7 +5,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { useState } from "react";
+import { useId, useState } from "react";
 import { Monitor, Smartphone, Braces, ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -16,11 +16,14 @@ export function TestExecution({
   onCreate,
   busy,
   domains,
+  embedded = false,
 }: {
   onCreate: (v: NewSession) => Promise<unknown>;
   busy: boolean;
   domains: Domain[];
+  embedded?: boolean;
 }) {
+  const fieldId = useId();
   const [engine, setEngine] = useState<Engine>("web");
   const [name, setName] = useState("이체 입력 확인");
   const [domainId, setDomainId] = useState("");
@@ -36,12 +39,14 @@ export function TestExecution({
           : "web";
   return (
     <div className="max-w-2xl space-y-6">
-      <div className="space-y-2">
-        <h1 className="text-2xl font-semibold">테스트 실행</h1>
-        <p className="text-sm text-muted-foreground">
-          실행환경을 고르고 테스트를 시작해요.
-        </p>
-      </div>
+      {!embedded && (
+        <div className="space-y-2">
+          <h1 className="text-2xl font-semibold">테스트 실행</h1>
+          <p className="text-sm text-muted-foreground">
+            실행환경을 고르고 테스트를 시작해요.
+          </p>
+        </div>
+      )}
       <form
         onSubmit={(e) => {
           e.preventDefault();
@@ -76,9 +81,9 @@ export function TestExecution({
           </div>
         )}
         <div className="space-y-2">
-          <Label htmlFor="test-name">테스트 이름</Label>
+          <Label htmlFor={fieldId + "-name"}>테스트 이름</Label>
           <Input
-            id="test-name"
+            id={fieldId + "-name"}
             required
             maxLength={80}
             value={name}
@@ -87,14 +92,14 @@ export function TestExecution({
         </div>
         {
           <div className="space-y-2">
-            <Label htmlFor="test-domain">도메인</Label>
+            <Label htmlFor={fieldId + "-domain"}>도메인</Label>
             <Select
               value={domain?.id || ""}
               onValueChange={setDomainId}
               disabled={busy || domains.length === 0}
             >
               <SelectTrigger
-                id="test-domain"
+                id={fieldId + "-domain"}
                 className="w-full"
                 aria-describedby="test-domain-address"
               >

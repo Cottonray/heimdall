@@ -1,17 +1,33 @@
+import { useState } from "react";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import { TestExecution } from "@/features/sessions/test-execution";
 import { DataTable } from "@/components/data-table";
 import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
 import { engines } from "@/lib/labels";
-import type { Session } from "../../../../contracts/studio";
+import type { Session, Domain, NewSession } from "../../../../contracts/studio";
 export function ScenarioList({
   sessions,
   onSelect,
-  onNew,
+  onCreate,
+  domains,
+  busy,
 }: {
   sessions: Session[];
   onSelect: (id: string) => void;
-  onNew: () => void;
+  onCreate: (value: NewSession) => Promise<unknown>;
+  domains: Domain[];
+  busy: boolean;
 }) {
+  const [open, setOpen] = useState(false);
+  const [error, setError] = useState("");
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between gap-4">
@@ -21,9 +37,52 @@ export function ScenarioList({
             저장된 테스트의 동작을 열어 확인하고 재실행해요.
           </p>
         </div>
-        <Button onClick={onNew}>
-          <Plus />새 시나리오
-        </Button>
+        <Dialog
+          open={open}
+          onOpenChange={(value) => {
+            if (!busy) {
+              setOpen(value);
+              setError("");
+            }
+          }}
+        >
+          <DialogTrigger asChild>
+            <Button>
+              <Plus />새 시나리오
+            </Button>
+          </DialogTrigger>
+          <DialogContent
+            className="max-h-[85dvh] overflow-y-auto sm:max-w-2xl"
+            showCloseButton={!busy}
+          >
+            <DialogHeader>
+              <DialogTitle>새 시나리오</DialogTitle>
+              <DialogDescription>
+                실행환경과 이름을 정하고 시나리오 작성을 시작해요.
+              </DialogDescription>
+            </DialogHeader>
+            <TestExecution
+              embedded
+              domains={domains}
+              busy={busy}
+              onCreate={async (value) => {
+                setError("");
+                const result = await onCreate(value);
+                if (result) setOpen(false);
+                else
+                  setError(
+                    "시나리오를 시작하지 못했어요. 연결 상태와 입력을 확인해 주세요.",
+                  );
+                return result;
+              }}
+            />
+            {error && (
+              <p role="alert" className="text-sm text-destructive">
+                {error}
+              </p>
+            )}
+          </DialogContent>
+        </Dialog>
       </div>
       <DataTable
         data={sessions.filter((s) => s.steps.length > 0)}
