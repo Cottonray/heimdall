@@ -84,7 +84,6 @@ export function ProfileEditor({
               aria-label="프로필 이미지 변경"
             >
               <UserAvatar user={user} size="profile" />
-              <Camera />
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent>
@@ -92,6 +91,7 @@ export function ProfileEditor({
               disabled={!user.avatarUploadAllowed || locked}
               onSelect={() => fileInput.current?.click()}
             >
+              <Camera />
               이미지 변경
             </DropdownMenuItem>
             <DropdownMenuItem
