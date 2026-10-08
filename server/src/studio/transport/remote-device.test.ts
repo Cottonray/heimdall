@@ -198,27 +198,33 @@ function fixture(leased = false) {
   const holder = control.snapshot();
   if (holder.kind === "human") control.forget(holder.viewerId);
   const lease = leased ? reserveDevice(item.serial, "test-session") : undefined;
-  connectRemoteDevice(ws, { device: item, size }, async () => allowed, {
-    target: () => target,
-    now: () => clock,
-    control,
-    frames: {
-      add(value) {
-        viewer = value;
+  connectRemoteDevice(
+    ws,
+    { device: item, size },
+    async () => allowed,
+    {
+      target: () => target,
+      now: () => clock,
+      control,
+      frames: {
+        add(value) {
+          viewer = value;
+        },
+        remove() {
+          removed = true;
+        },
+        kick() {},
       },
-      remove() {
-        removed = true;
+      perform: async () => perform(),
+      every(callback) {
+        timer = callback;
+        return () => {
+          stopped = true;
+        };
       },
-      kick() {},
     },
-    perform: async () => perform(),
-    every(callback) {
-      timer = callback;
-      return () => {
-        stopped = true;
-      };
-    },
-  }, lease);
+    lease,
+  );
   return {
     ws,
     messages,
@@ -360,7 +366,10 @@ test("reserved viewer releases after 15 seconds without a reply and retains an a
   assert.deepEqual(dead.closes, [1001]);
   assert.equal(deviceUsage(item.serial), "available");
   const alive = fixture(true);
-  for (let i = 0; i < 30; i++) { alive.ws.lastReceivedAt += 5000; alive.advance(5000); }
+  for (let i = 0; i < 30; i++) {
+    alive.ws.lastReceivedAt += 5000;
+    alive.advance(5000);
+  }
   assert.equal(alive.ws.isOpen, true);
   assert.equal(deviceUsage(item.serial), "in-use");
   alive.ws.close();
@@ -370,29 +379,75 @@ test("reserved viewer releases after 15 seconds without a reply and retains an a
 test("live touches execute before up and disconnect releases the pressed finger", async () => {
   const f = fixture();
   try {
-    f.input("down", {type: "touch", phase: "down", x: 20, y: 30});
+    f.input("down", { type: "touch", phase: "down", x: 20, y: 30 });
     await settle();
     assert.equal(f.performed, 1);
-    f.input("move", {type: "touch", phase: "move", x: 30, y: 40});
+    f.input("move", { type: "touch", phase: "move", x: 30, y: 40 });
     await settle();
     assert.equal(f.performed, 2);
     f.ws.close();
     await settle();
     assert.equal(f.performed, 3);
     assert.equal(control.snapshot().kind, "none");
-  } finally { f.ws.close(); }
+  } finally {
+    f.ws.close();
+  }
 });
 test("touch phase validation, orphan moves, and idle finger cleanup", async () => {
-  assert.throws(() => remoteAction({type: "touch", phase: "shell", x: 0, y: 0}, size));
+  assert.throws(() =>
+    remoteAction({ type: "touch", phase: "shell", x: 0, y: 0 }, size),
+  );
   const f = fixture();
   try {
-    f.input("orphan", {type: "touch", phase: "move", x: 20, y: 30});
+    f.input("orphan", { type: "touch", phase: "move", x: 20, y: 30 });
     await settle();
     assert.equal(f.performed, 0);
-    f.input("down", {type: "touch", phase: "down", x: 20, y: 30});
+    f.input("down", { type: "touch", phase: "down", x: 20, y: 30 });
     await settle();
     f.advance(10001);
     await settle();
     assert.equal(f.performed, 2);
-  } finally { f.ws.close(); }
+  } finally {
+    f.ws.close();
+  }
+});
+
+test("JPEG-only browsers retain one ADB swipe on release and cancel never taps", async () => {
+  const calls: string[][] = [];
+  const adb = async (args: string[]) => {
+    calls.push(args);
+    return result();
+  };
+  for (const phase of ["down", "move"] as const)
+    await performRemoteAction(
+      item.serial,
+      { type: "touch", phase, x: 10, y: 20 },
+      adb,
+    );
+  assert.equal(calls.length, 0);
+  await performRemoteAction(
+    item.serial,
+    { type: "touch", phase: "up", x: 30, y: 40 },
+    adb,
+  );
+  assert.equal(calls.length, 1);
+  assert.deepEqual(calls[0].slice(3, 9), [
+    "input",
+    "swipe",
+    "10",
+    "20",
+    "30",
+    "40",
+  ]);
+  await performRemoteAction(
+    item.serial,
+    { type: "touch", phase: "down", x: 10, y: 20 },
+    adb,
+  );
+  await performRemoteAction(
+    item.serial,
+    { type: "touch", phase: "cancel", x: 10, y: 20 },
+    adb,
+  );
+  assert.equal(calls.length, 1);
 });

@@ -122,12 +122,15 @@ export function connectRemoteDevice(
   let queue = Promise.resolve();
   let held: Extract<RemoteAction, { type: "touch" }> | undefined;
   let touchedAt = 0;
+  let heldStream = false;
   async function releaseTouch() {
     const previous = held;
     held = undefined;
+    const usedStream = heldStream;
+    heldStream = false;
     if (!previous || deps.target() !== serial) return;
     const action = { ...previous, phase: "cancel" as const };
-    if (supportsVideo && stream.touch(action.phase, action.x, action.y, size))
+    if (usedStream && stream.touch(action.phase, action.x, action.y, size))
       return;
     await deps.perform(serial, action);
   }
@@ -260,11 +263,12 @@ export function connectRemoteDevice(
               reply(true);
               return;
             }
+            if (action.phase === "down") heldStream = video && supportsVideo;
             held = action;
             touchedAt = deps.now();
           } else if (held) await releaseTouch();
           let injected = false;
-          if (action.type === "touch" && supportsVideo)
+          if (action.type === "touch" && heldStream)
             injected = stream.touch(action.phase, action.x, action.y, size);
           if (
             !injected &&
@@ -289,6 +293,8 @@ export function connectRemoteDevice(
               injected = stream.text(action.text);
           }
           if (!injected) {
+            if (action.type === "touch" && heldStream)
+              throw new Error("영상 연결을 기다려 주세요");
             if (video && (action.type === "tap" || action.type === "swipe"))
               throw new Error("영상 연결을 기다려 주세요");
             await deps.perform(serial, action);

@@ -1,3 +1,4 @@
+import { LegacyTouch } from "../domain/legacy-touch.ts";
 import { isIos, iosRequest } from "./ios-bridge.ts";
 import type { DeviceInfo } from "../../../../contracts/studio.ts";
 import * as device from "../../device.ts";
@@ -7,6 +8,8 @@ import {
   type RemoteAction,
 } from "../domain/remote-device.ts";
 import { listDeviceInventory } from "./device-inventory.ts";
+
+const legacyTouches = new Map<string, LegacyTouch>();
 
 export type RemoteDevice = { device: DeviceInfo; size: DisplaySize };
 
@@ -78,8 +81,15 @@ export async function performRemoteAction(
   let args: string[];
   let unicode = false;
   switch (action.type) {
-    case "touch":
-      throw new Error("실시간 입력 연결을 기다려 주세요");
+    case "touch": {
+      const touch = legacyTouches.get(serial) || new LegacyTouch();
+      if (action.phase === "down") legacyTouches.set(serial, touch);
+      const completed = touch.accept(action);
+      if (action.phase === "up" || action.phase === "cancel")
+        legacyTouches.delete(serial);
+      if (completed) await performRemoteAction(serial, completed, adb);
+      return;
+    }
     case "tap":
       args = ["input", "tap", String(action.x), String(action.y)];
       break;

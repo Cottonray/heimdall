@@ -1,3 +1,4 @@
+import { LegacyTouch } from "./legacy-touch.ts";
 import { inspector, stopInspector } from "./web-inspector.ts";
 import { installApp } from "./app-install.ts";
 import { iosWebDebug } from "../server/src/studio/domain/ios-web-debug.ts";
@@ -18,6 +19,7 @@ let starting: Promise<void> | undefined;
 let size: { width: number; height: number } | undefined;
 const video = new LatestJpeg();
 const hid = new SimulatorHid(udid);
+const legacyTouch = new LegacyTouch();
 let nativeCommands = Promise.resolve<unknown>(undefined);
 export async function stop() {
   stopInspector();
@@ -208,7 +210,13 @@ async function run(path: string, body?: unknown): Promise<Buffer> {
   commands = next.catch(() => undefined);
   return next;
 }
-async function legacyInput(action: ReturnType<typeof remoteAction>) {
+async function legacyInput(
+  action: ReturnType<typeof remoteAction>,
+): Promise<Buffer> {
+  if (action.type === "touch") {
+    const completed = legacyTouch.accept(action);
+    return completed ? legacyInput(completed) : Buffer.from("{}");
+  }
   if (action.type === "tap")
     await execute("mobile: tap", { x: action.x, y: action.y });
   else if (action.type === "swipe")
