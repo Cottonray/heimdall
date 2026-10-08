@@ -47,9 +47,7 @@ function Table({
         resolvedWidths.current = [];
       const widths = columnWidths.map(
         (width, index) =>
-          width ??
-          resolvedWidths.current[index] ??
-          (index === 0 ? 40 : defaultWidth),
+          width ?? resolvedWidths.current[index] ?? defaultWidth,
       );
       resolvedWidths.current = [...widths];
       const fillIndex = fillColumnIndex ?? widths.length - 1;
