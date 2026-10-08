@@ -154,3 +154,17 @@
 [data-avatar-color="5"] {
   background-color: #356f86;
 }
+
+@keyframes error-toast-enter {
+  from { opacity: 0; transform: translateY(-8px) scale(.98); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+@keyframes error-toast-exit {
+  from { opacity: 1; transform: translateY(0); }
+  to { opacity: 0; transform: translateY(-6px); }
+}
+.error-toast[data-state="open"] { animation: error-toast-enter 200ms ease-out both; }
+.error-toast[data-state="closed"] { animation: error-toast-exit 180ms ease-in both; pointer-events: none; }
+@media (prefers-reduced-motion: reduce) {
+  .error-toast[data-state] { animation-duration: 1ms; }
+}

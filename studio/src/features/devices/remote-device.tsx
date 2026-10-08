@@ -96,15 +96,24 @@ export function RemoteDevice({
             : "보기 전용";
   return (
     <main className="flex h-dvh flex-col overflow-hidden bg-background text-foreground">
-      <div className="flex shrink-0 items-center justify-between gap-3 border-b p-4">
+      <div className="flex h-16 shrink-0 items-center justify-between gap-4 border-b bg-background px-5">
         <div className="flex min-w-0 items-center gap-3">
-          <div className="flex shrink-0 items-center gap-2">
-            <StatusDot state={remote.connection} label={status} />
-            <PlatformIcon platform={remote.device?.platform || "android"} />
+          <div className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-muted">
+            <PlatformIcon
+              platform={
+                remote.device?.platform ||
+                (serial.startsWith("ios:") ? "ios" : "android")
+              }
+            />
           </div>
           <div className="min-w-0">
-            <h1 className="truncate text-lg font-semibold">{name}</h1>
-            <p className="truncate text-xs text-muted-foreground">{serial}</p>
+            <h1 className="truncate text-sm font-semibold" title={serial}>
+              {name}
+            </h1>
+            <div className="mt-1 flex items-center gap-1.5 text-xs text-muted-foreground">
+              <StatusDot state={remote.connection} label={status} />
+              <span>{status}</span>
+            </div>
           </div>
         </div>
         <div className="flex shrink-0 items-center gap-2">
