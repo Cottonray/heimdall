@@ -272,7 +272,7 @@ async function connectWithFirstByte(gen: number): Promise<{ socket: net.Socket; 
 
 function attachParser(sock: net.Socket, gen: number, rest: Buffer) {
     // 더미 바이트는 connectWithFirstByte 가 이미 먹었다. 여기부터 코덱 id 4B, 그 뒤 패킷
-    let buf = Buffer.alloc(0)
+    let buf: Buffer = Buffer.alloc(0)
     let sawCodec = false
 
     const feed = (chunk: Buffer) => {

@@ -111,6 +111,7 @@ services:
       # **자주 바뀌는 것은 굽지 않는다.** 서버 소스·화면·시나리오를 마운트해 두면
       # 문구 하나 고치자고 3GB 이미지를 다시 만들 일이 없다 (AICC 의 web/ 과 같은 판단)
       - ./server:/opt/aiqa/server:ro
+      - ./contracts:/opt/aiqa/contracts:ro
       - ./web:/opt/aiqa/web:ro
       - ./flows:/opt/aiqa/flows:ro
       # AVD 의 상태(설치된 앱·설정). 배포로 컨테이너가 새로 떠도 부팅이 조금 빠르다
