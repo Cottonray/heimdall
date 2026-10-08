@@ -8,6 +8,8 @@ const badgeVariants = cva(
   {
     variants: {
       variant: {
+        offline:
+          "border-zinc-200 bg-zinc-100 text-zinc-500 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-400",
         success: "bg-success/10 text-success border-success/15",
         default: "bg-primary text-primary-foreground [a&]:hover:bg-primary/90",
         secondary:

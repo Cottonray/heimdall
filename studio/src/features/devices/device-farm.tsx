@@ -257,9 +257,11 @@ export function DeviceFarm({
               cell: (device) => (
                 <Badge
                   variant={
-                    deviceStatus(device, !!error) === "사용가능"
-                      ? "success"
-                      : "outline"
+                    deviceStatus(device, !!error) === "오프라인"
+                      ? "offline"
+                      : deviceStatus(device, !!error) === "사용가능"
+                        ? "success"
+                        : "outline"
                   }
                 >
                   {deviceStatus(device, !!error)}
@@ -331,7 +333,15 @@ export function DeviceFarm({
                     <div className="space-y-3">
                       <div className="flex items-center justify-between gap-2">
                         <PlatformIcon platform={platform} />
-                        <Badge variant={ready ? "success" : "outline"}>
+                        <Badge
+                          variant={
+                            state === "오프라인"
+                              ? "offline"
+                              : ready
+                                ? "success"
+                                : "outline"
+                          }
+                        >
                           {state}
                         </Badge>
                       </div>
