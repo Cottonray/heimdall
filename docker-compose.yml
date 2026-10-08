@@ -17,6 +17,7 @@ services:
     mem_limit: 2g
     shm_size: 512m
     environment:
+      AIQA_WORKER_SECRET: ${AIQA_WORKER_SECRET:?AIQA_WORKER_SECRET required}
       AIQA_TEST_ORIGINS: ${AIQA_TEST_ORIGINS:-http://127.0.0.1:8081}
     networks:
       - internal
@@ -67,6 +68,9 @@ services:
       # nginx 는 접두사를 떼지 않는다 — 앱이 자기 경로를 안다 (홈서버 규약)
       AIQA_BASE_PATH: /aiqa
       AIQA_PORT: 8080
+      AIQA_WORKER_SECRET: ${AIQA_WORKER_SECRET:?AIQA_WORKER_SECRET required}
+      AIQA_TEST_USER_PASSWORD: ${AIQA_TEST_USER_PASSWORD:-}
+      AIQA_TEST_ADMIN_PASSWORD: ${AIQA_TEST_ADMIN_PASSWORD:-}
       AIQA_BROWSER_WORKER_URL: http://aiqa-browser:8081
       AIQA_WEB_DIR: /opt/aiqa/web
       AIQA_FLOW_DIR: /opt/aiqa/flows

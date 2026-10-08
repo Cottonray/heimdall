@@ -28,6 +28,9 @@ export async function frame(s: Session) {
   }
   const r = await fetch(`${WORKER}/frame?id=${s.id}`, {
     signal: AbortSignal.timeout(10000),
+    headers: {
+      authorization: "Bearer " + (process.env.AIQA_WORKER_SECRET || ""),
+    },
   });
   if (!r.ok) throw new Error("화면 연결이 끊겼어요");
   return Buffer.from(await r.arrayBuffer());

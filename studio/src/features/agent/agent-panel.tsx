@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useId, useState } from "react";
 import { Sparkles, Play, Hand, CheckCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -19,6 +19,7 @@ export function AgentPanel({
   onCommand: (tool: "qa_agent" | "qa_pause", goal?: string) => Promise<unknown>;
   onAction: (a: Action) => Promise<unknown>;
 }) {
+  const goalId = useId();
   const [goal, setGoal] = useState(session.goal || defaultGoal);
   const [expected, setExpected] = useState("");
   const closed = session.state === "closed";
@@ -37,9 +38,9 @@ export function AgentPanel({
       </CardHeader>
       <CardContent>
         <div className="space-y-4">
-          <Label htmlFor="goal">테스트 목표</Label>
+          <Label htmlFor={goalId}>테스트 목표</Label>
           <Textarea
-            id="goal"
+            id={goalId}
             rows={5}
             value={goal}
             onChange={(e) => setGoal(e.target.value)}

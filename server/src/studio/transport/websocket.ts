@@ -4,7 +4,10 @@ import { events } from "../infrastructure/events.ts";
 import { get } from "../domain/session.ts";
 import { frame } from "../engines/observe.ts";
 import { dispatch } from "../application/dispatch.ts";
-export function connect(ws: WsConnection) {
+export function connect(
+  ws: WsConnection,
+  authorized: () => Promise<boolean> = async () => true,
+) {
   const onSession = (session: PublicSession) => {
     if (ws.isOpen && ws.backlog < 65536)
       ws.send(JSON.stringify({ type: "studio", session }));
@@ -38,7 +41,11 @@ export function connect(ws: WsConnection) {
           return;
         }
         if (msg.type === "action")
-          void dispatch("qa_action", { id: msg.id, action: msg.action })
+          void authorized()
+            .then((ok) => {
+              if (!ok) throw new Error("로그인이 필요해요");
+              return dispatch("qa_action", { id: msg.id, action: msg.action });
+            })
             .then((result) =>
               ws.send(
                 JSON.stringify({

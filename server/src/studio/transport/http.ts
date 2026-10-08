@@ -1,10 +1,27 @@
+import {
+  authenticate,
+  login,
+  logout,
+  localRequest,
+} from "../infrastructure/auth.ts";
+import {
+  listDomains,
+  saveDomain,
+  removeDomain,
+} from "../infrastructure/domains.ts";
 import type { IncomingMessage, ServerResponse } from "node:http";
 import { readFile } from "node:fs/promises";
 import path from "node:path";
 import * as device from "../../device.ts";
 import { get } from "../domain/session.ts";
 import { DIR } from "../infrastructure/config.ts";
-import { saved } from "../infrastructure/repository.ts";
+import {
+  saved,
+  listSessions,
+  listProjects,
+  createProject,
+  moveSession,
+} from "../infrastructure/repository.ts";
 import { frame } from "../engines/observe.ts";
 import { worker } from "../engines/browser.ts";
 import { dispatch } from "../application/dispatch.ts";
@@ -30,12 +47,35 @@ export async function handle(
   try {
     const url = new URL(req.url || "/", "http://localhost"),
       id = url.searchParams.get("id") || "";
+    const auth = await authenticate(req);
+    if (route === "/api/studio/auth/me") {
+      send(200, { user: auth?.user || null });
+      return true;
+    }
+    const authRoute =
+      route === "/api/studio/auth/login" || route === "/api/studio/auth/logout";
+    if (!authRoute && !auth && !localRequest(req)) {
+      send(401, { error: "로그인이 필요해요" });
+      return true;
+    }
+    if (
+      req.method === "POST" &&
+      !localRequest(req) &&
+      req.headers.origin !== "https://gateway.example"
+    ) {
+      send(403, { error: "요청 출처를 확인해 주세요" });
+      return true;
+    }
     if (route === "/api/studio/status") {
       send(200, {
         browser: await worker("/healthz").catch(() => ({ ok: false })),
         android: await device.state(),
         llm: !!process.env.AIQA_OPENROUTER_API_KEY,
-        sessions: await dispatch("qa_list", {}),
+        projects: await listProjects(),
+        domains: await listDomains(),
+        sessions: await listSessions(
+          url.searchParams.get("projectId") || undefined,
+        ),
       });
       return true;
     }
@@ -67,6 +107,37 @@ export async function handle(
       if (body.length > 64000) throw new Error("요청이 너무 커요");
     }
     const data = JSON.parse(body || "{}");
+    if (route === "/api/studio/auth/login") {
+      send(200, { user: await login(req, res, data) });
+      return true;
+    }
+    if (route === "/api/studio/auth/logout") {
+      await logout(req, res);
+      send(200, { user: null });
+      return true;
+    }
+    if (route === "/api/studio/domains") {
+      if (auth?.user.role !== "admin" && !localRequest(req)) {
+        send(403, { error: "관리자만 도메인을 설정할 수 있어요" });
+        return true;
+      }
+      send(
+        200,
+        data.remove ? await removeDomain(data.id) : await saveDomain(data),
+      );
+      return true;
+    }
+    if (route === "/api/studio/projects") {
+      send(201, await createProject(data.name));
+      return true;
+    }
+    if (route === "/api/studio/project-assignment") {
+      send(
+        200,
+        await moveSession(String(data.id || ""), String(data.projectId || "")),
+      );
+      return true;
+    }
     if (route === "/api/studio/mcp") {
       const reply = (result: unknown) =>
         send(200, { jsonrpc: "2.0", id: data.id, result });

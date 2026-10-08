@@ -2,7 +2,7 @@ import http from "node:http";
 import { chromium, type BrowserContext } from "playwright";
 import { readFile } from "node:fs/promises";
 import { sessions, get } from "./sessions.ts";
-import { checkUrl } from "./policy.ts";
+import { checkUrl, configureOrigins } from "./policy.ts";
 import { observe } from "./observe.ts";
 import { operate } from "./actions.ts";
 const browser = await chromium.launch({ headless: true });
@@ -30,6 +30,11 @@ const server = http.createServer(async (req, res) => {
       res.end(await readFile(new URL("../demo.html", import.meta.url)));
       return;
     }
+    if (
+      !process.env.AIQA_WORKER_SECRET ||
+      req.headers.authorization !== "Bearer " + process.env.AIQA_WORKER_SECRET
+    )
+      return reply(401, { error: "unauthorized" });
     const id = url.searchParams.get("id") || "";
     if (url.pathname === "/frame") {
       const s = get(id);
@@ -48,6 +53,10 @@ const server = http.createServer(async (req, res) => {
       if (text.length > 64000) throw new Error("요청이 너무 커요");
     }
     const data = JSON.parse(text || "{}");
+    if (url.pathname === "/configure") {
+      configureOrigins(data.origins);
+      return reply(200, { ok: true });
+    }
     if (url.pathname === "/open") {
       if (sessions.size + opening >= 2)
         throw new Error("브라우저 워커 두 개가 사용 중이에요");

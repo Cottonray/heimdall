@@ -1,3 +1,4 @@
+import { authenticate, authEvents, localRequest } from "./studio/infrastructure/auth.ts"
 // QA Studio 서버. 구형 모바일 QA 화면·API·WebSocket은 2026-10-08 폐기했다.
 // Studio와 Android 샘플 앱의 WebView 자산만 제공한다.
 import http from 'node:http'
@@ -71,14 +72,31 @@ const server = http.createServer(async (req, res) => {
         else res.end()
     }
 })
-server.on('upgrade', (req, socket) => {
+server.on('upgrade', async (req, socket) => {
     const url = new URL(req.url ?? '/', 'http://localhost')
     if (url.pathname !== `${BASE}/studio/ws` || !studio.allowed(req)) {
         socket.write('HTTP/1.1 410 Gone\r\nConnection: close\r\n\r\n')
         socket.destroy()
         return
     }
-    const ws = accept(req, socket)
-    if (ws) studio.connect(ws)
+    try {
+        const auth = await authenticate(req)
+        if (!auth && !localRequest(req)) {
+            socket.write('HTTP/1.1 401 Unauthorized\r\nConnection: close\r\n\r\n')
+            socket.destroy()
+            return
+        }
+        const ws = accept(req, socket)
+        if (ws) {
+            const guard = async () => localRequest(req) || !!await authenticate(req)
+            studio.connect(ws, guard)
+            if (auth) {
+                const revoke = (hash: string) => { if (hash === auth.hash) ws.close() }
+                authEvents.on('revoke', revoke)
+                const expiry = setInterval(() => { if (auth.expires <= Date.now()) ws.close() }, 30000)
+                socket.on('close', () => { authEvents.off('revoke', revoke); clearInterval(expiry) })
+            }
+        }
+    } catch { socket.destroy() }
 })
 server.listen(PORT, () => console.log(`[aiqa] QA Studio listening on :${PORT} base=${BASE}`))

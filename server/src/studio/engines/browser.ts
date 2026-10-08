@@ -5,7 +5,10 @@ export async function worker<T = Record<string, unknown>>(
 ): Promise<T> {
   const r = await fetch(`${WORKER}${route}`, {
     method: body ? "POST" : "GET",
-    headers: { "content-type": "application/json" },
+    headers: {
+      "content-type": "application/json",
+      authorization: "Bearer " + (process.env.AIQA_WORKER_SECRET || ""),
+    },
     body: body ? JSON.stringify(body) : undefined,
     signal: AbortSignal.timeout(45000),
   });

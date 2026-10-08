@@ -3,8 +3,20 @@ import type {
   ToolArguments,
   ToolResults,
   StudioStatus,
+  Project,
+  Session,
+  User,
+  Domain,
 } from "../../../contracts/studio";
 export const API = "/aiqa/api/studio";
+export class ApiError extends Error {
+  constructor(
+    message: string,
+    readonly status: number,
+  ) {
+    super(message);
+  }
+}
 async function json<T>(response: Response): Promise<T> {
   if (!response.ok) {
     const body = (await response
@@ -12,12 +24,46 @@ async function json<T>(response: Response): Promise<T> {
       .catch(() => ({ error: "로그인 또는 서버 연결을 확인해 주세요" }))) as {
       error?: string;
     };
-    throw new Error(body.error || "요청을 처리하지 못했어요");
+    throw new ApiError(
+      body.error || "요청을 처리하지 못했어요",
+      response.status,
+    );
   }
   return response.json() as Promise<T>;
 }
+async function post<T>(path: string, body: unknown): Promise<T> {
+  return fetch(API + path, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body),
+  }).then(json<T>);
+}
 export const api = {
-  status: () => fetch(API + "/status").then(json<StudioStatus>),
+  me: () => fetch(API + "/auth/me").then(json<{ user: User | null }>),
+  login: (role: User["role"], username: string, password: string) =>
+    post<{ user: User }>("/auth/login", { role, username, password }),
+  logout: () => post("/auth/logout", {}),
+  saveDomain: (domain: Partial<Domain>) => post<Domain[]>("/domains", domain),
+  removeDomain: (id: string) =>
+    post<Domain[]>("/domains", { id, remove: true }),
+  status: (projectId = "") =>
+    fetch(
+      API +
+        "/status" +
+        (projectId ? "?projectId=" + encodeURIComponent(projectId) : ""),
+    ).then(json<StudioStatus>),
+  createProject: (name: string) =>
+    fetch(API + "/projects", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ name }),
+    }).then(json<Project>),
+  moveSession: (id: string, projectId: string) =>
+    fetch(API + "/project-assignment", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ id, projectId }),
+    }).then(json<Session>),
   call: <K extends ToolName>(tool: K, args: ToolArguments = {}) =>
     fetch(API + "/call", {
       method: "POST",

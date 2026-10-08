@@ -8,11 +8,13 @@
     "typecheck": "tsc --noEmit",
     "lint": "eslint src build.ts eslint.config.ts --max-warnings 0",
     "format": "prettier --write src build.ts eslint.config.ts",
-    "check": "yarn typecheck && yarn typecheck:server && yarn typecheck:worker && yarn lint && yarn lint:server && yarn lint:verify && yarn build",
+    "check": "yarn typecheck && yarn typecheck:server && yarn typecheck:worker && yarn lint && yarn lint:server && yarn lint:verify && yarn test:dashboard && yarn test:security && yarn build",
     "typecheck:server": "tsc -p ../server/tsconfig.json",
     "lint:server": "cd .. && node studio/node_modules/eslint/bin/eslint.js --config eslint.config.ts server/src/studio contracts browser-worker/src --max-warnings 0",
     "typecheck:worker": "tsc -p ../browser-worker/tsconfig.json",
-    "lint:verify": "node --experimental-strip-types verify-design-lint.ts"
+    "lint:verify": "node --experimental-strip-types verify-design-lint.ts",
+    "test:dashboard": "node --experimental-strip-types --test src/features/dashboard/metrics.test.ts src/features/workspace/tabs.test.ts",
+    "test:security": "node --experimental-strip-types --test ../server/src/studio/infrastructure/auth.test.ts"
   },
   "dependencies": {
     "class-variance-authority": "0.7.1",
@@ -21,6 +23,8 @@
     "radix-ui": "1.6.7",
     "react": "19.3.0",
     "react-dom": "19.3.0",
+    "react-is": "19.3.0",
+    "recharts": "3.8.0",
     "tailwind-merge": "3.7.0"
   },
   "devDependencies": {
@@ -31,6 +35,7 @@
     "@types/node": "24.10.0",
     "@types/react": "19.3.0",
     "@types/react-dom": "19.3.0",
+    "@types/react-is": "^19",
     "esbuild": "0.28.2",
     "eslint": "9.39.1",
     "eslint-plugin-jsx-a11y": "6.10.2",

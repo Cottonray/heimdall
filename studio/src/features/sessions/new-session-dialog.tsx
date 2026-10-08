@@ -12,21 +12,24 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { engines } from "@/lib/labels";
-import type { Engine, NewSession } from "../../../../contracts/studio";
+import type { Engine, NewSession, Domain } from "../../../../contracts/studio";
 export function NewSessionDialog({
   open,
   onOpenChange,
   onCreate,
   busy,
+  domains,
 }: {
   open: boolean;
   onOpenChange: (v: boolean) => void;
   onCreate: (v: NewSession) => Promise<unknown>;
   busy: boolean;
+  domains: Domain[];
 }) {
   const [engine, setEngine] = useState<Engine>("web");
   const [name, setName] = useState("이체 입력 확인");
-  const [url, setUrl] = useState("http://127.0.0.1:8081/demo/");
+  const [domainId, setDomainId] = useState("");
+  const domain = domains.find((d) => d.id === domainId) || domains[0];
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent>
@@ -39,7 +42,7 @@ export function NewSessionDialog({
         <form
           onSubmit={(e) => {
             e.preventDefault();
-            void onCreate({ engine, name, url });
+            void onCreate({ engine, name, url: domain?.url });
           }}
           className="space-y-5"
         >
@@ -77,21 +80,32 @@ export function NewSessionDialog({
           </div>
           {engine !== "android" && (
             <div className="space-y-2">
-              <Label htmlFor="test-url">테스트 주소</Label>
-              <Input
-                id="test-url"
-                required
-                type="url"
-                value={url}
-                onChange={(e) => setUrl(e.target.value)}
-              />
-              <p className="text-xs text-muted-foreground">
-                등록된 테스트 주소만 연결할 수 있어요.
+              <Label>도메인</Label>
+              <div className="max-h-48 space-y-2 overflow-y-auto">
+                {domains.map((d) => (
+                  <Button
+                    key={d.id}
+                    type="button"
+                    variant={domain?.id === d.id ? "secondary" : "outline"}
+                    aria-pressed={domain?.id === d.id}
+                    className="w-full justify-start"
+                    onClick={() => setDomainId(d.id)}
+                  >
+                    {d.name}
+                  </Button>
+                ))}
+              </div>
+              <p className="break-all text-xs text-muted-foreground">
+                {domain?.url ||
+                  "관리자가 도메인을 등록해야 테스트를 시작할 수 있어요."}
               </p>
             </div>
           )}
           <DialogFooter>
-            <Button type="submit" disabled={busy}>
+            <Button
+              type="submit"
+              disabled={busy || (engine !== "android" && !domain)}
+            >
               {busy ? "준비 중" : "시작"}
               <ArrowRight />
             </Button>

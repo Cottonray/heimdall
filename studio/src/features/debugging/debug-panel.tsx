@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useId, useState } from "react";
 import {
   Check,
   AlertCircle,
@@ -32,6 +32,7 @@ export function DebugPanel({
   busy: boolean;
   onAction: (a: Action) => Promise<unknown>;
 }) {
+  const formId = useId();
   const [evidence, setEvidence] = useState<Step | null>(null);
   const [url, setUrl] = useState("http://127.0.0.1:8081/demo/api/accounts");
   const [contains, setContains] = useState("QA 테스트 계좌");
@@ -151,9 +152,9 @@ export function DebugPanel({
               }}
             >
               <div className="space-y-2">
-                <Label htmlFor="api-url">GET 요청 주소</Label>
+                <Label htmlFor={formId + "-url"}>GET 요청 주소</Label>
                 <Input
-                  id="api-url"
+                  id={formId + "-url"}
                   type="url"
                   required
                   value={url}
@@ -162,9 +163,9 @@ export function DebugPanel({
               </div>
               <div className="flex flex-wrap items-end gap-3">
                 <div className="w-28 space-y-2">
-                  <Label htmlFor="api-status">기대 상태</Label>
+                  <Label htmlFor={formId + "-status"}>기대 상태</Label>
                   <Input
-                    id="api-status"
+                    id={formId + "-status"}
                     type="number"
                     min={100}
                     max={599}
@@ -174,9 +175,9 @@ export function DebugPanel({
                   />
                 </div>
                 <div className="min-w-0 flex-1 space-y-2">
-                  <Label htmlFor="api-contains">응답에 포함될 값</Label>
+                  <Label htmlFor={formId + "-contains"}>응답에 포함될 값</Label>
                   <Input
-                    id="api-contains"
+                    id={formId + "-contains"}
                     value={contains}
                     onChange={(e) => setContains(e.target.value)}
                   />

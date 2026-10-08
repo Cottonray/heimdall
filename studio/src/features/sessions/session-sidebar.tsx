@@ -1,145 +1,128 @@
-import { Moon, Sun, Settings } from "lucide-react";
-import type { Theme } from "@/features/settings/use-theme";
-import { HeimdallLogo } from "@/components/heimdall-logo";
-import { useState } from "react";
-import { Plus, Search, Monitor, Smartphone, Braces, Plug } from "lucide-react";
+import { Globe, PanelsTopLeft } from "lucide-react";
+import {
+  Plus,
+  ArrowLeft,
+  LayoutDashboard,
+  History,
+  Settings,
+  Moon,
+  Sun,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Badge } from "@/components/ui/badge";
-import { cn } from "@/lib/utils";
-import { engines, states } from "@/lib/labels";
-import type { Session } from "../../../../contracts/studio";
+import { HeimdallLogo } from "@/components/heimdall-logo";
+import type { Page } from "@/features/workspace/tabs";
+import type { Theme } from "@/features/settings/use-theme";
 export function SessionSidebar({
-  sessions,
-  selected,
-  onSelect,
+  projectName,
+  signedIn,
+  active,
+  onNavigate,
   onNew,
-  onMcp,
   theme,
   onToggleTheme,
-  onSettings,
 }: {
-  sessions: Session[];
-  selected: string;
-  onSelect: (id: string) => void;
+  projectName: string;
+  signedIn: boolean;
+  active: string;
+  onNavigate: (page: Page) => void;
   onNew: () => void;
-  onMcp: () => void;
   theme: Theme;
   onToggleTheme: () => void;
-  onSettings: () => void;
 }) {
-  const [search, setSearch] = useState("");
   return (
-    <aside className="flex flex-wrap items-center justify-between border-b bg-sidebar text-sidebar-foreground lg:sticky lg:top-0 lg:h-screen lg:w-64 lg:shrink-0 lg:flex-col lg:flex-nowrap lg:items-stretch lg:justify-start lg:border-b-0 lg:border-r">
-      <button
-        type="button"
-        onClick={() => onSelect("")}
-        aria-label="heimdall 기본 페이지"
-        className="flex items-center gap-3 px-5 py-6 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-      >
-        <HeimdallLogo />
-        <div>
-          <p className="font-semibold tracking-tight">heimdall</p>
-          <p className="text-xs text-muted-foreground">테스트 워크스페이스</p>
-        </div>
-      </button>
-      <div className="shrink-0 px-4 py-4 lg:pb-5 lg:pt-0">
-        <Button onClick={onNew} className="w-full">
-          <Plus />새 테스트
-        </Button>
-      </div>
-      <div className="hidden min-h-0 flex-1 flex-col lg:flex">
-        <div className="px-4">
-          <div className="relative">
-            <Search className="pointer-events-none absolute left-3 top-3 size-4 text-muted-foreground" />
-            <Input
-              aria-label="테스트 검색"
-              placeholder="테스트 검색"
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              className="pl-9"
-            />
-          </div>
-          <div className="flex items-center justify-between px-1 py-5">
-            <span className="text-xs font-medium text-muted-foreground">
-              테스트 기록
-            </span>
-            <Badge variant="secondary">{sessions.length}</Badge>
-          </div>
-        </div>
-        <nav
-          aria-label="테스트 목록"
-          className="min-h-0 flex-1 space-y-1 overflow-y-auto px-3 pb-4"
+    <aside className="flex shrink-0 flex-col border-b bg-sidebar text-sidebar-foreground md:w-56 md:border-b-0 md:border-r">
+      <div className="flex items-center justify-between gap-4 p-4 md:block md:space-y-6 md:p-5">
+        <button
+          type="button"
+          aria-label="heimdall 기본 페이지"
+          onClick={() => onNavigate("projects")}
+          className="flex min-w-0 items-center gap-3 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
         >
-          {sessions
-            .filter((s) => s.name.toLowerCase().includes(search.toLowerCase()))
-            .map((s) => {
-              const Icon =
-                s.engine === "android" || s.engine === "mobile-web"
-                  ? Smartphone
-                  : s.engine === "api"
-                    ? Braces
-                    : Monitor;
-              return (
-                <button
-                  type="button"
-                  key={s.id}
-                  onClick={() => onSelect(s.id)}
-                  aria-current={selected === s.id ? "page" : undefined}
-                  className={cn(
-                    "flex w-full items-start gap-3 rounded-lg p-3 text-left transition-colors hover:bg-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
-                    selected === s.id && "bg-accent",
-                  )}
-                >
-                  <Icon className="mt-0.5 size-4 shrink-0 text-muted-foreground" />
-                  <span className="min-w-0 flex-1">
-                    <span className="block truncate text-sm font-medium">
-                      {s.name}
-                    </span>
-                    <span className="mt-1 block text-xs text-muted-foreground">
-                      {engines[s.engine].label} · {states[s.state]}
-                    </span>
-                  </span>
-                  {s.state === "passed" && (
-                    <span className="mt-1.5 size-1.5 shrink-0 rounded-full bg-success" />
-                  )}
-                </button>
-              );
-            })}
-        </nav>
+          <HeimdallLogo />
+          <span className="font-semibold tracking-tight">heimdall</span>
+        </button>
+        {signedIn && projectName && (
+          <Button onClick={onNew} className="md:w-full">
+            <Plus />새 테스트
+          </Button>
+        )}
       </div>
-      <div className="flex shrink-0 gap-2 p-3 lg:flex-col lg:border-t lg:p-5">
+      {signedIn && projectName && (
+        <>
+          <div className="px-3 pb-3">
+            <Button
+              variant="ghost"
+              onClick={() => onNavigate("projects")}
+              className="w-full justify-start"
+            >
+              <ArrowLeft />
+              프로젝트 목록
+            </Button>
+            <p className="mt-3 truncate px-3 text-xs font-medium text-muted-foreground">
+              {projectName}
+            </p>
+          </div>
+          <nav
+            aria-label="워크스페이스 메뉴"
+            className="flex flex-wrap gap-1 px-3 pb-3 md:flex-1 md:flex-col"
+          >
+            <Button
+              variant={active === "dashboard" ? "secondary" : "ghost"}
+              aria-current={active === "dashboard" ? "page" : undefined}
+              onClick={() => onNavigate("dashboard")}
+              className="justify-start"
+            >
+              <LayoutDashboard />
+              대시보드
+            </Button>
+            <Button
+              variant={active === "board" ? "secondary" : "ghost"}
+              onClick={() => onNavigate("board")}
+              className="justify-start"
+            >
+              <PanelsTopLeft />
+              워크스페이스
+            </Button>
+            <Button
+              variant={active === "domains" ? "secondary" : "ghost"}
+              onClick={() => onNavigate("domains")}
+              className="justify-start"
+            >
+              <Globe />
+              도메인
+            </Button>
+            <Button
+              variant={active === "history" ? "secondary" : "ghost"}
+              aria-current={active === "history" ? "page" : undefined}
+              onClick={() => onNavigate("history")}
+              className="justify-start"
+            >
+              <History />
+              테스트 기록
+            </Button>
+          </nav>
+        </>
+      )}
+      <div className="mt-auto flex gap-1 border-t px-3 py-3 md:flex-col">
         <Button
           variant="ghost"
-          size="sm"
           onClick={onToggleTheme}
-          aria-label={theme === "dark" ? "라이트 모드" : "다크 모드"}
           className="justify-start"
         >
           {theme === "dark" ? <Sun /> : <Moon />}
-          <span className="hidden lg:inline">
-            {theme === "dark" ? "라이트 모드" : "다크 모드"}
-          </span>
+          {theme === "dark" ? "라이트 모드" : "다크 모드"}
         </Button>
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={onSettings}
-          aria-label="설정"
-          className="justify-start"
-        >
-          <Settings />
-          <span className="hidden lg:inline">설정</span>
-        </Button>
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={onMcp}
-          className="hidden lg:inline-flex lg:justify-start"
-        >
-          <Plug />
-          MCP 연결
-        </Button>
+        {signedIn && (
+          <Button
+            variant={active === "settings" ? "secondary" : "ghost"}
+            aria-current={active === "settings" ? "page" : undefined}
+            onClick={() => onNavigate("settings")}
+            className="justify-start"
+          >
+            <Settings />
+            설정
+          </Button>
+        )}
       </div>
     </aside>
   );

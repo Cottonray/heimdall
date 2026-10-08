@@ -23,6 +23,7 @@ export function Settings({
 }) {
   return (
     <div className="space-y-6">
+      <h1 className="text-2xl font-semibold tracking-tight">설정</h1>
       <div className="grid items-start gap-5 xl:grid-cols-2">
         <Card>
           <CardHeader>
@@ -56,7 +57,7 @@ export function Settings({
           <CardHeader>
             <CardTitle>MCP 연결</CardTitle>
             <CardDescription>
-              AI 도구에서 heimdall의 테스트를 실행해요.
+              AI 도구에서 헤임달의 테스트를 실행해요.
             </CardDescription>
           </CardHeader>
           <CardContent>

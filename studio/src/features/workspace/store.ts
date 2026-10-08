@@ -1,14 +1,21 @@
+import { openTab, closeTab, isPage, type Page } from "./tabs";
 import type {
   Action,
   Session,
   StudioStatus,
   Step,
+  User,
+  Domain,
 } from "../../../../contracts/studio";
-import { api, evidenceUrl } from "@/lib/api";
+import { api, ApiError, evidenceUrl } from "@/lib/api";
 type Snapshot = {
   sessions: Session[];
+  user: User | null;
   status: StudioStatus | null;
+  projectId: string;
   selectedId: string;
+  tabs: string[];
+  activeTab: string;
   loading: boolean;
   busy: boolean;
   connected: boolean;
@@ -18,8 +25,14 @@ type Snapshot = {
 export class WorkspaceStore {
   private value: Snapshot = {
     sessions: [],
+    user: null,
     status: null,
+    projectId: "",
     selectedId: location.hash.slice(1),
+    tabs: location.hash.slice(1)
+      ? ["projects", "dashboard", location.hash.slice(1)]
+      : ["projects"],
+    activeTab: location.hash.slice(1) || "projects",
     loading: true,
     busy: false,
     connected: false,
@@ -51,11 +64,51 @@ export class WorkspaceStore {
     this.value = { ...this.value, ...patch };
     this.listeners.forEach((fn) => fn());
   }
+  login = (role: User["role"], username: string, password: string) =>
+    this.run(async () => {
+      const { user } = await api.login(role, username, password);
+      this.patch({ user });
+      await this.refresh();
+      this.connect();
+    });
+  logout = () =>
+    this.run(async () => {
+      await api.logout();
+      this.resetAuth();
+    });
+  private resetAuth() {
+    this.patch({
+      user: null,
+      sessions: [],
+      status: null,
+      projectId: "",
+      selectedId: "",
+      activeTab: "projects",
+      tabs: ["projects"],
+      frame: "",
+    });
+    history.replaceState(null, "", location.pathname);
+    clearTimeout(this.retry);
+    this.ws?.close();
+    this.releaseFrame();
+  }
+  saveDomain = (domain: Partial<Domain>) =>
+    this.run(async () => {
+      await api.saveDomain(domain);
+      await this.refresh();
+    });
+  removeDomain = (id: string) =>
+    this.run(async () => {
+      await api.removeDomain(id);
+      await this.refresh();
+    });
   clearError = () => this.patch({ error: "" });
-  private fail = (error: unknown) =>
+  private fail = (error: unknown) => {
+    if (error instanceof ApiError && error.status === 401) this.resetAuth();
     this.patch({
       error: error instanceof Error ? error.message : String(error),
     });
+  };
   private update = (session: Session) => {
     const old = this.value.sessions.find((s) => s.id === session.id);
     if (old && old.updated > session.updated) return;
@@ -89,9 +142,44 @@ export class WorkspaceStore {
     this.objectUrl = URL.createObjectURL(blob);
     this.patch({ frame: this.objectUrl });
   };
+  enterProject = (projectId: string) => {
+    this.patch({ projectId });
+    this.navigate("dashboard");
+    void this.refresh();
+  };
+  createProject = (name: string) =>
+    this.run(async () => {
+      const project = await api.createProject(name);
+      await this.refresh();
+      this.enterProject(project.id);
+    });
+  moveSession = (id: string, projectId: string) =>
+    this.run(async () => {
+      this.update(await api.moveSession(id, projectId));
+      await this.refresh();
+      this.enterProject(projectId);
+      this.select(id);
+    });
+  navigate = (page: Page) => {
+    this.select("");
+    this.patch(openTab(this.value, page));
+  };
+  closeTab = (id: string) => {
+    const next = closeTab(this.value, id);
+    const changed = next.activeTab !== this.value.activeTab;
+    this.patch(next);
+    if (changed) {
+      if (isPage(next.activeTab)) this.navigate(next.activeTab);
+      else this.select(next.activeTab);
+    }
+  };
   select = (id: string) => {
     this.releaseFrame();
-    this.patch({ selectedId: id, frame: "" });
+    this.patch({
+      ...openTab(this.value, id || "projects"),
+      selectedId: id,
+      frame: "",
+    });
     history.replaceState(null, "", location.pathname + (id ? "#" + id : ""));
     if (this.ws?.readyState === WebSocket.OPEN)
       this.ws.send(JSON.stringify({ type: "watch", id }));
@@ -111,10 +199,22 @@ export class WorkspaceStore {
     }
   }
   refresh = async () => {
+    if (!this.value.user) return;
     try {
-      const status = await api.status();
+      const user = this.value.user;
+      const projectId = this.value.projectId;
+      const status = await api.status(projectId);
+      if (projectId !== this.value.projectId || user !== this.value.user)
+        return;
       this.patch({ status, loading: false });
       for (const session of status.sessions) this.update(session);
+      if (!this.value.projectId && this.value.selectedId) {
+        const selected = status.sessions.find(
+          (s) => s.id === this.value.selectedId,
+        );
+        if (selected)
+          this.patch({ projectId: selected.projectId || "default" });
+      }
       if (
         this.value.selectedId &&
         !status.sessions.some((s) => s.id === this.value.selectedId)
@@ -138,7 +238,10 @@ export class WorkspaceStore {
   };
   open = async (args: Parameters<typeof api.call<"qa_open">>[1]) =>
     this.run(async () => {
-      const s = await api.call("qa_open", args);
+      const s = await api.call("qa_open", {
+        ...args,
+        projectId: this.value.projectId || "default",
+      });
       this.update(s);
       this.select(s.id);
       await this.refresh();
@@ -175,7 +278,8 @@ export class WorkspaceStore {
       await this.loadFrame(id);
     });
   private connect = () => {
-    if (this.stopped) return;
+    if (this.stopped || !this.value.user) return;
+    if (this.ws && this.ws.readyState < WebSocket.CLOSING) return;
     const ws = new WebSocket(
       (location.protocol === "https:" ? "wss:" : "ws:") +
         "//" +
@@ -225,13 +329,26 @@ export class WorkspaceStore {
         p.reject(new Error("연결이 끊겼어요. 실행 기록을 확인해 주세요"));
       }
       this.pending.clear();
-      if (!this.stopped) this.retry = setTimeout(this.connect, 3000);
+      if (!this.stopped && this.value.user)
+        this.retry = setTimeout(this.connect, 3000);
     };
   };
   start = () => {
     this.stopped = false;
-    void this.refresh();
-    this.connect();
+    void api
+      .me()
+      .then(async ({ user }) => {
+        if (this.stopped) return;
+        this.patch({ user, loading: !!user });
+        if (user) {
+          await this.refresh();
+          this.connect();
+        }
+      })
+      .catch((error) => {
+        this.fail(error);
+        this.patch({ loading: false });
+      });
     this.poll = setInterval(() => void this.refresh(), 15000);
     return () => {
       this.stopped = true;

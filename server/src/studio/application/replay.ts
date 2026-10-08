@@ -11,6 +11,7 @@ export async function replay(source: PublicSession) {
         url: source.url,
         name: `${source.name} · 재실행`,
         parent: source.id,
+        projectId: source.projectId,
       })
     ).id,
   );

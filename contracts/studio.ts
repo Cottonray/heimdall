@@ -1,3 +1,10 @@
+export type User = {
+  id: string;
+  username: string;
+  name: string;
+  role: "user" | "admin";
+};
+export type Domain = { id: string; name: string; url: string; origin: string };
 export type Engine = "web" | "mobile-web" | "api" | "android";
 export type SessionState =
   "opening" | "manual" | "ai" | "replay" | "paused" | "passed" | "closed";
@@ -54,7 +61,14 @@ export type Step = {
   evidence?: string;
   observation?: unknown;
 };
+export type Project = {
+  id: string;
+  name: string;
+  created: string;
+  tests: number;
+};
 export type Session = {
+  projectId?: string;
   id: string;
   name: string;
   engine: Engine;
@@ -71,6 +85,7 @@ export type Session = {
   parent?: string;
 };
 export type NewSession = {
+  projectId?: string;
   engine?: Engine;
   name?: string;
   url?: string;
@@ -78,6 +93,8 @@ export type NewSession = {
 };
 export type SessionExport = { session: Session; code: string; jsonl: string };
 export type StudioStatus = {
+  domains: Domain[];
+  projects: Project[];
   browser: { ok: boolean; active?: number; capacity?: number };
   android: { booted: boolean };
   llm: boolean;

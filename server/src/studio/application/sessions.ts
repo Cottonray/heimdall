@@ -1,3 +1,4 @@
+import { requireDomain } from "../infrastructure/domains.ts";
 import { randomUUID } from "node:crypto";
 import type { Session, NewSession, Observation } from "../domain/types.ts";
 import { sessions, publicSession } from "../domain/session.ts";
@@ -5,7 +6,11 @@ import * as device from "../../device.ts";
 import * as appium from "../../appium.ts";
 import * as control from "../../control.ts";
 import * as runner from "../../runner.ts";
-import { ensureDb, persist } from "../infrastructure/repository.ts";
+import {
+  ensureDb,
+  persist,
+  requireProject,
+} from "../infrastructure/repository.ts";
 import { worker } from "../engines/browser.ts";
 import { observe } from "../engines/observe.ts";
 let mobileReserved = false;
@@ -17,11 +22,14 @@ function hasContent(observation?: Observation) {
 }
 export async function open(data: NewSession) {
   await ensureDb();
+  const projectId = await requireProject(data.projectId || "default");
   const engine = ["web", "mobile-web", "api", "android"].includes(
     data.engine || "",
   )
     ? data.engine!
     : "web";
+  if (engine !== "android")
+    await requireDomain(String(data.url || "http://127.0.0.1:8081/demo/"));
   if (
     engine === "android" &&
     (mobileReserved || runner.busy() || control.snapshot().kind !== "none")
@@ -42,6 +50,7 @@ export async function open(data: NewSession) {
   }
   const s: Session = {
     id: randomUUID(),
+    projectId,
     name: String(data.name || "새 테스트").slice(0, 80),
     engine,
     url: String(data.url || "http://127.0.0.1:8081/demo/"),
