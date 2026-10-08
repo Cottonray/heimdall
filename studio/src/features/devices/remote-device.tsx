@@ -400,27 +400,24 @@ export function RemoteDevice({
           className="flex min-h-0 min-w-0 w-3/5 flex-col"
         >
           <Tabs
-            value={
-              serial.startsWith("ios:") && toolTab === "camera"
-                ? "web"
-                : toolTab
-            }
+            value={serial.startsWith("ios:") ? "web" : toolTab}
             onValueChange={setToolTab}
             variant="flush"
             className="min-h-0 flex-1"
           >
             <PanelTabsList
-              value={
-                serial.startsWith("ios:") && toolTab === "camera"
-                  ? "web"
-                  : toolTab
-              }
+              value={serial.startsWith("ios:") ? "web" : toolTab}
               label="기기 도구"
               items={[
                 { value: "web", label: "웹 디버깅", icon: <Monitor /> },
-                { value: "apps", label: "앱 설치", icon: <Monitor /> },
                 ...(!serial.startsWith("ios:")
                   ? [
+                      { value: "apps", label: "앱 설치", icon: <Monitor /> },
+                      {
+                        value: "phone",
+                        label: "휴대폰 설정",
+                        icon: <Monitor />,
+                      },
                       {
                         value: "camera",
                         label: "카메라 설정",
@@ -428,7 +425,6 @@ export function RemoteDevice({
                       },
                     ]
                   : []),
-                { value: "phone", label: "휴대폰 설정", icon: <Monitor /> },
               ]}
             />
             <TabsContent
@@ -443,17 +439,19 @@ export function RemoteDevice({
                 discovery={webviews}
               />
             </TabsContent>
-            <TabsContent
-              forceMount
-              value="apps"
-              className="min-h-0 flex-1 overflow-auto data-[state=inactive]:hidden"
-            >
-              <AppLibrary
-                serial={serial}
-                viewerId={remote.viewerId || ""}
-                canControl={remote.canControl}
-              />
-            </TabsContent>
+            {!serial.startsWith("ios:") && (
+              <TabsContent
+                forceMount
+                value="apps"
+                className="min-h-0 flex-1 overflow-auto data-[state=inactive]:hidden"
+              >
+                <AppLibrary
+                  serial={serial}
+                  viewerId={remote.viewerId || ""}
+                  canControl={remote.canControl}
+                />
+              </TabsContent>
+            )}
             {!serial.startsWith("ios:") && (
               <TabsContent
                 forceMount
@@ -467,17 +465,19 @@ export function RemoteDevice({
                 />
               </TabsContent>
             )}
-            <TabsContent
-              forceMount
-              value="phone"
-              className="min-h-0 flex-1 overflow-auto data-[state=inactive]:hidden"
-            >
-              <PhoneSettings
-                serial={serial}
-                viewer={remote.viewerId || ""}
-                canControl={remote.canControl}
-              />
-            </TabsContent>
+            {!serial.startsWith("ios:") && (
+              <TabsContent
+                forceMount
+                value="phone"
+                className="min-h-0 flex-1 overflow-auto data-[state=inactive]:hidden"
+              >
+                <PhoneSettings
+                  serial={serial}
+                  viewer={remote.viewerId || ""}
+                  canControl={remote.canControl}
+                />
+              </TabsContent>
+            )}
           </Tabs>
         </aside>
       </div>
