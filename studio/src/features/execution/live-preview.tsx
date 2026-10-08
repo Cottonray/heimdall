@@ -40,8 +40,8 @@ export function LivePreview({
     session.state === "replay" ||
     session.state === "closed";
   return (
-    <Card variant="plain" className="h-full rounded-none gap-3 py-3">
-      <CardHeader className="px-3">
+    <Card variant="preview" className="h-full">
+      <CardHeader variant="compact">
         <div className="flex items-center justify-between gap-3">
           <CardTitle>
             <span className="flex items-center gap-2">
@@ -59,7 +59,7 @@ export function LivePreview({
             : session.observation?.url || session.url}
         </p>
       </CardHeader>
-      <CardContent className="min-h-0 flex-1 px-3">
+      <CardContent variant="compact" className="min-h-0 flex-1">
         <div className="flex h-full min-h-48 items-center justify-center overflow-hidden rounded-lg border bg-muted/40">
           {frame ? (
             <PreviewSurface
@@ -110,7 +110,7 @@ export function LivePreview({
           )}
         </div>
       </CardContent>
-      <CardFooter className="px-3">
+      <CardFooter variant="compact">
         <div className="w-full space-y-3">
           <div className="flex flex-wrap items-center gap-2">
             <Button

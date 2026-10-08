@@ -5,7 +5,7 @@ import { mkdtemp, writeFile, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { createHash } from "node:crypto";
-import { handleAgent, agentRequest } from "./agent-registry.ts";
+import { handleAgent, agentRequest, connectAgent } from "./agent-registry.ts";
 test("long poll wakes immediately, independent results do not steal commands, credentials stay enforced", async () => {
   const dir = await mkdtemp(join(tmpdir(), "heimdall-agent-test-"));
   const prior = process.env.HEIMDALL_AGENTS_FILE;
@@ -83,6 +83,96 @@ test("long poll wakes immediately, independent results do not steal commands, cr
     assert.equal((await next).toString(), "jpeg");
   } finally {
     server.closeAllConnections();
+    await new Promise<void>((r) => server.close(() => r()));
+    if (prior) process.env.HEIMDALL_AGENTS_FILE = prior;
+    else delete process.env.HEIMDALL_AGENTS_FILE;
+    await rm(dir, { recursive: true, force: true });
+  }
+});
+
+test("agent WebSocket authenticates, dispatches immediately and rejects pending work on disconnect", async () => {
+  const { accept } = await import("../../ws.ts");
+  const dir = await mkdtemp(join(tmpdir(), "heimdall-ws-test-"));
+  const prior = process.env.HEIMDALL_AGENTS_FILE;
+  process.env.HEIMDALL_AGENTS_FILE = join(dir, "agents.json");
+  const serial = "ios:22222222-2222-2222-2222-222222222222";
+  await writeFile(
+    process.env.HEIMDALL_AGENTS_FILE,
+    JSON.stringify({
+      agents: [
+        {
+          id: "ws-test",
+          tokenHash: createHash("sha256").update("ws-token").digest("hex"),
+          serials: [serial],
+        },
+      ],
+    }),
+  );
+  const server = createServer();
+  server.on("upgrade", (req, socket) => {
+    const ws = accept(req, socket);
+    if (ws) connectAgent(ws);
+  });
+  await new Promise<void>((r) => server.listen(0, "127.0.0.1", r));
+  const url = `ws://127.0.0.1:${(server.address() as { port: number }).port}`;
+  const sockets: WebSocket[] = [];
+  const open = async () => {
+    const ws = new WebSocket(url);
+    sockets.push(ws);
+    await new Promise<void>((r, j) => {
+      ws.addEventListener("open", () => r(), { once: true });
+      ws.addEventListener("error", j, { once: true });
+    });
+    return ws;
+  };
+  const message = (ws: WebSocket) =>
+    new Promise<{ ready?: boolean; commands: { id: string; path: string }[] }>((r) =>
+      ws.addEventListener("message", (e) => r(JSON.parse(String(e.data))), {
+        once: true,
+      }),
+    );
+  try {
+    const bad = await open();
+    const closed = new Promise<number>((r) =>
+      bad.addEventListener("close", (e) => r(e.code), { once: true }),
+    );
+    bad.send(JSON.stringify({ agentId: "ws-test", token: "wrong" }));
+    assert.equal(await closed, 4401);
+    const ws = await open();
+    const ready = message(ws);
+    ws.send(
+      JSON.stringify({
+        agentId: "ws-test",
+        token: "ws-token",
+        devices: [{ serial, platform: "ios", model: "Simulator", ready: true }],
+      }),
+    );
+    assert.equal((await ready).ready, true);
+    const delivered = message(ws);
+    const result = agentRequest(`/action?serial=${serial}`, {
+      type: "key",
+      key: "home",
+    });
+    const { commands } = await delivered;
+    assert.equal(commands.length, 1);
+    ws.send(
+      JSON.stringify({
+        responses: [
+          { id: commands[0].id, result: Buffer.from("ok").toString("base64") },
+        ],
+      }),
+    );
+    assert.equal((await result).toString(), "ok");
+    const pending = agentRequest(`/frame?serial=${serial}`);
+    const rejected = assert.rejects(pending, /연결이 끊겼/);
+    ws.close();
+    await rejected;
+    await assert.rejects(
+      agentRequest(`/frame?serial=${serial}`),
+      /연결을 확인/,
+    );
+  } finally {
+    for (const ws of sockets) ws.close();
     await new Promise<void>((r) => server.close(() => r()));
     if (prior) process.env.HEIMDALL_AGENTS_FILE = prior;
     else delete process.env.HEIMDALL_AGENTS_FILE;

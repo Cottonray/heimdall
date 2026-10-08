@@ -40,8 +40,8 @@ export function DebugPanel({
   const [contains, setContains] = useState("QA 테스트 계좌");
   const [status, setStatus] = useState("200");
   return (
-    <Card variant="plain" className="rounded-none py-3">
-      <CardContent className="px-3">
+    <Card variant="panel">
+      <CardContent variant="compact">
         <Tabs defaultValue={agent ? "agent" : "timeline"}>
           <div className="flex flex-wrap items-center justify-between gap-3">
             <TabsList className="flex flex-wrap h-auto">

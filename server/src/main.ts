@@ -1,3 +1,4 @@
+import { connectAgent } from "./studio/infrastructure/agent-registry.ts"
 import { authenticate, authEvents, localRequest } from "./studio/infrastructure/auth.ts"
 // QA Studio 서버. 구형 모바일 QA 화면·API·WebSocket은 2026-10-08 폐기했다.
 // Studio와 Android 샘플 앱의 WebView 자산만 제공한다.
@@ -78,6 +79,11 @@ const server = http.createServer(async (req, res) => {
 })
 server.on('upgrade', async (req, socket) => {
     const url = new URL(req.url ?? '/', 'http://localhost')
+    if (url.pathname === `${BASE}/studio/ws` && url.searchParams.get('agent') === '1' && !req.headers.origin) {
+        const ws = accept(req, socket)
+        if (ws) connectAgent(ws)
+        return
+    }
     const inspectorRequested = url.pathname === `${BASE}/studio/devtools`
     if ((!inspectorRequested && url.pathname !== `${BASE}/studio/ws`) || !studio.allowed(req)) {
         socket.write('HTTP/1.1 410 Gone\r\nConnection: close\r\n\r\n')

@@ -66,14 +66,14 @@ export function TestExecution({
             >
               <SelectTrigger
                 id={fieldId + "-domain"}
-                className="w-full h-auto min-h-9 whitespace-normal text-left *:data-[slot=select-value]:line-clamp-none"
+                variant="multiline"
               >
                 <SelectValue placeholder="등록된 도메인이 없어요" />
               </SelectTrigger>
               <SelectContent
                 position="popper"
                 align="start"
-                className="w-[var(--radix-select-trigger-width)]"
+                className="w-(--radix-select-trigger-width)"
               >
                 {domains.map((d) => (
                   <SelectItem key={d.id} value={d.id}>

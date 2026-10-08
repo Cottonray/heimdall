@@ -274,3 +274,5 @@ DataTable의 onRowClick 옵션으로 일반 셀 영역 전체에 행 액션을 �
 - 시나리오 목록의 유형을 도메인·환경 컬럼으로 바꿔요. 시작 주소와 일치하는 등록 도메인의 이름·주소 및 설정 환경을 표시하며 미등록 주소는 환경을 추측하지 않고 —로 표시해요.
 
 - 테스트 기록 화면에는 새 테스트 버튼을 표시하지 않아요.
+
+원격 지연 검증 중 최신 실행 패널의 스타일도 공통 규격으로 옮겼다. Card panel/preview, CardHeader·CardContent·CardFooter compact, SelectTrigger multiline, DialogContent form과 session-panels 높이 토큰을 사용한다. 기존 간격·크기는 유지하고 허용 사례를 디자인 lint 검사에 추가했다.

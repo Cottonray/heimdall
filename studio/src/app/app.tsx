@@ -496,7 +496,7 @@ function SessionContent({
           </Button>
         </div>
       </div>
-      <div className="flex h-[calc(100dvh-12rem)] min-h-[480px] overflow-hidden border rounded-lg">
+      <div className="flex h-session-panels min-h-120 overflow-hidden border rounded-lg">
         <div className="min-w-0 flex-1 overflow-auto">
           <LivePreview
             session={s}

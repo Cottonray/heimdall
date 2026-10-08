@@ -95,7 +95,7 @@ const accepted = render(
     <Button variant="refresh">새로고침</Button><Button variant="notification" size="icon" aria-label="알림" />
     <Button variant="danger-ghost" size="icon-sm" aria-label="닫기" /><Button variant="cell" size="fill" aria-label="셀" />
     <SelectTrigger variant="refresh" aria-label="주기" /><DialogContent variant="download" />
-    <TableRow variant="static"><TableCell variant="action" /></TableRow><CardContent variant="stack" />
+    <TableRow variant="static"><TableCell variant="action" /></TableRow><Card variant="panel" /><Card variant="preview" /><CardHeader variant="compact" /><CardFooter variant="compact" /><CardContent variant="compact" /><SelectTrigger variant="multiline" /><DialogContent variant="form" /><CardContent variant="stack" />
     <svg><path fill="var(--primary)" /></svg>
   </div>`,
   `import { Button } from "@/components/ui/button";

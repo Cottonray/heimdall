@@ -72,7 +72,9 @@ export class SimulatorHid {
   private disabled = false;
   private stopped = false;
   private readonly udid: string;
-  constructor(udid: string) { this.udid = udid; }
+  constructor(udid: string) {
+    this.udid = udid;
+  }
   async perform(action: RemoteAction): Promise<boolean> {
     const events = hidEvents(action);
     if (!events || this.disabled) return false;

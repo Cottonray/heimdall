@@ -54,62 +54,102 @@ try {
 const { inventory, perform, stop } = await import("./ios.ts");
 const token = (await readFile(tokenFile, "utf8")).trim();
 let stopping = false;
+let connection: WebSocket | undefined;
 const shutdown = new AbortController();
 for (const signal of ["SIGTERM", "SIGINT"] as const)
   process.on(signal, () => {
     stopping = true;
     shutdown.abort();
+    connection?.close();
     stop();
     appiumProcess?.kill();
   });
 type Command = { id: string; path: string; body?: unknown };
+
 let devices = await inventory();
-let lastInventory = Date.now();
-async function exchange(body: object) {
-  const response = await fetch(url, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${token}`,
-    },
-    body: JSON.stringify({ agentId: id, devices, responses: [], ...body }),
-    signal: AbortSignal.any([shutdown.signal, AbortSignal.timeout(8000)]),
-  });
-  if (!response.ok) throw new Error(`마스터 응답 ${response.status}`);
-  return (await response.json()) as { commands: Command[] };
-}
-async function executeCommand(command: Command) {
-  let result: { id: string; result?: string; error?: string };
-  try {
-    result = {
-      id: command.id,
-      result: (await perform(command.path, command.body)).toString("base64"),
-    };
-  } catch {
-    result = { id: command.id, error: "시뮬레이터 요청을 완료하지 못했어요" };
-  }
-  // Results use a separate request: never wait behind the command long poll.
-  for (let attempt = 0; attempt < 3 && !stopping; attempt++) {
-    try {
-      await exchange({ responseOnly: true, responses: [result] });
-      return;
-    } catch {
-      await delay(200);
-    }
-  }
-}
+const endpoint = new URL("/aiqa/studio/ws?agent=1", master);
+endpoint.protocol = endpoint.protocol === "https:" ? "wss:" : "ws:";
 console.log(`Heimdall server ${id} → ${url.origin}`);
+async function connected() {
+  await new Promise<void>((resolve) => {
+    const ws = new WebSocket(endpoint);
+    connection = ws;
+    let ready = false;
+    let updating = false;
+    const timeout = setTimeout(() => ws.close(), 10000);
+    const heartbeat = setInterval(() => {
+      if (!ready || updating || ws.readyState !== WebSocket.OPEN) return;
+      updating = true;
+      void inventory()
+        .then((value) => {
+          devices = value;
+        })
+        .catch(() => {
+          devices = devices.map((d) => ({ ...d, ready: false }));
+        })
+        .finally(() => {
+          updating = false;
+          if (ws.readyState === WebSocket.OPEN)
+            ws.send(JSON.stringify({ devices }));
+        });
+    }, 4000);
+    ws.addEventListener("open", () =>
+      ws.send(JSON.stringify({ agentId: id, token, devices })),
+    );
+    ws.addEventListener("close", () => {
+      clearTimeout(timeout);
+      clearInterval(heartbeat);
+      resolve();
+    });
+    ws.addEventListener("error", () => ws.close());
+    ws.addEventListener("message", (event) => {
+      try {
+        const data = JSON.parse(String(event.data));
+        if (data.ready) {
+          ready = true;
+          clearTimeout(timeout);
+        }
+        if (!Array.isArray(data.commands)) return;
+        if (data.commands.length > 32) {
+          ws.close();
+          return;
+        }
+        for (const command of data.commands as Command[]) void execute(command);
+      } catch {
+        ws.close();
+      }
+    });
+    async function execute(command: Command) {
+      let response: { id: string; result?: string; error?: string };
+      try {
+        response = {
+          id: command.id,
+          result: (await perform(command.path, command.body)).toString(
+            "base64",
+          ),
+        };
+      } catch {
+        response = {
+          id: command.id,
+          error: "시뮬레이터 요청을 완료하지 못했어요",
+        };
+      }
+      if (ws.readyState !== WebSocket.OPEN) return;
+      // At most one frame is requested at a time. Never accumulate large image responses.
+      if (ws.bufferedAmount > 1000000) {
+        ws.close();
+        return;
+      }
+      ws.send(JSON.stringify({ responses: [response] }));
+    }
+  });
+}
 while (!stopping) {
   try {
-    if (Date.now() - lastInventory > 5000) {
-      devices = await inventory();
-      lastInventory = Date.now();
-    }
-    const { commands } = await exchange({ wait: true });
-    for (const command of commands) void executeCommand(command);
-  } catch (error) {
-    if (stopping) break;
-    console.error(error instanceof Error ? error.message : "마스터 연결 실패");
-    await delay(2000);
+    await connected();
+  } catch {
+    console.error("마스터 연결을 확인해 주세요");
   }
+  if (!stopping)
+    await delay(1000, undefined, { signal: shutdown.signal }).catch(() => {});
 }

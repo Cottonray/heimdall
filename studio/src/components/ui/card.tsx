@@ -5,12 +5,14 @@ function Card({
   className,
   variant = "default",
   ...props
-}: React.ComponentProps<"div"> & { variant?: "default" | "plain" }) {
+}: React.ComponentProps<"div"> & { variant?: "default" | "plain" | "panel" | "preview" }) {
   return (
     <div
       data-slot="card"
       className={cn(
         "flex flex-col gap-6 rounded-xl border bg-card py-6 text-card-foreground shadow-sm",
+        variant === "panel" && "rounded-none border-0 shadow-none py-3",
+        variant === "preview" && "rounded-none border-0 shadow-none gap-3 py-3",
         variant === "plain" && "border-0 shadow-none",
         className,
       )}
@@ -19,12 +21,13 @@ function Card({
   );
 }
 
-function CardHeader({ className, ...props }: React.ComponentProps<"div">) {
+function CardHeader({ className, variant = "default", ...props }: React.ComponentProps<"div"> & { variant?: "default" | "compact" }) {
   return (
     <div
       data-slot="card-header"
       className={cn(
         "@container/card-header grid auto-rows-min grid-rows-[auto_auto] items-start gap-2 px-6 has-data-[slot=card-action]:grid-cols-[1fr_auto] [.border-b]:pb-6",
+        variant === "compact" && "px-3",
         className,
       )}
       {...props}
@@ -65,21 +68,21 @@ function CardAction({ className, ...props }: React.ComponentProps<"div">) {
   );
 }
 
-function CardContent({ className, variant = "default", ...props }: React.ComponentProps<"div"> & { variant?: "default" | "stack" }) {
+function CardContent({ className, variant = "default", ...props }: React.ComponentProps<"div"> & { variant?: "default" | "stack" | "compact" }) {
   return (
     <div
       data-slot="card-content"
-      className={cn("px-6", variant === "stack" && "space-y-3", className)}
+      className={cn("px-6", variant === "stack" && "space-y-3", variant === "compact" && "px-3", className)}
       {...props}
     />
   );
 }
 
-function CardFooter({ className, ...props }: React.ComponentProps<"div">) {
+function CardFooter({ className, variant = "default", ...props }: React.ComponentProps<"div"> & { variant?: "default" | "compact" }) {
   return (
     <div
       data-slot="card-footer"
-      className={cn("flex items-center px-6 [.border-t]:pt-6", className)}
+      className={cn("flex items-center px-6 [.border-t]:pt-6", variant === "compact" && "px-3", className)}
       {...props}
     />
   );
