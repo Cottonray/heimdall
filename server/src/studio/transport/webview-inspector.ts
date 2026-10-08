@@ -1,3 +1,5 @@
+import { randomUUID } from "node:crypto";
+import { isIos, iosRequest } from "../infrastructure/ios-bridge.ts";
 import type { WsConnection } from "../../ws.ts";
 import { openWebView } from "../infrastructure/webviews.ts";
 
@@ -9,6 +11,7 @@ export async function connectInspector(
   id: string,
   authorized: () => Promise<boolean>,
 ) {
+  if (isIos(serial)) return connectIosInspector(ws, serial, id, authorized);
   let closed = false;
   let upstream: WebSocket | undefined;
   let release: (() => Promise<void>) | undefined;
@@ -127,5 +130,77 @@ export async function connectInspector(
     });
   } catch {
     ws.close(4503);
+  }
+}
+
+async function connectIosInspector(
+  ws: WsConnection,
+  serial: string,
+  target: string,
+  authorized: () => Promise<boolean>,
+) {
+  const connection = randomUUID();
+  let closed = false,
+    ready = false;
+  const queue: string[] = [];
+  let lastPing = 0;
+  let bytes = 0;
+  const call = async (op: string, args = {}) =>
+    JSON.parse(
+      (
+        await iosRequest(
+          "/inspector/" + op + "?serial=" + encodeURIComponent(serial),
+          { connection, ...args },
+        )
+      ).toString(),
+    );
+  ws.on({
+    onClose() {
+      closed = true;
+      if (ready) void call("close").catch(() => {});
+    },
+    onMessage(raw) {
+      bytes += Buffer.byteLength(raw);
+      if (bytes > 1024 * 1024) ws.close(1009);
+      else queue.push(raw);
+    },
+  });
+  try {
+    if (!(await authorized())) {
+      ws.close(4409);
+      return;
+    }
+    await call("open", { target });
+    ready = true;
+    while (!closed) {
+      if (!(await authorized())) {
+        ws.close(4409);
+        break;
+      }
+      if (Date.now() - ws.lastReceivedAt > 15000) { ws.close(1001); break; }
+      if (Date.now() - lastPing > 5000) { ws.ping(); lastPing = Date.now(); }
+      const messages = queue.splice(0, 100);
+      bytes -= messages.reduce((n, s) => n + Buffer.byteLength(s), 0);
+      const result = await call(messages.length ? "send" : "poll", {
+        messages,
+      });
+      if (!(await authorized())) {
+        ws.close(4409);
+        break;
+      }
+      for (const event of result.events || []) {
+        if (ws.backlog > 8 * 1024 * 1024) {
+          ws.close(1009);
+          break;
+        }
+        ws.send(event);
+      }
+      await new Promise((resolve) => setTimeout(resolve, 100));
+    }
+  } catch {
+    ws.close(4503);
+  } finally {
+    closed = true;
+    if (ready) await call("close").catch(() => {});
   }
 }

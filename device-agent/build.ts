@@ -22,9 +22,10 @@ try {
   await copyFile(resolve(root, "dist/heimdall.js"), resolve(dir, "heimdall"));
   await chmod(resolve(dir, "heimdall"), 0o755);
   await copyFile(resolve(root, "README.md"), resolve(dir, "README.md"));
+  await copyFile(resolve(root, "../studio/node_modules/inspect-webkit/LICENSE"), resolve(dir, "inspect-webkit-LICENSE"));
   const output = resolve(root, "../web/studio/assets/heimdall-macos.zip");
   await rm(output, { force: true });
-  execFileSync("zip", ["-q", output, "heimdall", "README.md"], { cwd: dir });
+  execFileSync("zip", ["-q", output, "heimdall", "README.md", "inspect-webkit-LICENSE"], { cwd: dir });
 } finally {
   await rm(dir, { recursive: true, force: true });
 }

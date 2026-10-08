@@ -1,3 +1,4 @@
+import { inspector } from "./web-inspector.ts";
 import { installApp } from "./app-install.ts";
 import { iosWebDebug } from "../server/src/studio/domain/ios-web-debug.ts";
 import { remoteAction } from "../server/src/studio/domain/remote-device.ts";
@@ -111,6 +112,21 @@ export async function inventory() {
     : [];
 }
 export function perform(path: string, body?: unknown): Promise<Buffer> {
+  const endpoint = new URL(path, "http://localhost");
+  if (
+    endpoint.pathname.startsWith("/inspector/") ||
+    endpoint.pathname === "/webviews"
+  ) {
+    if (endpoint.searchParams.get("serial") !== serial)
+      return Promise.reject(new Error("허용되지 않은 기기예요"));
+    return inspector(
+      udid!,
+      endpoint.pathname === "/webviews"
+        ? "targets"
+        : endpoint.pathname.split("/").at(-1)!,
+      body,
+    ).then((result) => Buffer.from(JSON.stringify(result)));
+  }
   // Video never waits for a web-context switch, animation or text command.
   if (new URL(path, "http://localhost").pathname === "/frame")
     return run(path, body);

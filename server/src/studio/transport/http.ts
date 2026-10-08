@@ -391,6 +391,23 @@ export async function handle(
         send(409, { error: "기기를 점유한 창에서 인스펙터를 열어 주세요" });
         return true;
       }
+      if (isIos(serial)) {
+        const discovery = JSON.parse(
+          (
+            await iosRequest("/webviews?serial=" + encodeURIComponent(serial))
+          ).toString(),
+        );
+        if (
+          !discovery.targets.some((target: { id: string }) => target.id === id)
+        )
+          throw new Error("웹페이지를 다시 선택해 주세요");
+        send(200, {
+          frontend:
+            DEVTOOLS_PREFIX +
+            "serve_rev/@2d54072eb2f350d37f3f304c4ba0fafcddbd7e82/inspector.html",
+        });
+        return true;
+      }
       const connection = await openWebView(
         serial,
         url.searchParams.get("socket") || "",

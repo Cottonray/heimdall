@@ -1,6 +1,5 @@
 import { AppLibrary } from "@/features/apps/app-library";
 import { ErrorToast } from "@/components/error-toast";
-import { IosWebDebugging } from "./ios-web-debugging";
 import {
   Tabs,
   TabsList,
@@ -359,21 +358,12 @@ export function RemoteDevice({
               />
             </TabsList>
             <TabsContent value="web" className="min-h-0 flex-1 overflow-hidden">
-              {ios ? (
-                <IosWebDebugging
-                  serial={serial}
-                  viewerId={remote.viewerId}
-                  canControl={remote.canControl}
-                  discovery={webviews}
-                />
-              ) : (
-                <WebViewDebugging
-                  serial={serial}
-                  viewerId={remote.viewerId}
-                  canControl={remote.canControl}
-                  discovery={webviews}
-                />
-              )}
+              <WebViewDebugging
+                serial={serial}
+                viewerId={remote.viewerId}
+                canControl={remote.canControl}
+                discovery={webviews}
+              />
             </TabsContent>
             <TabsContent value="apps" className="min-h-0 flex-1 overflow-auto">
               <AppLibrary
