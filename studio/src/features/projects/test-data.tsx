@@ -3,7 +3,7 @@ import { DataTable } from "@/components/data-table";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
+import { JsonDataEditor, jsonError } from "./json-data-editor";
 import { Label } from "@/components/ui/label";
 import {
   Dialog,
@@ -25,6 +25,10 @@ type Entry = {
 export function ProjectTestData({ projectId }: { projectId: string }) {
   const [entries, setEntries] = useState<Entry[]>([]);
   const [editing, setEditing] = useState<Partial<Entry> | null>(null);
+  const [contentValid, setContentValid] = useState(true);
+  useEffect(() => {
+    setContentValid(true);
+  }, [editing?.id, !!editing]);
   const [removing, setRemoving] = useState<Entry | null>(null);
   const [revision, setRevision] = useState(0);
   const [busy, setBusy] = useState(false);
@@ -166,7 +170,8 @@ export function ProjectTestData({ projectId }: { projectId: string }) {
             className="space-y-4"
             onSubmit={(e) => {
               e.preventDefault();
-              if (editing) void save(editing);
+              if (editing && contentValid && !jsonError(editing.content || ""))
+                void save(editing);
             }}
           >
             <div className="space-y-2">
@@ -204,26 +209,26 @@ export function ProjectTestData({ projectId }: { projectId: string }) {
                 }
               />
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="test-data-content">추가 데이터 (JSON)</Label>
-              <Textarea
-                id="test-data-content"
-                rows={4}
-                required
-                maxLength={50000}
-                value={editing?.content || ""}
-                onChange={(e) =>
-                  setEditing({ ...editing, content: e.target.value })
-                }
+            {editing && (
+              <JsonDataEditor
+                key={editing.id || "new"}
+                value={editing.content || ""}
+                onChange={(content) => setEditing({ ...editing, content })}
+                onValidityChange={setContentValid}
               />
-            </div>
+            )}
             {error && (
               <p role="alert" className="text-sm text-destructive">
                 {error}
               </p>
             )}
             <DialogFooter>
-              <Button disabled={busy} type="submit">
+              <Button
+                disabled={
+                  busy || !contentValid || !!jsonError(editing?.content || "")
+                }
+                type="submit"
+              >
                 저장
               </Button>
             </DialogFooter>
