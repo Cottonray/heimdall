@@ -43,7 +43,7 @@ export function RefreshControl({
     <div
       role="group"
       aria-label="새로고침 설정"
-      className="inline-flex h-9 shrink-0 items-center rounded-md border border-input bg-background shadow-xs"
+      className="inline-flex h-9 shrink-0 items-center overflow-hidden rounded-md border border-input bg-background shadow-xs"
     >
       <Select
         value={String(interval)}
@@ -59,6 +59,7 @@ export function RefreshControl({
         <SelectTrigger
           aria-label="새로고침 주기"
           variant="refresh"
+          data-press-feedback="off"
         >
           <SelectValue />
         </SelectTrigger>
@@ -72,6 +73,8 @@ export function RefreshControl({
       </Select>
       <Button
         variant="refresh"
+        className="h-full"
+        data-press-feedback="off"
         disabled={busy}
         onClick={onRefresh}
       >
