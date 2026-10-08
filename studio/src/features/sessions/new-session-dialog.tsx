@@ -1,3 +1,10 @@
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { useState } from "react";
 import { Monitor, Smartphone, Braces, ArrowRight } from "lucide-react";
 import {
@@ -109,22 +116,31 @@ export function NewSessionDialog({
           </div>
           {engine !== "android" && (
             <div className="space-y-2">
-              <Label>도메인</Label>
-              <div className="max-h-48 space-y-2 overflow-y-auto">
-                {domains.map((d) => (
-                  <Button
-                    key={d.id}
-                    type="button"
-                    variant={domain?.id === d.id ? "secondary" : "outline"}
-                    aria-pressed={domain?.id === d.id}
-                    className="w-full justify-start"
-                    onClick={() => setDomainId(d.id)}
-                  >
-                    {d.name}
-                  </Button>
-                ))}
-              </div>
-              <p className="break-all text-xs text-muted-foreground">
+              <Label htmlFor="test-domain">도메인</Label>
+              <Select
+                value={domain?.id || ""}
+                onValueChange={setDomainId}
+                disabled={busy || domains.length === 0}
+              >
+                <SelectTrigger
+                  id="test-domain"
+                  className="w-full"
+                  aria-describedby="test-domain-address"
+                >
+                  <SelectValue placeholder="등록된 도메인이 없어요" />
+                </SelectTrigger>
+                <SelectContent position="popper" align="start">
+                  {domains.map((d) => (
+                    <SelectItem key={d.id} value={d.id}>
+                      {d.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <p
+                id="test-domain-address"
+                className="break-all text-xs text-muted-foreground"
+              >
                 {domain?.url ||
                   "관리자가 도메인을 등록해야 테스트를 시작할 수 있어요."}
               </p>
