@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 # AI QA 데모를 홈서버에 반영한다 — **로컬 Mac 에서** 실행한다.
 #
-#   ./deploy/aiqa/deploy.sh            # 소스만 보내고 갈아끼운다 (보통 이것)
-#   ./deploy/aiqa/deploy.sh --build    # 이미지까지 다시 굽는다 (Dockerfile·샘플 앱을 고쳤을 때)
+#   ./deploy.sh            # 소스만 보내고 갈아끼운다 (보통 이것)
+#   ./deploy.sh --build    # 이미지까지 다시 굽는다 (Dockerfile·샘플 앱을 고쳤을 때)
 #
 # 홈서버에는 이 저장소를 보는 CI 가 없다 (홈 Jenkins 는 ai-sdlc·이력 관리시스템·안드로이드
 # 빌드만 안다). 그래서 반영은 이 스크립트 하나다 — deploy/aicc/deploy.sh 와 같은 방식이다.
@@ -30,7 +30,7 @@ say() { printf '\n\033[1m▶ %s\033[0m\n' "$*"; }
 # --- 배포 전 확인 -------------------------------------------------------------
 # deploy.sh 는 git 이 아니라 **이 워크트리를** 그대로 복사한다. main 보다 뒤처진 채 배포하면
 # 남의 작업이 배포판에서 지워진다 (2026-09-07 에 nl2sql 에서 두 번 났다).
-source "$here/../lib/preflight.sh"
+source "$here/tools/preflight.sh"
 require_main_merged "$here"
 
 # Run regression checks unless explicitly disabled for a user-requested deployment.
@@ -52,7 +52,7 @@ cp "$here/Dockerfile" "$here/docker-compose.yml" "$here/entrypoint.sh" "$payload
 rm -rf "$payload/aiqa/server/node_modules" "$payload/aiqa/server/.yarn"
 rm -rf "$payload/aiqa/browser-worker/node_modules" "$payload/aiqa/browser-worker/.yarn"
 # Yarn 은 저장소가 고정한 판(frontend/.yarnrc.yml 의 yarnPath) 그대로 쓴다. corepack 금지
-cp "$here/../../frontend/.yarn/releases/yarn-4.18.0.cjs" "$payload/aiqa/yarn.cjs"
+cp "$here/tools/yarn-4.18.0.cjs" "$payload/aiqa/yarn.cjs"
 # gradle 이 만든 찌꺼기를 들고 가지 않는다 — 빌드는 저쪽 컨테이너 안에서 새로 한다
 rm -rf "$payload/aiqa/sample-app/.gradle" "$payload/aiqa/sample-app/build" "$payload/aiqa/sample-app/app/build"
 

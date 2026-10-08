@@ -1,3 +1,4 @@
+import { subscribeAgentFrames } from "../infrastructure/agent-registry.ts";
 import * as stream from "../../stream.ts";
 import { isIos, iosRequest, iosControl } from "../infrastructure/ios-bridge.ts";
 import { randomUUID } from "node:crypto";
@@ -50,7 +51,7 @@ export function connectRemoteDevice(
 ) {
   if (isIos(remote.device.serial) && deps === runtime) {
     const serial = remote.device.serial;
-    const clients = new Map<string, ReturnType<typeof setInterval>>();
+    const clients = new Map<string, () => void>();
     deps = {
       ...runtime,
       target: () => serial,
@@ -58,11 +59,27 @@ export function connectRemoteDevice(
       frames: {
         kick() {},
         remove(id) {
-          const timer = clients.get(id);
-          if (timer) clearInterval(timer);
+          clients.get(id)?.();
           clients.delete(id);
         },
         add(client) {
+          const subscribed = subscribeAgentFrames(serial, {
+            frame(jpeg) {
+              if (
+                client.ws.isOpen &&
+                client.ws.backlog < 128 * 1024 &&
+                client.onFrame?.(jpeg) !== false
+              )
+                client.ws.sendBinary(jpeg);
+            },
+            error() {
+              client.ws.close(1011);
+            },
+          });
+          if (subscribed) {
+            clients.set(client.id, subscribed);
+            return;
+          }
           let pending = false;
           const tick = async () => {
             if (pending || !client.ws.isOpen || client.ws.backlog > 128 * 1024)
@@ -85,7 +102,7 @@ export function connectRemoteDevice(
             }
           };
           const timer = setInterval(() => void tick(), 40);
-          clients.set(client.id, timer);
+          clients.set(client.id, () => clearInterval(timer));
           void tick();
         },
       },

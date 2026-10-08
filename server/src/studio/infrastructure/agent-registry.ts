@@ -4,6 +4,46 @@ import type { IncomingMessage, ServerResponse } from "node:http";
 import type { DeviceInfo } from "../../../../contracts/studio.ts";
 import type { WsConnection } from "../../ws.ts";
 const sockets = new Map<string, WsConnection>();
+const frameStreaming = new Set<string>();
+type FrameListener = { frame: (jpeg: Buffer) => void; error: () => void };
+const frameListeners = new Map<string, Set<FrameListener>>();
+/** Stream capable agents push fresh frames; older agents retain request/response. */
+export function subscribeAgentFrames(
+  serial: string,
+  listener: FrameListener,
+): (() => void) | undefined {
+  const entry = [...agents.entries()].find(
+    ([id, a]) =>
+      frameStreaming.has(id) &&
+      Date.now() - a.seen < 10000 &&
+      a.devices.some((d) => d.serial === serial && d.ready),
+  );
+  if (!entry) return undefined;
+  const listeners = frameListeners.get(serial) || new Set<FrameListener>();
+  frameListeners.set(serial, listeners);
+  listeners.add(listener);
+  let stopped = false;
+  const renew = () =>
+    void agentRequest(
+      `/frames/start?serial=${encodeURIComponent(serial)}`,
+    ).catch(() => {
+      if (!stopped) listener.error();
+    });
+  const timer = setInterval(renew, 5000);
+  timer.unref();
+  renew();
+  return () => {
+    stopped = true;
+    clearInterval(timer);
+    listeners.delete(listener);
+    if (!listeners.size) {
+      frameListeners.delete(serial);
+      void agentRequest(
+        `/frames/stop?serial=${encodeURIComponent(serial)}`,
+      ).catch(() => {});
+    }
+  };
+}
 type Command = { id: string; path: string; body?: unknown };
 type Agent = { seen: number; devices: DeviceInfo[]; commands: Command[] };
 const waiting = new Map<string, () => void>();
@@ -225,6 +265,10 @@ export function connectAgent(ws: WsConnection) {
       token = "";
       if (sockets.get(agentId) !== ws) return;
       sockets.delete(agentId);
+      frameStreaming.delete(agentId);
+      for (const serial of permitted?.serials || [])
+        for (const listener of frameListeners.get(serial) || [])
+          listener.error();
       const agent = agents.get(agentId);
       if (agent) {
         agent.seen = 0;
@@ -264,6 +308,7 @@ export function connectAgent(ws: WsConnection) {
               // Finish old in-flight requests before accepting this new connection.
               previous?.close(1012);
               sockets.set(agentId, ws);
+              if (data.frameStreaming === true) frameStreaming.add(agentId);
               updateDevices(data.devices);
               clearTimeout(deadline);
               ws.send(JSON.stringify({ ready: true }));
@@ -277,6 +322,23 @@ export function connectAgent(ws: WsConnection) {
         }
         const agent = agents.get(agentId);
         if (agent) agent.seen = Date.now();
+        if (data.frame !== undefined) {
+          const frame = data.frame;
+          if (
+            !frameStreaming.has(agentId) ||
+            !permitted.serials.includes(frame?.serial) ||
+            typeof frame.jpeg !== "string" ||
+            frame.jpeg.length > 700000
+          )
+            throw new Error();
+          const listeners = frameListeners.get(frame.serial);
+          if (listeners?.size) {
+            const jpeg = Buffer.from(frame.jpeg, "base64");
+            if (jpeg.length < 4 || jpeg.readUInt16BE(0) !== 0xffd8)
+              throw new Error();
+            for (const listener of listeners) listener.frame(jpeg);
+          }
+        }
         if (data.responses !== undefined) {
           if (!Array.isArray(data.responses) || data.responses.length > 32)
             throw new Error();

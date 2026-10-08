@@ -148,14 +148,14 @@ export class SimulatorHid {
     if (Date.now() < this.videoRetryAt || !(await this.prepare()))
       return undefined;
     try {
-      // idb VideoStreamRequest.Start: 30 fps, MJPEG, quality .30, scale .3.
+      // idb VideoStreamRequest.Start: 60 fps, MJPEG, quality .30, scale .3.
       return await this.video.frame(
         this.client!,
         grpcFrame(
           message(
             1,
             Buffer.concat([
-              integer(2, 30),
+              integer(2, 60),
               integer(3, 2),
               double(4, 0.3),
               double(5, 0.3),

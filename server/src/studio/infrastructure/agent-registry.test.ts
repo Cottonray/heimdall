@@ -5,7 +5,12 @@ import { mkdtemp, writeFile, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { createHash } from "node:crypto";
-import { handleAgent, agentRequest, connectAgent } from "./agent-registry.ts";
+import {
+  handleAgent,
+  agentRequest,
+  connectAgent,
+  subscribeAgentFrames,
+} from "./agent-registry.ts";
 test("long poll wakes immediately, independent results do not steal commands, credentials stay enforced", async () => {
   const dir = await mkdtemp(join(tmpdir(), "heimdall-agent-test-"));
   const prior = process.env.HEIMDALL_AGENTS_FILE;
@@ -126,7 +131,11 @@ test("agent WebSocket authenticates, dispatches immediately and rejects pending 
     return ws;
   };
   const message = (ws: WebSocket) =>
-    new Promise<{ ready?: boolean; heartbeat?: boolean; commands: { id: string; path: string }[] }>((r) =>
+    new Promise<{
+      ready?: boolean;
+      heartbeat?: boolean;
+      commands: { id: string; path: string }[];
+    }>((r) =>
       ws.addEventListener("message", (e) => r(JSON.parse(String(e.data))), {
         once: true,
       }),
@@ -143,13 +152,18 @@ test("agent WebSocket authenticates, dispatches immediately and rejects pending 
     ws.send(
       JSON.stringify({
         agentId: "ws-test",
+        frameStreaming: true,
         token: "ws-token",
         devices: [{ serial, platform: "ios", model: "Simulator", ready: true }],
       }),
     );
     assert.equal((await ready).ready, true);
     const heartbeat = message(ws);
-    ws.send(JSON.stringify({devices: [{serial, platform: "ios", model: "Simulator", ready: true}]}));
+    ws.send(
+      JSON.stringify({
+        devices: [{ serial, platform: "ios", model: "Simulator", ready: true }],
+      }),
+    );
     assert.equal((await heartbeat).heartbeat, true);
     const delivered = message(ws);
     const result = agentRequest(`/action?serial=${serial}`, {
@@ -166,6 +180,49 @@ test("agent WebSocket authenticates, dispatches immediately and rejects pending 
       }),
     );
     assert.equal((await result).toString(), "ok");
+    const subscribed = message(ws);
+    let receive: (jpeg: Buffer) => void = () => {};
+    const frame = new Promise<Buffer>((resolve) => {
+      receive = resolve;
+    });
+    const unsubscribe = subscribeAgentFrames(serial, {
+      frame: receive,
+      error: () => {},
+    });
+    assert.ok(unsubscribe);
+    const start = (await subscribed).commands[0];
+    assert.ok(start.path.startsWith("/frames/start"));
+    ws.send(
+      JSON.stringify({
+        responses: [
+          { id: start.id, result: Buffer.from("{}").toString("base64") },
+        ],
+      }),
+    );
+    ws.send(
+      JSON.stringify({
+        frame: {
+          serial,
+          jpeg: Buffer.from([0xff, 0xd8, 0xff, 0xd9]).toString("base64"),
+        },
+      }),
+    );
+    assert.deepEqual(await frame, Buffer.from([0xff, 0xd8, 0xff, 0xd9]));
+    const stopped = message(ws);
+    unsubscribe();
+    const stop = (await stopped).commands[0];
+    assert.ok(stop.path.startsWith("/frames/stop"));
+    ws.send(
+      JSON.stringify({
+        responses: [
+          { id: stop.id, result: Buffer.from("{}").toString("base64") },
+        ],
+      }),
+    );
+    assert.equal(
+      subscribeAgentFrames("ios:other", { frame: () => {}, error: () => {} }),
+      undefined,
+    );
     const pending = agentRequest(`/frame?serial=${serial}`);
     const rejected = assert.rejects(pending, /연결이 끊겼/);
     ws.close();

@@ -4,7 +4,7 @@ import { fileURLToPath } from "node:url";
 const root = path.dirname(fileURLToPath(import.meta.url));
 const yarn = path.resolve(
   root,
-  "../../frontend/.yarn/releases/yarn-4.18.0.cjs",
+  "tools/yarn-4.18.0.cjs",
 );
 for (const project of ["server", "browser-worker", "studio"]) {
   execFileSync(process.execPath, [yarn, "install", "--immutable"], {

@@ -79,12 +79,50 @@ async function connected(endpoint: URL) {
     let ready = false;
     let updating = false;
     let receivedAt = Date.now();
+    let streamingSerial = "";
+    let streamUntil = 0;
+    let streaming = false;
+    let lastFrame: Buffer | undefined;
+    const frames = setInterval(() => {
+      if (
+        streaming ||
+        !streamingSerial ||
+        Date.now() > streamUntil ||
+        ws.readyState !== WebSocket.OPEN ||
+        ws.bufferedAmount > 128 * 1024
+      )
+        return;
+      streaming = true;
+      const serial = streamingSerial;
+      void perform(`/frame?serial=${encodeURIComponent(serial)}`)
+        .then((jpeg) => {
+          if (
+            finished ||
+            serial !== streamingSerial ||
+            ws.readyState !== WebSocket.OPEN ||
+            ws.bufferedAmount > 128 * 1024 ||
+            lastFrame === jpeg
+          )
+            return;
+          lastFrame = jpeg;
+          ws.send(
+            JSON.stringify({
+              frame: { serial, jpeg: jpeg.toString("base64") },
+            }),
+          );
+        })
+        .catch(() => finish())
+        .finally(() => {
+          streaming = false;
+        });
+    }, 16);
     let finished = false;
     const finish = () => {
       if (finished) return;
       finished = true;
       clearTimeout(timeout);
       clearInterval(heartbeat);
+      clearInterval(frames);
       // Do not wait forever for a close handshake through a stale SSH forward.
       ws.close();
       resolve();
@@ -111,7 +149,9 @@ async function connected(endpoint: URL) {
         });
     }, 4000);
     ws.addEventListener("open", () =>
-      ws.send(JSON.stringify({ agentId: id, token, devices })),
+      ws.send(
+        JSON.stringify({ agentId: id, token, devices, frameStreaming: true }),
+      ),
     );
     ws.addEventListener("close", () => {
       finish();
@@ -141,11 +181,24 @@ async function connected(endpoint: URL) {
     async function execute(command: Command) {
       let response: { id: string; result?: string; error?: string };
       try {
+        const path = new URL(command.path, "http://localhost");
+        if (
+          path.pathname === "/frames/start" ||
+          path.pathname === "/frames/stop"
+        ) {
+          const serial = path.searchParams.get("serial");
+          if (!devices.some((d) => d.serial === serial && d.ready))
+            throw new Error("Unknown device");
+          streamingSerial = path.pathname === "/frames/start" ? serial! : "";
+          streamUntil = Date.now() + 12000;
+          if (!streamingSerial) lastFrame = undefined;
+        }
         response = {
           id: command.id,
-          result: (await perform(command.path, command.body)).toString(
-            "base64",
-          ),
+          result: (path.pathname.startsWith("/frames/")
+            ? Buffer.from("{}")
+            : await perform(command.path, command.body)
+          ).toString("base64"),
         };
       } catch {
         response = {

@@ -3,7 +3,6 @@ import { ProfileEditor } from "@/features/auth/profile-editor";
 import type { ProfileActionResult } from "@/lib/api";
 import { Download, UserRound, Plug } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { downloadMcp } from "@/features/integrations/mcp";
 import {
   Dialog,
@@ -54,11 +53,8 @@ export function Settings({
             </TabsTrigger>
           </TabsList>
           <TabsContent value="account" variant="settings">
-            <Card variant="plain">
-              <CardHeader>
-                <CardTitle>프로필</CardTitle>
-              </CardHeader>
-              <CardContent>
+            <section className="space-y-5 px-1 py-2">
+              <h2 className="text-base font-semibold">프로필</h2>
                 <ProfileEditor
                   key={user.id}
                   user={user}
@@ -67,8 +63,7 @@ export function Settings({
                   onSaveAvatar={onSaveAvatar}
                   onChangePassword={onChangePassword}
                 />
-              </CardContent>
-            </Card>
+            </section>
           </TabsContent>
           <TabsContent value="mcp" variant="settings">
             <section className="space-y-5 px-1 py-2">
