@@ -43,7 +43,7 @@ export function RefreshControl({
     <div
       role="group"
       aria-label="새로고침 설정"
-      className="inline-flex shrink-0 items-center"
+      className="inline-flex h-9 shrink-0 items-center rounded-md border border-input bg-background shadow-xs"
     >
       <Select
         value={String(interval)}
@@ -58,7 +58,7 @@ export function RefreshControl({
       >
         <SelectTrigger
           aria-label="새로고침 주기"
-          className="w-28 rounded-r-none shadow-none"
+          className="h-full w-28 rounded-r-none border-0 bg-transparent shadow-none focus-visible:ring-inset data-[size=default]:h-full"
         >
           <SelectValue />
         </SelectTrigger>
@@ -74,7 +74,7 @@ export function RefreshControl({
         variant="outline"
         disabled={busy}
         onClick={onRefresh}
-        className="-ml-px rounded-l-none shadow-none"
+        className="h-full rounded-l-none border-0 border-l border-input bg-transparent shadow-none focus-visible:border-input focus-visible:ring-inset dark:border-input dark:bg-transparent"
       >
         <RefreshCw className={busy ? "animate-spin" : undefined} />
         새로고침
