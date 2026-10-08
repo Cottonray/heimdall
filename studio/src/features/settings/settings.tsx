@@ -16,7 +16,6 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
-  DialogDescription,
 } from "@/components/ui/dialog";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import type { User } from "../../../../contracts/studio";
@@ -41,10 +40,9 @@ export function Settings({
   const [pending, setPending] = useState(false);
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent variant="settings">
+      <DialogContent variant="settings" aria-describedby={undefined}>
         <DialogHeader>
           <DialogTitle>설정</DialogTitle>
-          <DialogDescription>계정과 MCP 연결을 관리해요.</DialogDescription>
         </DialogHeader>
         <Tabs
           defaultValue="account"
