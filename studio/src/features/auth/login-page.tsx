@@ -48,7 +48,7 @@ export function LoginPage({
           <div className="mb-8">
             <p className="mb-3 text-sm font-medium text-primary">heimdall</p>
             <h1 className="text-3xl font-semibold tracking-tight">
-              워크스페이스에 로그인
+              헤임달에 로그인
             </h1>
           </div>
           <Card>
