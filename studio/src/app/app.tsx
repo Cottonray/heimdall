@@ -130,7 +130,6 @@ export function App() {
           admin={w.user?.role === "admin"}
           active={w.activeTab}
           onNavigate={w.store.navigate}
-          onRun={() => w.store.navigate("execution")}
           theme={theme}
           onTheme={setTheme}
         />
