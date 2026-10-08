@@ -9,6 +9,7 @@ import {
   prepareRemoteDevice,
   performRemoteAction,
 } from "../infrastructure/remote-device.ts";
+import { reserveDevice, deviceUsage } from "../infrastructure/device-lease.ts";
 import { connectRemoteDevice } from "./remote-device.ts";
 
 const size = { width: 720, height: 1600 };
@@ -157,7 +158,7 @@ test("JPEG orientation uses physical pixels without trusting truncated dimension
   );
 });
 
-function fixture() {
+function fixture(leased = false) {
   let handlers: WsHandlers = {},
     opened = true;
   let clock = Date.now(),
@@ -196,6 +197,7 @@ function fixture() {
   control.unlockRunner();
   const holder = control.snapshot();
   if (holder.kind === "human") control.forget(holder.viewerId);
+  const lease = leased ? reserveDevice(item.serial, "test-session") : undefined;
   connectRemoteDevice(ws, { device: item, size }, async () => allowed, {
     target: () => target,
     now: () => clock,
@@ -216,7 +218,7 @@ function fixture() {
         stopped = true;
       };
     },
-  });
+  }, lease);
   return {
     ws,
     messages,
@@ -350,4 +352,17 @@ test("dead peers and revoked idle sessions close, and idle control is released",
   idle.advance(1000);
   assert.equal(control.snapshot().kind, "none");
   idle.ws.close();
+});
+
+test("reserved viewer releases after 15 seconds without a reply and retains an alive idle window", () => {
+  const dead = fixture(true);
+  dead.advance(15001);
+  assert.deepEqual(dead.closes, [1001]);
+  assert.equal(deviceUsage(item.serial), "available");
+  const alive = fixture(true);
+  for (let i = 0; i < 30; i++) { alive.ws.lastReceivedAt += 5000; alive.advance(5000); }
+  assert.equal(alive.ws.isOpen, true);
+  assert.equal(deviceUsage(item.serial), "in-use");
+  alive.ws.close();
+  assert.equal(deviceUsage(item.serial), "available");
 });

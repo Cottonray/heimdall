@@ -35,6 +35,8 @@ const tabsListVariants = cva(
         line: "gap-1 bg-transparent",
         workspace:
           "h-12 min-w-0 max-w-full flex-1 justify-start gap-0 overflow-x-auto overflow-y-hidden rounded-none bg-transparent p-0 group-data-[orientation=horizontal]/tabs:h-12",
+        settings:
+          "w-36 shrink-0 justify-start gap-2 rounded-none border-r bg-transparent p-0 pr-3 group-data-[orientation=vertical]/tabs:h-full [&_[data-slot=tabs-trigger]]:h-10 [&_[data-slot=tabs-trigger]]:flex-none",
       },
     },
     defaultVariants: {
@@ -80,12 +82,21 @@ function TabsTrigger({
 
 function TabsContent({
   className,
+  variant = "default",
   ...props
-}: React.ComponentProps<typeof TabsPrimitive.Content>) {
+}: React.ComponentProps<typeof TabsPrimitive.Content> & {
+  variant?: "default" | "remote" | "settings";
+}) {
   return (
     <TabsPrimitive.Content
       data-slot="tabs-content"
-      className={cn("flex-1 outline-none", className)}
+      className={cn(
+        "flex-1 outline-none",
+        variant === "remote" &&
+          "flex min-h-0 flex-col gap-3 data-[state=inactive]:hidden",
+        variant === "settings" && "min-w-0 space-y-5 overflow-y-auto",
+        className,
+      )}
       {...props}
     />
   );

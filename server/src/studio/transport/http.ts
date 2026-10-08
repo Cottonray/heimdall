@@ -34,6 +34,9 @@ import { worker } from "../engines/browser.ts";
 import { dispatch } from "../application/dispatch.ts";
 import { allowed, allowedBrowserOrigin } from "./access.ts";
 import { tools } from "./mcp.ts";
+import { discoverWebViews, openWebView } from "../infrastructure/webviews.ts";
+import { deviceUsage, ownsDevice } from "../infrastructure/device-lease.ts";
+import { DEVTOOLS_PREFIX, serveDevTools } from "./devtools-assets.ts";
 export async function handle(
   req: IncomingMessage,
   res: ServerResponse,
@@ -60,7 +63,9 @@ export async function handle(
       return true;
     }
     const authRoute =
-      route === "/api/studio/auth/login" || route === "/api/studio/auth/test-login" || route === "/api/studio/auth/logout";
+      route === "/api/studio/auth/login" ||
+      route === "/api/studio/auth/test-login" ||
+      route === "/api/studio/auth/logout";
     if (!authRoute && !auth && !localRequest(req)) {
       send(401, { error: "로그인이 필요해요" });
       return true;
@@ -94,9 +99,56 @@ export async function handle(
     }
     if (route === "/api/studio/devices" && req.method === "GET") {
       try {
-        send(200, await listDeviceInventory());
+        send(
+          200,
+          (await listDeviceInventory()).map((item) => ({
+            ...item,
+            usage: deviceUsage(item.serial),
+          })),
+        );
       } catch {
-        send(502, { error: "기기 목록을 확인하지 못했어요. 잠시 후 새로고침해 주세요" });
+        send(502, {
+          error: "기기 목록을 확인하지 못했어요. 잠시 후 새로고침해 주세요",
+        });
+      }
+      return true;
+    }
+    if (route.startsWith("/api/studio/devtools/") && req.method === "GET") {
+      if (!auth) {
+        send(401, { error: "로그인이 필요해요" });
+        return true;
+      }
+      await serveDevTools(res, route);
+      return true;
+    }
+    if (route === "/api/studio/webviews" && req.method === "GET") {
+      if (!auth) {
+        send(401, { error: "로그인이 필요해요" });
+        return true;
+      }
+      send(200, await discoverWebViews(url.searchParams.get("serial") || ""));
+      return true;
+    }
+    if (route === "/api/studio/inspector" && req.method === "GET") {
+      const serial = url.searchParams.get("serial") || "";
+      const viewer = url.searchParams.get("viewer") || "";
+      if (!auth || !ownsDevice(viewer, serial, auth.hash)) {
+        send(409, { error: "기기를 점유한 창에서 인스펙터를 열어 주세요" });
+        return true;
+      }
+      const connection = await openWebView(
+        serial,
+        url.searchParams.get("socket") || "",
+        id,
+      );
+      try {
+        if (!connection.target.revision)
+          throw new Error("이 웹뷰의 DevTools 버전을 확인하지 못했어요");
+        send(200, {
+          frontend: `${DEVTOOLS_PREFIX}serve_rev/${connection.target.revision}/inspector.html`,
+        });
+      } finally {
+        await connection.release();
       }
       return true;
     }
@@ -136,12 +188,14 @@ export async function handle(
       return true;
     }
     let body = "";
-    const bodyLimit = route === "/api/studio/profile"
-      ? Math.ceil(MAX_AVATAR_BYTES / 3) * 4 + 1024
-      : 64000;
+    const bodyLimit =
+      route === "/api/studio/profile"
+        ? Math.ceil(MAX_AVATAR_BYTES / 3) * 4 + 1024
+        : 64000;
     for await (const chunk of req) {
       body += chunk;
-      if (Buffer.byteLength(body) > bodyLimit) throw new Error("요청이 너무 커요");
+      if (Buffer.byteLength(body) > bodyLimit)
+        throw new Error("요청이 너무 커요");
     }
     const data = JSON.parse(body || "{}");
     if (route === "/api/studio/auth/test-login") {

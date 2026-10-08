@@ -14,9 +14,9 @@
     "typecheck:worker": "tsc -p ../browser-worker/tsconfig.json",
     "lint:verify": "node --experimental-strip-types verify-design-lint.ts",
     "test:dashboard": "node --experimental-strip-types --test src/features/dashboard/metrics.test.ts src/features/workspace/tabs.test.ts src/features/workspace/store.test.ts",
-    "test:security": "node --experimental-strip-types --test ../server/src/studio/infrastructure/auth.test.ts ../server/src/studio/infrastructure/device-inventory.test.ts ../server/src/studio/transport/remote-device.test.ts",
+    "test:security": "node --experimental-strip-types --test ../server/src/studio/infrastructure/auth.test.ts ../server/src/studio/infrastructure/device-inventory.test.ts ../server/src/studio/transport/remote-device.test.ts ../server/src/studio/infrastructure/webviews.test.ts",
     "test:table": "node --experimental-strip-types --test src/components/data-table-model.test.ts",
-    "test:remote": "node --experimental-strip-types --test src/features/devices/remote-coordinates.test.ts src/features/devices/remote-control.test.ts"
+    "test:remote": "node --experimental-strip-types --test src/features/devices/remote-coordinates.test.ts src/features/devices/remote-control.test.ts src/features/devices/device-status.test.ts"
   },
   "dependencies": {
     "class-variance-authority": "0.7.1",

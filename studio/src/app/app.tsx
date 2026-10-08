@@ -51,6 +51,7 @@ export function App() {
   const w = useWorkspace();
   const { theme, resolvedTheme, setTheme, toggleTheme } = useTheme();
   const [newOpen, setNewOpen] = useState(false);
+  const [settingsOpen, setSettingsOpen] = useState(false);
   const [exported, setExported] = useState<SessionExport | null>(null);
   const [remoteDevice] = useState(
     () => new URLSearchParams(location.search).get("device") || "",
@@ -174,7 +175,7 @@ export function App() {
                 user={w.user}
                 busy={w.busy}
                 onLogout={w.store.logout}
-                onSettings={() => w.store.navigate("settings")}
+                onSettings={() => setSettingsOpen(true)}
               />
             </div>
           </header>
@@ -294,19 +295,6 @@ export function App() {
                         return !w.store.getSnapshot().error;
                       }}
                     />
-                  ) : id === "settings" ? (
-                    w.user && (
-                      <Settings
-                        user={w.user}
-                        busy={w.busy}
-                        onSaveAvatar={w.store.saveProfile}
-                        onChangePassword={w.store.changePassword}
-                        theme={theme}
-                        onTheme={setTheme}
-                        status={w.status}
-                        onRefresh={() => void w.store.refresh()}
-                      />
-                    )
                   ) : s ? (
                     <div className="space-y-6">
                       <SessionContent
@@ -338,6 +326,18 @@ export function App() {
           if (!w.store.getSnapshot().error) setNewOpen(false);
         }}
       />
+      {w.user && (
+        <Settings
+          open={settingsOpen}
+          onOpenChange={setSettingsOpen}
+          user={w.user}
+          busy={w.busy}
+          onSaveAvatar={w.store.saveProfile}
+          onChangePassword={w.store.changePassword}
+          status={w.status}
+          onRefresh={() => void w.store.refresh()}
+        />
+      )}
       <ExportDialog data={exported} onClose={() => setExported(null)} />
     </div>
   );

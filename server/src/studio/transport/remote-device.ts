@@ -1,4 +1,5 @@
 import { randomUUID } from "node:crypto";
+import type { DeviceLease } from "../infrastructure/device-lease.ts";
 import type { WsConnection } from "../../ws.ts";
 import * as device from "../../device.ts";
 import * as screen from "../../screen.ts";
@@ -39,8 +40,9 @@ export function connectRemoteDevice(
   remote: RemoteDevice,
   authorized: () => Promise<boolean>,
   deps: Runtime = runtime,
+  lease?: DeviceLease,
 ) {
-  const viewerId = randomUUID();
+  const viewerId = lease?.viewerId || randomUUID();
   const serial = remote.device.serial;
   let size = remote.size;
   let closed = false,
@@ -64,14 +66,18 @@ export function connectRemoteDevice(
 
   const stop = deps.every(() => {
     if (closed) return;
+    if (lease && !deps.control.mayTouch(viewerId)) {
+      fail("기기 점유가 종료됐어요. 다시 열어 주세요", 4409);
+      return;
+    }
     deps.control.sweep();
     if (!targetUnchanged()) return;
     const now = deps.now();
-    if (now - ws.lastReceivedAt > 45000) {
+    if (now - ws.lastReceivedAt > (lease ? 15000 : 45000)) {
       ws.close(1001);
       return;
     }
-    if (now - lastPing >= 15000) {
+    if (now - lastPing >= (lease ? 5000 : 15000)) {
       lastPing = now;
       ws.ping();
     }
@@ -97,7 +103,10 @@ export function connectRemoteDevice(
       stop();
       deps.frames.remove(viewerId);
       // An already-started ADB command has a 10s bound. Keep its lock until it exits.
-      if (!pending) deps.control.forget(viewerId);
+      if (!pending) {
+        deps.control.forget(viewerId);
+        lease?.release();
+      }
     },
     onMessage: (raw) => {
       if (closed) return;
@@ -151,7 +160,10 @@ export function connectRemoteDevice(
         })
         .finally(() => {
           pending -= 1;
-          if (closed && !pending) deps.control.forget(viewerId);
+          if (closed && !pending) {
+            deps.control.forget(viewerId);
+            lease?.release();
+          }
         });
     },
   });

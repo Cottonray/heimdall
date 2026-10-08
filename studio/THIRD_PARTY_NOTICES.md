@@ -16,3 +16,7 @@ The Android and iOS paths in `src/components/platform-icon.tsx` come from [Simpl
 - The per-icon metadata identifies [iOS](https://en.wikipedia.org/wiki/IOS) as the source and supplies no separate icon license.
 
 Android and iOS names and marks identify device platforms. Copyright licenses do not grant trademark rights or imply endorsement.
+
+## Chromium DevTools
+
+The WebView inspector loads the unmodified Chromium DevTools frontend corresponding to the revision advertised by the target WebView. Assets are delivered from Google's `chrome-devtools-frontend.appspot.com` through an authenticated same-origin proxy; they are not checked into this repository. See the [Chromium DevTools source and license](https://chromium.googlesource.com/devtools/devtools-frontend/+/refs/heads/main/LICENSE). Product names identify the debugging frontend and do not imply endorsement.

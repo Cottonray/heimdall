@@ -82,7 +82,7 @@ export function useRemoteDevice(serial: string, onAuthExpired: () => void) {
       finishAction(false);
     }
     function connect() {
-      if (disposed || document.hidden || socket.current) return;
+      if (disposed || socket.current) return;
       setState((previous) => ({
         ...previous,
         connection: "connecting",
@@ -113,7 +113,13 @@ export function useRemoteDevice(serial: string, onAuthExpired: () => void) {
         }
         try {
           const message = JSON.parse(event.data) as ServerMessage;
-          if (message.type === "ready") {
+          if (message.type === "reserved") {
+            setState((previous) => ({
+              ...previous,
+              error: "",
+              connection: "connecting",
+            }));
+          } else if (message.type === "ready") {
             clearTimeout(handshake);
             attempt = 0;
             setState((previous) => ({
@@ -180,19 +186,11 @@ export function useRemoteDevice(serial: string, onAuthExpired: () => void) {
         }
         if (!mayRetryRemoteClose(event.code)) return;
         attempt++;
-        if (attempt <= 3 && !document.hidden)
-          retry = setTimeout(connect, attempt * 3000);
+        if (attempt <= 3) retry = setTimeout(connect, attempt * 3000);
       };
     }
     function visibilityChanged() {
-      if (document.hidden) {
-        disconnect();
-        setState((previous) => ({
-          ...previous,
-          connection: "paused",
-          error: "",
-        }));
-      } else {
+      if (!document.hidden) {
         attempt = 0;
         connect();
       }

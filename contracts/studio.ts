@@ -122,6 +122,7 @@ export interface ToolResults {
 export type ToolName = keyof ToolResults;
 
 export type DeviceInfo = {
+  usage?: "available" | "in-use";
   serial: string;
   state: string;
   kind: "emulator" | "real";
@@ -131,4 +132,15 @@ export type DeviceInfo = {
   platform: "android" | "ios";
   ready: boolean;
   error?: string;
+};
+export type WebViewTarget = {
+  socket: string;
+  id: string;
+  title: string;
+  url: string;
+  kind: "webview" | "browser";
+};
+export type WebViewDiscovery = {
+  targets: WebViewTarget[];
+  unavailable: number;
 };

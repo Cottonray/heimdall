@@ -8,6 +8,8 @@ import { accept } from './ws.ts'
 import * as studio from './studio.ts'
 import { prepareRemoteDevice, RemoteDeviceError } from './studio/infrastructure/remote-device.ts'
 import { connectRemoteDevice } from './studio/transport/remote-device.ts'
+import { reserveDevice, ownsDevice } from './studio/infrastructure/device-lease.ts'
+import { connectInspector } from './studio/transport/webview-inspector.ts'
 
 const BASE = process.env.AIQA_BASE_PATH ?? '/aiqa'
 const PORT = Number(process.env.AIQA_PORT ?? 8080)
@@ -76,7 +78,8 @@ const server = http.createServer(async (req, res) => {
 })
 server.on('upgrade', async (req, socket) => {
     const url = new URL(req.url ?? '/', 'http://localhost')
-    if (url.pathname !== `${BASE}/studio/ws` || !studio.allowed(req)) {
+    const inspectorRequested = url.pathname === `${BASE}/studio/devtools`
+    if ((!inspectorRequested && url.pathname !== `${BASE}/studio/ws`) || !studio.allowed(req)) {
         socket.write('HTTP/1.1 410 Gone\r\nConnection: close\r\n\r\n')
         socket.destroy()
         return
@@ -84,31 +87,45 @@ server.on('upgrade', async (req, socket) => {
     try {
         const remoteRequested = url.searchParams.has('device')
         const auth = await authenticate(req)
-        if (!auth && (remoteRequested || !localRequest(req))) {
+        if (!auth && (remoteRequested || inspectorRequested || !localRequest(req))) {
             socket.write('HTTP/1.1 401 Unauthorized\r\nConnection: close\r\n\r\n')
             socket.destroy()
             return
         }
         const ws = accept(req, socket)
         if (ws) {
-            const guard = async () => (!remoteRequested && localRequest(req)) || !!await authenticate(req)
+            const guard = async () => (!remoteRequested && !inspectorRequested && localRequest(req)) || !!await authenticate(req)
             if (auth) {
                 const revoke = (hash: string) => { if (hash === auth.hash) ws.close(4401) }
                 authEvents.on('revoke', revoke)
                 const expiry = setInterval(() => { if (auth.expires <= Date.now()) ws.close(4401) }, 30000)
                 socket.on('close', () => { authEvents.off('revoke', revoke); clearInterval(expiry) })
             }
-            if (remoteRequested) {
+            if (inspectorRequested) {
+                const serial = url.searchParams.get('serial') || ''
+                const viewer = url.searchParams.get('viewer') || ''
+                const authorized = async () => ownsDevice(viewer, serial, auth!.hash) && await guard()
+                await connectInspector(ws, serial, url.searchParams.get('socket') || '', url.searchParams.get('id') || '', authorized)
+            } else if (remoteRequested) {
+                let lease: ReturnType<typeof reserveDevice> | undefined
+                const waiting = setInterval(() => {
+                    if (Date.now() - ws.lastReceivedAt > 15000) ws.close(1001)
+                    else ws.ping()
+                }, 5000)
                 try {
+                    lease = reserveDevice(url.searchParams.get('device') ?? '', auth!.hash)
+                    ws.on({ onClose: () => { clearInterval(waiting); lease?.release() } })
+                    ws.send(JSON.stringify({ type: 'reserved' }))
                     const remote = await prepareRemoteDevice(url.searchParams.get('device') ?? '')
                     if (!ws.isOpen) return
                     if (!await guard()) { ws.close(4401); return }
-                    if (ws.isOpen) connectRemoteDevice(ws, remote, guard)
+                    clearInterval(waiting)
+                    if (ws.isOpen) connectRemoteDevice(ws, remote, guard, undefined, lease)
                 } catch (error) {
                     const known = error instanceof RemoteDeviceError
                     ws.send(JSON.stringify({ type: 'error', error: known ? error.message : '기기 상태를 확인하지 못했어요. 다시 열어 주세요' }))
                     ws.close(known && error.status < 500 ? (error.status === 404 ? 4404 : 4409) : 4503)
-                }
+                } finally { clearInterval(waiting) }
             } else studio.connect(ws, guard)
         }
     } catch { socket.destroy() }

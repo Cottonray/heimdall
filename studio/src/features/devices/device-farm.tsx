@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { ExternalLink, RefreshCw } from "lucide-react";
+import { ExternalLink, RefreshCw, LayoutGrid, List } from "lucide-react";
 import { PageHeader } from "@/components/page-header";
 import { PlatformIcon } from "@/components/platform-icon";
 import { Button } from "@/components/ui/button";
@@ -10,22 +10,27 @@ import { Item } from "@/components/ui/item";
 import { API } from "@/lib/api";
 import { APP_ROOT } from "@/lib/paths";
 import type { DeviceInfo } from "../../../../contracts/studio";
-
-function deviceStatus(device: DeviceInfo, lookupFailed: boolean) {
-  if (lookupFailed || device.error) return "상태 확인 불가";
-  if (device.state === "unauthorized") return "승인 대기";
-  if (device.state === "offline") return "오프라인";
-  if (device.state !== "device" || device.ready === undefined)
-    return "상태 확인 불가";
-  if (!device.ready) return "부팅 중";
-  return device.kind === "emulator" ? "실행 중" : "사용 가능";
-}
+import { DataTable } from "@/components/data-table";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  deviceStatus,
+  matchesDeviceFilter,
+  type DeviceFilter,
+} from "./device-status";
 
 export function DeviceFarm({ active }: { active: boolean }) {
   const [devices, setDevices] = useState<DeviceInfo[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [revision, setRevision] = useState(0);
+  const [view, setView] = useState<"cards" | "list">("cards");
+  const [filter, setFilter] = useState<DeviceFilter>("available");
   useEffect(() => {
     if (!active) return;
     const controller = new AbortController();
@@ -56,13 +61,20 @@ export function DeviceFarm({ active }: { active: boolean }) {
       }
     }
     void refresh();
-    const timer = setInterval(() => void refresh(), 15000);
+    const timer = setInterval(() => void refresh(), 3000);
+    window.addEventListener("focus", refresh);
     return () => {
       controller.abort();
       clearInterval(timer);
+      window.removeEventListener("focus", refresh);
     };
   }, [active, revision]);
   const virtual = devices.filter((device) => device.kind === "emulator").length;
+  const visibleDevices = devices.filter((device) =>
+    matchesDeviceFilter(device, filter, !!error),
+  );
+  const remoteUrl = (device: DeviceInfo) =>
+    APP_ROOT + "?" + new URLSearchParams({ device: device.serial });
   return (
     <div className="space-y-8">
       <PageHeader
@@ -76,6 +88,43 @@ export function DeviceFarm({ active }: { active: boolean }) {
         }
         actions={
           <>
+            <Select
+              value={filter}
+              onValueChange={(value) => setFilter(value as DeviceFilter)}
+            >
+              <SelectTrigger aria-label="디바이스 상태 필터">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="available">사용가능</SelectItem>
+                <SelectItem value="in-use">사용 중</SelectItem>
+                <SelectItem value="all">전체</SelectItem>
+              </SelectContent>
+            </Select>
+            <div
+              role="group"
+              aria-label="보기 방식"
+              className="flex items-center gap-1"
+            >
+              <Button
+                variant={view === "cards" ? "secondary" : "ghost"}
+                size="icon"
+                aria-label="카드보기"
+                aria-pressed={view === "cards"}
+                onClick={() => setView("cards")}
+              >
+                <LayoutGrid />
+              </Button>
+              <Button
+                variant={view === "list" ? "secondary" : "ghost"}
+                size="icon"
+                aria-label="목록보기"
+                aria-pressed={view === "list"}
+                onClick={() => setView("list")}
+              >
+                <List />
+              </Button>
+            </div>
             <Button
               variant="outline"
               disabled={loading}
@@ -116,14 +165,84 @@ export function DeviceFarm({ active }: { active: boolean }) {
             </Card>
           ))}
         </div>
+      ) : view === "list" ? (
+        <DataTable
+          data={visibleDevices}
+          caption="디바이스 목록"
+          getRowId={(device) => device.serial}
+          getRowLabel={(device) => device.model || device.serial}
+          searchText={(device) =>
+            `${device.model} ${device.serial} ${device.platform}`
+          }
+          searchPlaceholder="기기 이름 또는 ID 검색"
+          emptyMessage="선택한 상태의 기기가 없어요."
+          columns={[
+            {
+              id: "name",
+              header: "기기",
+              sortValue: (device) => device.model || device.serial,
+              cell: (device) => (
+                <div className="flex items-center gap-2">
+                  <PlatformIcon platform={device.platform || "android"} />
+                  {device.model || device.serial}
+                </div>
+              ),
+            },
+            {
+              id: "status",
+              header: "상태",
+              sortValue: (device) => deviceStatus(device, !!error),
+              cell: (device) => (
+                <Badge
+                  variant={
+                    deviceStatus(device, !!error) === "사용가능"
+                      ? "success"
+                      : "outline"
+                  }
+                >
+                  {deviceStatus(device, !!error)}
+                </Badge>
+              ),
+            },
+            {
+              id: "kind",
+              header: "유형",
+              cell: (device) =>
+                device.kind === "emulator" ? "가상 기기" : "실물 기기",
+            },
+            { id: "serial", header: "ID", cell: (device) => device.serial },
+            {
+              id: "open",
+              header: "연결",
+              cell: (device) =>
+                deviceStatus(device, !!error) === "사용가능" ? (
+                  <Button variant="outline" size="sm" asChild>
+                    <a
+                      href={remoteUrl(device)}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      aria-label={`${device.model || device.serial} 원격 조작 새 창 열기`}
+                    >
+                      <ExternalLink />
+                      연결
+                    </a>
+                  </Button>
+                ) : (
+                  <span className="text-muted-foreground">
+                    {deviceStatus(device, !!error)}
+                  </span>
+                ),
+            },
+          ]}
+        />
       ) : (
         <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-          {devices.map((device) => {
+          {visibleDevices.map((device) => {
             const platform = device.platform || "android";
             const platformName = platform === "ios" ? "iOS" : "Android";
             const virtual = device.kind === "emulator";
             const state = deviceStatus(device, !!error);
-            const ready = state === "실행 중" || state === "사용 가능";
+            const ready = state === "사용가능";
             const name =
               device.model ||
               `${platformName} ${virtual ? "가상 기기" : "실물 기기"}`;
@@ -137,10 +256,13 @@ export function DeviceFarm({ active }: { active: boolean }) {
                 asChild
               >
                 <a
-                  href={remoteUrl}
+                  href={ready ? remoteUrl : undefined}
+                  aria-disabled={!ready}
                   target="_blank"
                   rel="noopener noreferrer"
-                  aria-label={`${name} 원격 조작 새 창 열기`}
+                  aria-label={
+                    ready ? `${name} 원격 조작 새 창 열기` : `${name} ${state}`
+                  }
                 >
                   <div className="space-y-6">
                     <div className="space-y-3">
@@ -186,8 +308,10 @@ export function DeviceFarm({ active }: { active: boolean }) {
           })}
         </div>
       )}
-      {!loading && !error && !devices.length && (
-        <p className="text-sm text-muted-foreground">표시할 기기가 없어요.</p>
+      {!loading && !error && !visibleDevices.length && view === "cards" && (
+        <p className="text-sm text-muted-foreground">
+          선택한 상태의 기기가 없어요.
+        </p>
       )}
     </div>
   );
