@@ -195,9 +195,9 @@ export function DeviceFarm({
             )}
 
             <RefreshControl
+              storageKey={management ? "device-admin" : "devices"}
               busy={loading}
               active={active}
-              defaultInterval={3}
               onRefresh={() => setRevision((value) => value + 1)}
             />
           </>

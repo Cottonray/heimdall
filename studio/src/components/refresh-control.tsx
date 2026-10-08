@@ -13,14 +13,23 @@ export function RefreshControl({
   onRefresh,
   busy = false,
   active = true,
-  defaultInterval = 0,
+  storageKey,
 }: {
   onRefresh: () => void;
   busy?: boolean;
   active?: boolean;
-  defaultInterval?: number;
+  storageKey: string;
 }) {
-  const [interval, setIntervalValue] = useState(defaultInterval);
+  const [interval, setIntervalValue] = useState(() => {
+    try {
+      const saved = Number(
+        localStorage.getItem(`heimdall-refresh-${storageKey}`),
+      );
+      return [0, 3, 5, 10, 30, 60].includes(saved) ? saved : 0;
+    } catch {
+      return 0;
+    }
+  });
   const latest = useRef({ onRefresh, busy });
   latest.current = { onRefresh, busy };
   useEffect(() => {
@@ -36,22 +45,20 @@ export function RefreshControl({
       aria-label="새로고침 설정"
       className="inline-flex shrink-0 items-center"
     >
-      <Button
-        variant="outline"
-        disabled={busy}
-        onClick={onRefresh}
-        className="rounded-r-none shadow-none"
-      >
-        <RefreshCw className={busy ? "animate-spin" : undefined} />
-        새로고침
-      </Button>
       <Select
         value={String(interval)}
-        onValueChange={(value) => setIntervalValue(Number(value))}
+        onValueChange={(value) => {
+          setIntervalValue(Number(value));
+          try {
+            localStorage.setItem(`heimdall-refresh-${storageKey}`, value);
+          } catch {
+            /* Storage may be unavailable. */
+          }
+        }}
       >
         <SelectTrigger
           aria-label="새로고침 주기"
-          className="-ml-px w-28 rounded-l-none shadow-none"
+          className="w-28 rounded-r-none shadow-none"
         >
           <SelectValue />
         </SelectTrigger>
@@ -63,6 +70,15 @@ export function RefreshControl({
           ))}
         </SelectContent>
       </Select>
+      <Button
+        variant="outline"
+        disabled={busy}
+        onClick={onRefresh}
+        className="-ml-px rounded-l-none shadow-none"
+      >
+        <RefreshCw className={busy ? "animate-spin" : undefined} />
+        새로고침
+      </Button>
     </div>
   );
 }

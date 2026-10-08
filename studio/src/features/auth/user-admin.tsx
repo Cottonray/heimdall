@@ -83,6 +83,7 @@ export function UserAdmin({ active = true }: { active?: boolean }) {
         title="사용자 관리"
         actions={
           <RefreshControl
+            storageKey="users"
             busy={loading}
             active={active}
             onRefresh={() => setRevision((value) => value + 1)}

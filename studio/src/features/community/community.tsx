@@ -85,6 +85,7 @@ export function Community({
           actions={
             <>
               <RefreshControl
+                storageKey="community"
                 busy={loading}
                 active={active && !reading && !editing}
                 onRefresh={() => setRevision((value) => value + 1)}
