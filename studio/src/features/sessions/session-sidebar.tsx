@@ -5,6 +5,7 @@ import { PanelLeftClose, PanelLeftOpen } from "lucide-react";
 import { Brain, MessageSquare } from "lucide-react";
 import {
   Users,
+  Play,
   Settings2,
   Database,
   ListChecks,
@@ -112,6 +113,7 @@ export function SessionSidebar({
                 { page: "dashboard", label: "대시보드", icon: LayoutDashboard },
                 { page: "test-data", label: "테스트데이터", icon: Database },
                 { page: "scenarios", label: "시나리오", icon: ListChecks },
+                { page: "execution", label: "테스트 실행", icon: Play },
                 { page: "history", label: "테스트 기록", icon: History },
               ]
             : [
@@ -289,6 +291,15 @@ export function SessionSidebar({
               >
                 <ListChecks />
                 시나리오
+              </Button>
+              <Button
+                variant={active === "execution" ? "secondary" : "ghost"}
+                aria-current={active === "execution" ? "page" : undefined}
+                onClick={() => onNavigate("execution")}
+                className="justify-start"
+              >
+                <Play />
+                테스트 실행
               </Button>
               <Button
                 variant={active === "history" ? "secondary" : "ghost"}

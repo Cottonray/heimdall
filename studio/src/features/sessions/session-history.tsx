@@ -1,8 +1,16 @@
 import { Button } from "@/components/ui/button";
 import { DataTable } from "@/components/data-table";
-import { StatusBadge } from "@/components/status-badge";
+import { Badge } from "@/components/ui/badge";
 import { engines } from "@/lib/labels";
 import type { Session } from "../../../../contracts/studio";
+function executionStatus(s: Session) {
+  if (
+    s.working ||
+    ["opening", "manual", "ai", "replay", "paused"].includes(s.state)
+  )
+    return "실행중";
+  return s.steps.some((step) => !step.ok || !!step.error) ? "오류" : "정상";
+}
 export function SessionHistory({
   sessions,
   onDelete,
@@ -54,8 +62,23 @@ export function SessionHistory({
           {
             id: "state",
             header: "상태",
-            sortValue: (s) => s.state,
-            cell: (s) => <StatusBadge state={s.state} />,
+            sortValue: executionStatus,
+            cell: (s) => {
+              const status = executionStatus(s);
+              return (
+                <Badge
+                  variant={
+                    status === "오류"
+                      ? "destructive"
+                      : status === "정상"
+                        ? "success"
+                        : "default"
+                  }
+                >
+                  {status}
+                </Badge>
+              );
+            },
           },
           {
             id: "updated",
