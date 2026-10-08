@@ -1,3 +1,4 @@
+import { ErrorToast } from "@/components/error-toast";
 import {
   Tabs,
   TabsList,
@@ -101,9 +102,7 @@ export function RemoteDevice({
           </div>
           <div className="min-w-0">
             <h1 className="truncate text-lg font-semibold">{name}</h1>
-            <p className="truncate text-xs text-muted-foreground">
-              {serial}
-            </p>
+            <p className="truncate text-xs text-muted-foreground">{serial}</p>
           </div>
         </div>
         <div className="flex shrink-0 items-center gap-2">
@@ -125,11 +124,7 @@ export function RemoteDevice({
           </Button>
         </div>
       </div>
-      {remote.error && (
-        <p role="alert" className="shrink-0 text-sm text-destructive">
-          {remote.error}
-        </p>
-      )}
+      <ErrorToast message={remote.error || capture.error || undefined} />
       <div className="flex min-h-0 flex-1">
         <div className="flex min-h-0 min-w-0 flex-1 flex-col gap-4 p-4">
           <div className="flex min-h-0 flex-1 items-center justify-center overflow-hidden rounded-lg border bg-muted/40">
@@ -306,11 +301,7 @@ export function RemoteDevice({
                 </span>
               )}
             </div>
-            {capture.error && (
-              <p role="alert" className="text-sm text-destructive">
-                {capture.error}
-              </p>
-            )}
+
             <form
               className="flex items-center gap-2"
               onSubmit={async (event) => {

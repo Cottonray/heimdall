@@ -228,11 +228,6 @@ export function WebViewDebugging({
           일부 웹뷰가 응답하지 않아요. 잠시 후 다시 확인해 주세요.
         </p>
       )}
-      {!canControl && (
-        <p className="text-sm text-muted-foreground">
-          기기를 점유한 상태에서 인스펙터를 열 수 있어요.
-        </p>
-      )}
       {current ? (
         <iframe
           key={current.instance}
