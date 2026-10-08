@@ -274,7 +274,7 @@ export async function handle(
       send(200, {
         browser: await worker("/healthz").catch(() => ({ ok: false })),
         android: await device.state(),
-        llm: !!process.env.AIQA_OPENROUTER_API_KEY,
+        llm: (await aiModel()).configured,
         projects: await listProjects(),
         domains: await listDomains(),
         sessions: await listSessions(
@@ -317,7 +317,7 @@ export async function handle(
     }
     const data = JSON.parse(body || "{}");
     if (route === "/api/studio/admin/ai-model") {
-      await saveAiModel(data.model);
+      await saveAiModel(data);
       send(200, await aiModel());
       return true;
     }
