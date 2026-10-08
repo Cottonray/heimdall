@@ -100,7 +100,6 @@ export function DeviceFarm({
       window.removeEventListener("focus", refresh);
     };
   }, [active, revision]);
-  const virtual = devices.filter((device) => device.kind === "emulator").length;
   const visibleDevices = devices.filter((device) =>
     matchesDeviceFilter(device, filter, !!error),
   );
@@ -110,13 +109,6 @@ export function DeviceFarm({
     <div className="space-y-8">
       <PageHeader
         title={management ? "기기관리" : "디바이스팜"}
-        description={
-          error
-            ? "기기 상태 확인 불가"
-            : loading && !devices.length
-              ? "기기 확인 중"
-              : `가상 ${virtual}대 · 실물 ${devices.length - virtual}대`
-        }
         actions={
           <>
             <Select
