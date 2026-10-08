@@ -1,3 +1,4 @@
+import { aiModel, saveAiModel } from "../infrastructure/ai-model.ts";
 import { posts, savePost } from "../infrastructure/community.ts";
 import {
   deviceMetadata,
@@ -105,6 +106,20 @@ export async function handle(
       }
       if (req.method === "GET") {
         send(200, await deviceMetadata());
+        return true;
+      }
+      if (req.method !== "POST") {
+        send(405, {});
+        return true;
+      }
+    }
+    if (route === "/api/studio/admin/ai-model") {
+      if (auth?.user.role !== "admin") {
+        send(403, { error: "관리자만 이용할 수 있어요" });
+        return true;
+      }
+      if (req.method === "GET") {
+        send(200, await aiModel());
         return true;
       }
       if (req.method !== "POST") {
@@ -288,6 +303,11 @@ export async function handle(
         throw new Error("요청이 너무 커요");
     }
     const data = JSON.parse(body || "{}");
+    if (route === "/api/studio/admin/ai-model") {
+      await saveAiModel(data.model);
+      send(200, await aiModel());
+      return true;
+    }
     if (route === "/api/studio/community") {
       await savePost(auth!.user, data);
       send(200, { ok: true });

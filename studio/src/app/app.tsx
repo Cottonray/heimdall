@@ -1,3 +1,4 @@
+import { AiModelAdmin } from "@/features/auth/ai-model-admin";
 import { Community } from "@/features/community/community";
 import { SortableTabsList } from "@/components/ui/sortable-tabs-list";
 import { UserAdmin } from "@/features/auth/user-admin";
@@ -109,6 +110,7 @@ export function App() {
       "community",
       "device-admin",
       "user-admin",
+      "ai-models",
     ].includes(w.activeTab) && !!w.projectId;
   return (
     <div className="flex h-dvh flex-col overflow-hidden bg-background text-foreground md:flex-row">
@@ -135,36 +137,38 @@ export function App() {
               <SortableTabsList order={visibleTabs} onMove={w.store.moveTab}>
                 {(w.user ? visibleTabs : ["projects"]).map((id) => {
                   const label =
-                    id === "community"
-                      ? "커뮤니티"
-                      : id === "execution"
-                        ? "테스트 실행"
-                        : id === "device-admin"
-                          ? "기기관리"
-                          : id === "user-admin"
-                            ? "사용자 관리"
-                            : id === "test-data"
-                              ? "테스트데이터"
-                              : id === "scenarios"
-                                ? "시나리오"
-                                : id === "board"
-                                  ? "워크스페이스"
-                                  : id === "domains"
-                                    ? "도메인"
-                                    : id === "projects"
-                                      ? "프로젝트"
-                                      : id === "dashboard"
-                                        ? "대시보드"
-                                        : id === "history"
-                                          ? "테스트 기록"
-                                          : id === "settings" ||
-                                              id === "project-settings"
-                                            ? id === "settings"
-                                              ? "설정"
-                                              : "프로젝트 설정"
-                                            : w.sessions.find(
-                                                (s) => s.id === id,
-                                              )?.name || "테스트";
+                    id === "ai-models"
+                      ? "AI 모델 관리"
+                      : id === "community"
+                        ? "커뮤니티"
+                        : id === "execution"
+                          ? "테스트 실행"
+                          : id === "device-admin"
+                            ? "기기관리"
+                            : id === "user-admin"
+                              ? "사용자 관리"
+                              : id === "test-data"
+                                ? "테스트데이터"
+                                : id === "scenarios"
+                                  ? "시나리오"
+                                  : id === "board"
+                                    ? "워크스페이스"
+                                    : id === "domains"
+                                      ? "도메인"
+                                      : id === "projects"
+                                        ? "프로젝트"
+                                        : id === "dashboard"
+                                          ? "대시보드"
+                                          : id === "history"
+                                            ? "테스트 기록"
+                                            : id === "settings" ||
+                                                id === "project-settings"
+                                              ? id === "settings"
+                                                ? "설정"
+                                                : "프로젝트 설정"
+                                              : w.sessions.find(
+                                                  (s) => s.id === id,
+                                                )?.name || "테스트";
                   const Icon =
                     id === "projects"
                       ? Folder
@@ -263,6 +267,12 @@ export function App() {
                     />
                   ) : id === "community" ? (
                     <Community user={w.user!} />
+                  ) : id === "ai-models" ? (
+                    w.user?.role === "admin" ? (
+                      <AiModelAdmin />
+                    ) : (
+                      <p>관리자만 이용할 수 있어요.</p>
+                    )
                   ) : id === "user-admin" ? (
                     w.user?.role === "admin" ? (
                       <UserAdmin />

@@ -1,3 +1,4 @@
+import { aiModel } from "./ai-model.ts";
 export async function complete(system: string, content: string) {
   const key = process.env.AIQA_OPENROUTER_API_KEY;
   if (!key) throw new Error("OpenRouter 키가 설정되지 않았어요");
@@ -11,7 +12,7 @@ export async function complete(system: string, content: string) {
         "x-title": "AI QA Studio",
       },
       body: JSON.stringify({
-        model: process.env.AIQA_LLM_MODEL || "deepseek/deepseek-v4.1-flash",
+        model: (await aiModel()).model,
         reasoning: { enabled: false },
         temperature: 0.1,
         max_tokens: 1200,

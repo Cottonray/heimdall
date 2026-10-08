@@ -1,4 +1,4 @@
-import { MessageSquare } from "lucide-react";
+import { Brain, MessageSquare } from "lucide-react";
 import {
   Users,
   Settings2,
@@ -82,6 +82,14 @@ export function SessionSidebar({
           </Button>
           {admin && (
             <>
+              <Button
+                variant={active === "ai-models" ? "secondary" : "ghost"}
+                onClick={() => onNavigate("ai-models")}
+                className="justify-start"
+              >
+                <Brain />
+                AI 모델 관리
+              </Button>
               <Button
                 variant={active === "device-admin" ? "secondary" : "ghost"}
                 onClick={() => onNavigate("device-admin")}
