@@ -1,3 +1,5 @@
+import { useEffect, useState } from "react";
+import { Skeleton } from "@/components/ui/skeleton";
 import { Item } from "@/components/ui/item";
 import { Plus, ArrowUpRight, Check, Minus } from "lucide-react";
 import {
@@ -42,12 +44,25 @@ export function Dashboard({
   onNew,
   onSelect,
   overview = false,
+  loading = false,
+  active = true,
 }: {
   sessions: Session[];
   onNew?: () => void;
   onSelect?: (id: string) => void;
   overview?: boolean;
+  loading?: boolean;
+  active?: boolean;
 }) {
+  const [reducedMotion, setReducedMotion] = useState(
+    () => window.matchMedia("(prefers-reduced-motion: reduce)").matches,
+  );
+  useEffect(() => {
+    const query = window.matchMedia("(prefers-reduced-motion: reduce)");
+    const update = () => setReducedMotion(query.matches);
+    query.addEventListener("change", update);
+    return () => query.removeEventListener("change", update);
+  }, []);
   const metrics = buildMetrics(sessions);
   const coverageData = [
     { name: "covered", value: metrics.covered, fill: "var(--primary)" },
@@ -79,6 +94,53 @@ export function Dashboard({
       detail: `검증 실패 ${metrics.failed}회 포함`,
     },
   ];
+  if (loading)
+    return (
+      <div
+        className="space-y-6"
+        role="status"
+        aria-label="테스트 현황을 불러오는 중"
+        aria-busy="true"
+      >
+        <Skeleton className="h-8 w-36" />
+        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+          {[0, 1, 2, 3].map((index) => (
+            <Card key={index}>
+              <CardHeader>
+                <Skeleton className="h-4 w-24" />
+              </CardHeader>
+              <CardContent className="space-y-3">
+                <Skeleton className="h-9 w-20" />
+                <Skeleton className="h-3 w-32" />
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+        <div className="grid gap-5 xl:grid-cols-2">
+          {[0, 1].map((index) => (
+            <Card key={index}>
+              <CardHeader>
+                <Skeleton className="h-5 w-40" />
+              </CardHeader>
+              <CardContent>
+                <Skeleton className="h-64 w-full" />
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+        {onSelect && (
+          <Card>
+            <CardHeader>
+              <Skeleton className="h-5 w-24" />
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <Skeleton className="h-12 w-full" />
+              <Skeleton className="h-12 w-full" />
+            </CardContent>
+          </Card>
+        )}
+      </div>
+    );
   return (
     <div className="space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-4">
@@ -129,7 +191,7 @@ export function Dashboard({
                   className="h-56 w-full"
                   aria-label={`전체 4개 유형 중 ${metrics.covered}개 유형에서 검증 실행, ${metrics.coverage}%`}
                 >
-                  <PieChart accessibilityLayer>
+                  <PieChart key={String(active)} accessibilityLayer>
                     <Pie
                       data={coverageData}
                       dataKey="value"
@@ -139,7 +201,9 @@ export function Dashboard({
                       startAngle={90}
                       endAngle={-270}
                       strokeWidth={0}
-                      isAnimationActive={false}
+                      isAnimationActive={active && !reducedMotion}
+                      animationDuration={800}
+                      animationEasing="ease-out"
                     />
                     <ChartTooltip
                       content={<ChartTooltipContent nameKey="name" hideLabel />}
@@ -188,7 +252,11 @@ export function Dashboard({
               className="h-56 w-full"
               aria-label="최근 7일 일별 검증 통과 및 실패 횟수"
             >
-              <BarChart accessibilityLayer data={metrics.daily}>
+              <BarChart
+                key={String(active)}
+                accessibilityLayer
+                data={metrics.daily}
+              >
                 <CartesianGrid vertical={false} stroke="var(--border)" />
                 <XAxis
                   dataKey="label"
@@ -208,14 +276,18 @@ export function Dashboard({
                   stackId="checks"
                   fill="var(--primary)"
                   radius={3}
-                  isAnimationActive={false}
+                  isAnimationActive={active && !reducedMotion}
+                  animationDuration={800}
+                  animationEasing="ease-out"
                 />
                 <Bar
                   dataKey="failed"
                   stackId="checks"
                   fill="var(--destructive)"
                   radius={3}
-                  isAnimationActive={false}
+                  isAnimationActive={active && !reducedMotion}
+                  animationDuration={800}
+                  animationEasing="ease-out"
                 />
               </BarChart>
             </ChartContainer>

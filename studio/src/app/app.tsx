@@ -291,6 +291,8 @@ export function App() {
                     <DeviceFarm active={w.activeTab === "devices"} />
                   ) : id === "dashboard" ? (
                     <Dashboard
+                      loading={w.loading}
+                      active={w.activeTab === id}
                       sessions={w.status?.sessions || []}
                       onSelect={w.store.select}
                     />
