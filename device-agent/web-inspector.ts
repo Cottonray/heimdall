@@ -139,3 +139,10 @@ export async function inspector(
   client.bytes -= bytes;
   return { events };
 }
+
+export function stopInspector() {
+  for (const client of clients.values()) client.ws.close();
+  clients.clear();
+  void bridge?.then(server => server.stop()).catch(() => {});
+  bridge = undefined;
+}

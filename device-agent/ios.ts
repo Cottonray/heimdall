@@ -1,4 +1,4 @@
-import { inspector } from "./web-inspector.ts";
+import { inspector, stopInspector } from "./web-inspector.ts";
 import { installApp } from "./app-install.ts";
 import { iosWebDebug } from "../server/src/studio/domain/ios-web-debug.ts";
 import { remoteAction } from "../server/src/studio/domain/remote-device.ts";
@@ -20,6 +20,7 @@ const video = new LatestJpeg();
 const hid = new SimulatorHid(udid);
 let nativeCommands = Promise.resolve<unknown>(undefined);
 export function stop() {
+  stopInspector();
   video.stop();
   hid.stop();
 }
