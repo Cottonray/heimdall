@@ -72,7 +72,7 @@ async function saved(id: string) {
 }
 async function observe(s: Session) {
     if (s.engine === 'android') {
-        s.observation = { serial: device.target(), tree: (await appium.source(s.appiumId!)).map(n => ({ text: n.text, selector: n.id, desc: n.desc, bounds: n.bounds })), ...(await device.screenSize()) }
+        s.observation = { serial: device.target(), tree: (await appium.source(s.appiumId!)).filter(n=>n.package===device.APP_ID).map(n => ({ text: n.text, selector: n.id, desc: n.desc, bounds: n.bounds })), ...(await device.screenSize()) }
     } else s.observation = await worker(`/observe?id=${s.id}`)
     return s.observation
 }

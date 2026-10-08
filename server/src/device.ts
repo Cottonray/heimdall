@@ -393,6 +393,7 @@ export async function currentActivity(): Promise<string> {
 // ── 화면에 무엇이 있나 ────────────────────────────────────────────────────────
 
 export type UiNode = {
+    package?: string
     text: string
     /** resource-id 의 뒷부분. Compose 의 testTag 가 여기로 나온다 */
     id: string
@@ -451,6 +452,7 @@ export function parseUiSource(xml: string): UiNode[] {
         const b = at('bounds').match(/\[(-?\d+),(-?\d+)\]\[(-?\d+),(-?\d+)\]/)
         if (!b) continue
         nodes.push({
+            package: at('package'),
             text: decodeXml(at('text')),
             // "com.pkg:id/tag" 에서 뒤만 쓴다. 시나리오에 패키지 이름을 적게 하지 않으려는 것
             id: at('resource-id').split('/').pop() ?? '',
