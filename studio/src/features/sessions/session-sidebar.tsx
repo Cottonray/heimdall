@@ -5,7 +5,6 @@ import {
   Play,
   Database,
   ListChecks,
-  PanelsTopLeft,
   Folder,
   Smartphone,
 } from "lucide-react";
@@ -151,14 +150,7 @@ export function SessionSidebar({
               <LayoutDashboard />
               대시보드
             </Button>
-            <Button
-              variant={active === "board" ? "secondary" : "ghost"}
-              onClick={() => onNavigate("board")}
-              className="justify-start"
-            >
-              <PanelsTopLeft />
-              워크스페이스
-            </Button>
+            {/* 워크스페이스 메뉴 임시 숨김: 기능과 저장 데이터는 유지해요. */}
             <Button
               variant={active === "test-data" ? "secondary" : "ghost"}
               onClick={() => onNavigate("test-data")}
