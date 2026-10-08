@@ -74,7 +74,7 @@ export function ProfileEditor({
     });
   return (
     <div className="space-y-6" aria-busy={locked}>
-      <div className="space-y-3">
+      <div className="flex flex-col items-center gap-3 text-center">
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button
@@ -143,85 +143,87 @@ export function ProfileEditor({
         </div>
       </div>
       <Separator />
-      {user.passwordChangeAllowed ? (
-        <form
-          onSubmit={(event) => {
-            event.preventDefault();
-            void run(async () => {
-              if (newPassword !== confirmation)
-                throw new Error("새 비밀번호가 일치하지 않아요.");
-              const result = await onChangePassword(
-                currentPassword,
-                newPassword,
-              );
-              if (!result.ok)
-                throw new Error(
-                  result.error || "비밀번호를 변경하지 못했어요.",
-                );
-              setCurrentPassword("");
-              setNewPassword("");
-              setConfirmation("");
-              setFeedback({ error: false, message: "비밀번호를 변경했어요." });
-            });
-          }}
+      <form
+        onSubmit={(event) => {
+          event.preventDefault();
+          if (!user.passwordChangeAllowed) return;
+          void run(async () => {
+            if (newPassword !== confirmation)
+              throw new Error("새 비밀번호가 일치하지 않아요.");
+            const result = await onChangePassword(currentPassword, newPassword);
+            if (!result.ok)
+              throw new Error(result.error || "비밀번호를 변경하지 못했어요.");
+            setCurrentPassword("");
+            setNewPassword("");
+            setConfirmation("");
+            setFeedback({ error: false, message: "비밀번호를 변경했어요." });
+          });
+        }}
+      >
+        <fieldset
+          disabled={locked || !user.passwordChangeAllowed}
+          aria-describedby={
+            !user.passwordChangeAllowed ? id + "-password-disabled" : undefined
+          }
+          className="space-y-4"
         >
-          <fieldset disabled={locked} className="space-y-4">
-            <legend className="mb-4 text-sm font-semibold">
-              비밀번호 변경
-            </legend>
-            <div className="space-y-2">
-              <Label htmlFor={id + "-current-password"}>현재 비밀번호</Label>
-              <Input
-                id={id + "-current-password"}
-                type="password"
-                autoComplete="current-password"
-                required
-                maxLength={256}
-                value={currentPassword}
-                onChange={(event) => setCurrentPassword(event.target.value)}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor={id + "-new-password"}>새 비밀번호</Label>
-              <Input
-                id={id + "-new-password"}
-                type="password"
-                autoComplete="new-password"
-                required
-                minLength={12}
-                maxLength={256}
-                aria-describedby={id + "-password-help"}
-                value={newPassword}
-                onChange={(event) => setNewPassword(event.target.value)}
-              />
-              <p
-                id={id + "-password-help"}
-                className="text-xs text-muted-foreground"
-              >
-                12자 이상 입력해 주세요.
-              </p>
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor={id + "-confirm-password"}>새 비밀번호 확인</Label>
-              <Input
-                id={id + "-confirm-password"}
-                type="password"
-                autoComplete="new-password"
-                required
-                minLength={12}
-                maxLength={256}
-                value={confirmation}
-                onChange={(event) => setConfirmation(event.target.value)}
-              />
-            </div>
-            <Button type="submit" disabled={locked}>
-              <LockKeyhole />
-              비밀번호 변경
-            </Button>
-          </fieldset>
-        </form>
-      ) : (
-        <p className="text-sm text-muted-foreground">
+          <legend className="mb-4 text-sm font-semibold">비밀번호 변경</legend>
+          <div className="space-y-2">
+            <Label htmlFor={id + "-current-password"}>현재 비밀번호</Label>
+            <Input
+              id={id + "-current-password"}
+              type="password"
+              autoComplete="current-password"
+              required
+              maxLength={256}
+              value={currentPassword}
+              onChange={(event) => setCurrentPassword(event.target.value)}
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor={id + "-new-password"}>새 비밀번호</Label>
+            <Input
+              id={id + "-new-password"}
+              type="password"
+              autoComplete="new-password"
+              required
+              minLength={12}
+              maxLength={256}
+              aria-describedby={id + "-password-help"}
+              value={newPassword}
+              onChange={(event) => setNewPassword(event.target.value)}
+            />
+            <p
+              id={id + "-password-help"}
+              className="text-xs text-muted-foreground"
+            >
+              12자 이상 입력해 주세요.
+            </p>
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor={id + "-confirm-password"}>새 비밀번호 확인</Label>
+            <Input
+              id={id + "-confirm-password"}
+              type="password"
+              autoComplete="new-password"
+              required
+              minLength={12}
+              maxLength={256}
+              value={confirmation}
+              onChange={(event) => setConfirmation(event.target.value)}
+            />
+          </div>
+          <Button
+            type="submit"
+            disabled={locked || !user.passwordChangeAllowed}
+          >
+            <LockKeyhole />
+            비밀번호 변경
+          </Button>
+        </fieldset>
+      </form>
+      {!user.passwordChangeAllowed && (
+        <p id={id + "-password-disabled"} className="text-sm text-destructive">
           테스트용 계정은 비밀번호를 변경할 수 없어요.
         </p>
       )}
