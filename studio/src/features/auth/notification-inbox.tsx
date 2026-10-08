@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react";
 import { Bell, CheckCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import {
   Popover,
   PopoverContent,
@@ -74,10 +73,18 @@ export function NotificationInbox({ userId }: { userId: string }) {
       <PopoverTrigger asChild>
         <Button
           variant="ghost"
+          size="icon"
+          className="relative size-9 rounded-full text-muted-foreground hover:bg-accent hover:text-foreground data-[state=open]:bg-accent data-[state=open]:text-foreground"
+          title="알림함"
           aria-label={`알림함${unread.length ? ` · 안 읽은 알림 ${unread.length}개` : ""}`}
         >
-          <Bell />
-          {unread.length > 0 && <Badge>{unread.length}</Badge>}
+          <Bell aria-hidden="true" className="size-[18px]" />
+          {unread.length > 0 && (
+            <span
+              aria-hidden="true"
+              className="pointer-events-none absolute right-2 top-1.5 size-1.5 rounded-full bg-primary ring-2 ring-background"
+            />
+          )}
         </Button>
       </PopoverTrigger>
       <PopoverContent aria-label="알림함">
