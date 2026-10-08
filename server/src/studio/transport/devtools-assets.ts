@@ -15,7 +15,7 @@ let cachedBytes = 0;
 export function assetPath(route: string) {
   const path = route.slice("/api/studio/devtools/".length);
   if (
-    !/^serve_rev\/@[a-f0-9]{40}\/[A-Za-z0-9_./-]+\.(?:html|js|css|svg|png|wasm|json)$/.test(
+    !/^serve_rev\/@[a-f0-9]{40}\/[A-Za-z0-9_./-]+\.(?:html|js|css|svg|png|wasm|json|woff2)$/.test(
       path,
     ) ||
     path.split("/").some((part) => part === ".." || part === ".")
@@ -49,7 +49,13 @@ export async function serveDevTools(res: ServerResponse, route: string) {
               ? "image/svg+xml"
               : path.endsWith(".json")
                 ? "application/json"
-                : "application/octet-stream";
+                : path.endsWith(".wasm")
+                  ? "application/wasm"
+                  : path.endsWith(".png")
+                    ? "image/png"
+                    : path.endsWith(".woff2")
+                      ? "font/woff2"
+                      : "application/octet-stream";
     } catch {
       const response = await fetch(ORIGIN + path, {
         redirect: "error",
