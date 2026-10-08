@@ -90,7 +90,7 @@ export function SessionSidebar({
             setCollapsed(next);
             try {
               localStorage.setItem("heimdall.sidebar.collapsed", String(next));
-            } catch {}
+            } catch { /* The in-memory toggle still works when storage is unavailable. */ }
           }}
         >
           {collapsed ? <PanelLeftOpen /> : <PanelLeftClose />}

@@ -1,5 +1,6 @@
 import { startCdpServer } from "../studio/node_modules/inspect-webkit/dist/index.js";
 import { execFile } from "node:child_process";
+import { setTimeout as delay } from "node:timers/promises";
 import { promisify } from "node:util";
 const exec = promisify(execFile);
 type Target = {
@@ -39,7 +40,13 @@ async function targets(udid: string) {
     throw e;
   });
   const server = await bridge!;
-  return server.getTargets().filter((t) => t.source.kind === "simulator");
+  const deadline = Date.now() + 2000;
+  let found = server.getTargets().filter((t) => t.source.kind === "simulator");
+  while (!found.length && Date.now() < deadline) {
+    await delay(100);
+    found = server.getTargets().filter((t) => t.source.kind === "simulator");
+  }
+  return found;
 }
 export async function inspector(
   udid: string,
@@ -143,6 +150,6 @@ export async function inspector(
 export function stopInspector() {
   for (const client of clients.values()) client.ws.close();
   clients.clear();
-  void bridge?.then(server => server.stop()).catch(() => {});
+  void bridge?.then((server) => server.stop()).catch(() => {});
   bridge = undefined;
 }

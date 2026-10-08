@@ -1,3 +1,4 @@
+import { IdbVideo } from "./idb-video.ts";
 import { spawn, type ChildProcess } from "node:child_process";
 import { access, mkdtemp, rm } from "node:fs/promises";
 import { connect as connectHttp2, type ClientHttp2Session } from "node:http2";
@@ -66,6 +67,8 @@ export function grpcFrame(payload: Buffer) {
 
 /** Simulator-only HID bypasses XCTest's per-command idle/snapshot overhead. */
 export class SimulatorHid {
+  private video = new IdbVideo();
+  private videoRetryAt = 0;
   private child?: ChildProcess;
   private client?: ClientHttp2Session;
   private starting?: Promise<boolean>;
@@ -119,7 +122,36 @@ export class SimulatorHid {
     }
     return true;
   }
+  async frame(): Promise<Buffer | undefined> {
+    if (Date.now() < this.videoRetryAt || !(await this.prepare()))
+      return undefined;
+    try {
+      // idb VideoStreamRequest.Start: 30 fps, MJPEG, quality .30, scale .3.
+      return await this.video.frame(
+        this.client!,
+        grpcFrame(
+          message(
+            1,
+            Buffer.concat([
+              integer(2, 30),
+              integer(3, 2),
+              double(4, 0.3),
+              double(5, 0.3),
+            ]),
+          ),
+        ),
+      );
+    } catch {
+      this.video.stop();
+      this.videoRetryAt = Date.now() + 30000;
+      console.warn(
+        "Simulator 영상 연결을 확인해 주세요. WDA 영상으로 임시 전환해요.",
+      );
+      return undefined;
+    }
+  }
   stop() {
+    this.video.stop();
     this.stopped = true;
     this.client?.destroy();
     this.child?.kill();
@@ -148,6 +180,7 @@ export class SimulatorHid {
       );
       return false;
     }
+    this.video.stop();
     this.client?.destroy();
     this.child?.kill();
     const directory = await mkdtemp(join(tmpdir(), "heimdall-hid-"));

@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+import { openSshRelay } from "./ssh-relay.ts";
 import { spawn } from "node:child_process";
 import { homedir } from "node:os";
 import { join } from "node:path";
@@ -70,7 +71,7 @@ let devices = await inventory();
 const endpoint = new URL("/aiqa/studio/ws?agent=1", master);
 endpoint.protocol = endpoint.protocol === "https:" ? "wss:" : "ws:";
 console.log(`Heimdall server ${id} → ${url.origin}`);
-async function connected() {
+async function connected(endpoint: URL) {
   await new Promise<void>((resolve) => {
     const ws = new WebSocket(endpoint);
     connection = ws;
@@ -101,7 +102,8 @@ async function connected() {
       clearInterval(heartbeat);
       resolve();
     });
-    ws.addEventListener("error", () => ws.close());
+    // Undici emits close after error; calling close from error recurses while connecting.
+    ws.addEventListener("error", () => {});
     ws.addEventListener("message", (event) => {
       try {
         const data = JSON.parse(String(event.data));
@@ -146,7 +148,14 @@ async function connected() {
 }
 while (!stopping) {
   try {
-    await connected();
+    if (config.relaySsh) {
+      const relay = await openSshRelay(config.relaySsh, shutdown.signal);
+      try {
+        await connected(relay.url);
+      } finally {
+        relay.close();
+      }
+    } else await connected(endpoint);
   } catch {
     console.error("마스터 연결을 확인해 주세요");
   }

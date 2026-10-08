@@ -80,7 +80,7 @@ export function connectRemoteDevice(
               pending = false;
             }
           };
-          const timer = setInterval(() => void tick(), 80);
+          const timer = setInterval(() => void tick(), 40);
           clients.set(client.id, timer);
           void tick();
         },

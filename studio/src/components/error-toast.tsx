@@ -37,11 +37,11 @@ export function ErrorToast({ message }: { message?: string }) {
         <Button
           variant="ghost"
           size="icon-sm"
-          className="shrink-0 text-muted-foreground"
+          className="shrink-0"
           aria-label="오류 알림 닫기"
           onClick={() => setVisible(false)}
         >
-          <X />
+          <X className="text-muted-foreground" />
         </Button>
       </div>
     </div>

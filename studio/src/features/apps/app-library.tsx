@@ -1,5 +1,6 @@
 import { useEffect, useState, useRef } from "react";
 import { API } from "@/lib/api";
+import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { DataTable } from "@/components/data-table";
 type App = {
@@ -102,7 +103,7 @@ export function AppLibrary({
         </h1>
         {management && (
           <>
-            <input
+            <Input
               ref={input}
               type="file"
               accept=".apk,.zip"

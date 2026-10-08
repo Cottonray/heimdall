@@ -153,7 +153,7 @@ async function run(path: string, body?: unknown): Promise<Buffer> {
     );
   }
   if (url.pathname === "/frame") {
-    const frame = await video.frame();
+    const frame = (await hid.frame()) || (await video.frame());
     size = displayFromJpeg(frame, dimensions);
     return frame;
   }
