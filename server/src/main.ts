@@ -48,7 +48,7 @@ const server = http.createServer(async (req, res) => {
     const route = url.pathname.slice(BASE.length)
     try {
         if (await studio.handle(req, res, route)) return
-        if (route === '/studio' || route === '/studio/' || route === '/studio/index.html') {
+        if (route === '/studio' || route === '/studio/' || route === '/studio/index.html' || /^\/studio\/assets\/[a-zA-Z0-9._-]+\.(?:js|css|woff2|svg)$/.test(route)) {
             if (!studio.allowed(req)) return json(res, 403, { error: '로그인 후 QA Studio를 이용해 주세요' })
             if (req.method !== 'GET') return json(res, 405, { error: 'method not allowed' })
             if (route === '/studio') {
@@ -56,7 +56,7 @@ const server = http.createServer(async (req, res) => {
                 res.end()
                 return
             }
-            await serveStatic(res, 'studio/index.html')
+            await serveStatic(res, route.startsWith('/studio/assets/') ? route.slice(1) : 'studio/index.html')
             return
         }
         // Studio가 테스트하는 Android 샘플 앱의 WebView. 구형 QA 콘솔과 별개다.
