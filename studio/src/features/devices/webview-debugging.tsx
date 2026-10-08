@@ -26,6 +26,7 @@ export function useWebViews(
   });
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [loadedSerial, setLoadedSerial] = useState("");
   const [revision, setRevision] = useState(0);
   useEffect(() => {
     if (!connected) return;
@@ -54,6 +55,7 @@ export function useWebViews(
         const next = (await response.json()) as WebViewDiscovery;
         if (!controller.signal.aborted) {
           setResult(next);
+          setLoadedSerial(serial);
           setError("");
         }
       } catch (error) {
@@ -79,6 +81,7 @@ export function useWebViews(
     ...result,
     error,
     loading,
+    initialLoading: loading && loadedSerial !== serial,
     refresh: () => setRevision((n) => n + 1),
   };
 }
@@ -238,7 +241,7 @@ export function WebViewDebugging({
         >
           {discovery.targets.length
             ? "웹페이지를 선택하고 인스펙터를 열어 주세요."
-            : discovery.loading
+            : discovery.initialLoading
               ? "웹뷰를 확인하고 있어요."
               : "디버깅 가능한 웹뷰가 없어요. 앱에서 웹페이지를 열고 WebView 디버깅을 허용해 주세요."}
         </div>

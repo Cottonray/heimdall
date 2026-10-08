@@ -89,8 +89,8 @@ export function RemoteDevice({
       <div className="-mx-4 flex shrink-0 items-center justify-between gap-3 border-b px-4 pb-4">
         <div className="flex min-w-0 items-center gap-3">
           <div className="flex shrink-0 items-center gap-2">
-            <PlatformIcon platform={remote.device?.platform || "android"} />
             <StatusDot state={remote.connection} label={status} />
+            <PlatformIcon platform={remote.device?.platform || "android"} />
           </div>
           <div className="min-w-0">
             <h1 className="truncate text-lg font-semibold">{name}</h1>
@@ -284,14 +284,20 @@ export function RemoteDevice({
               </Button>
               <Button
                 variant={capture.recording ? "destructive" : "outline"}
+                aria-label={capture.recording ? "녹화 종료" : "녹화 시작"}
+                title={
+                  capture.recording
+                    ? "녹화 종료 · 최대 3분 · 소리 제외"
+                    : "녹화 시작 · 최대 3분 · 소리 제외"
+                }
                 disabled={!remote.frame && !capture.recording}
                 onClick={capture.recording ? capture.stop : capture.start}
               >
                 <Video />
-                {capture.recording ? "녹화 종료" : "녹화"}
+                {capture.recording ? "정지" : "녹화"}
               </Button>
               {capture.recording && (
-                <span role="status" className="text-xs text-muted-foreground">
+                <span role="status" className="sr-only">
                   녹화 중 · 최대 3분 · 소리 제외
                 </span>
               )}
