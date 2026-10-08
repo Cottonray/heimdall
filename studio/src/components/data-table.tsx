@@ -279,14 +279,14 @@ export function DataTable<T>({
           )}
         </TableBody>
       </Table>
-      <div className="flex flex-wrap items-center justify-between gap-4">
+      <div className="grid grid-cols-2 items-center gap-4 md:grid-cols-[1fr_auto_1fr]">
         <p role="status" className="text-sm text-muted-foreground">
           총 {current.count}개
           {current.pageCount > 1
             ? ` · ${current.start}–${current.end}번째`
             : ""}
         </p>
-        <div className="flex flex-wrap items-center gap-4">
+        <div className="col-start-2 row-start-1 justify-self-end md:col-start-3">
           <div className="flex items-center gap-2">
             <span className="text-sm text-muted-foreground">페이지당</span>
             <Select
@@ -308,32 +308,67 @@ export function DataTable<T>({
               </SelectContent>
             </Select>
           </div>
-          <span className="text-sm text-muted-foreground">
-            {current.pageIndex + 1} / {current.pageCount} 페이지
-          </span>
-          <div className="flex items-center gap-2">
-            <Button
-              type="button"
-              variant="outline"
-              size="icon-sm"
-              aria-label="이전 페이지"
-              disabled={current.pageIndex === 0}
-              onClick={() => setPage(current.pageIndex - 1)}
-            >
-              <ChevronLeft aria-hidden="true" />
-            </Button>
-            <Button
-              type="button"
-              variant="outline"
-              size="icon-sm"
-              aria-label="다음 페이지"
-              disabled={current.pageIndex + 1 >= current.pageCount}
-              onClick={() => setPage(current.pageIndex + 1)}
-            >
-              <ChevronRight aria-hidden="true" />
-            </Button>
-          </div>
         </div>
+        <nav
+          aria-label="페이지 이동"
+          className="col-span-2 row-start-2 flex items-center justify-center gap-1 md:col-span-1 md:col-start-2 md:row-start-1"
+        >
+          <Button
+            type="button"
+            variant="outline"
+            size="icon-sm"
+            aria-label="이전 페이지"
+            disabled={current.pageIndex === 0}
+            onClick={() => setPage(current.pageIndex - 1)}
+          >
+            <ChevronLeft aria-hidden="true" />
+          </Button>
+          {Array.from(
+            new Set([
+              0,
+              current.pageCount - 1,
+              ...Array.from(
+                { length: 5 },
+                (_, offset) => current.pageIndex + offset - 2,
+              ).filter((index) => index >= 0 && index < current.pageCount),
+            ]),
+          )
+            .sort((a, b) => a - b)
+            .map((index, position, pages) => (
+              <span key={index} className="flex items-center gap-1">
+                {position > 0 && index - pages[position - 1] > 1 && (
+                  <span
+                    aria-hidden="true"
+                    className="px-1 text-muted-foreground"
+                  >
+                    …
+                  </span>
+                )}
+                <Button
+                  type="button"
+                  variant={index === current.pageIndex ? "secondary" : "ghost"}
+                  size="icon-sm"
+                  aria-label={`${index + 1}페이지`}
+                  aria-current={
+                    index === current.pageIndex ? "page" : undefined
+                  }
+                  onClick={() => setPage(index)}
+                >
+                  {index + 1}
+                </Button>
+              </span>
+            ))}
+          <Button
+            type="button"
+            variant="outline"
+            size="icon-sm"
+            aria-label="다음 페이지"
+            disabled={current.pageIndex + 1 >= current.pageCount}
+            onClick={() => setPage(current.pageIndex + 1)}
+          >
+            <ChevronRight aria-hidden="true" />
+          </Button>
+        </nav>
       </div>
     </div>
   );
