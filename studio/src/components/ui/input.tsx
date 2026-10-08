@@ -1,4 +1,5 @@
 import * as React from "react";
+import { Search } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 function Input({ className, type, ...props }: React.ComponentProps<"input">) {
@@ -17,4 +18,16 @@ function Input({ className, type, ...props }: React.ComponentProps<"input">) {
   );
 }
 
-export { Input };
+function SearchInput({ className, ...props }: React.ComponentProps<"input">) {
+  return (
+    <div data-slot="search-input" className={cn("relative", className)}>
+      <Search
+        aria-hidden="true"
+        className="pointer-events-none absolute left-3 top-2.5 size-4 text-muted-foreground"
+      />
+      <Input {...props} type="search" className="pl-9" />
+    </div>
+  );
+}
+
+export { Input, SearchInput };

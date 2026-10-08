@@ -1,4 +1,4 @@
-import { Sun, Moon, Download, RefreshCw } from "lucide-react";
+import { Download, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -8,15 +8,18 @@ import {
   CardContent,
 } from "@/components/ui/card";
 import { downloadMcp } from "@/features/integrations/mcp";
-import type { Theme } from "./use-theme";
+import { ThemeControls } from "./theme-controls";
+import type { Theme, ResolvedTheme } from "./use-theme";
 import type { StudioStatus } from "../../../../contracts/studio";
 export function Settings({
   theme,
   onTheme,
+  resolvedTheme,
   status,
   onRefresh,
 }: {
   theme: Theme;
+  resolvedTheme: ResolvedTheme;
   onTheme: (theme: Theme) => void;
   status: StudioStatus | null;
   onRefresh: () => void;
@@ -33,24 +36,11 @@ export function Settings({
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="flex flex-wrap gap-3">
-              <Button
-                variant={theme === "light" ? "default" : "outline"}
-                aria-pressed={theme === "light"}
-                onClick={() => onTheme("light")}
-              >
-                <Sun />
-                라이트
-              </Button>
-              <Button
-                variant={theme === "dark" ? "default" : "outline"}
-                aria-pressed={theme === "dark"}
-                onClick={() => onTheme("dark")}
-              >
-                <Moon />
-                다크
-              </Button>
-            </div>
+            <ThemeControls
+              theme={theme}
+              resolvedTheme={resolvedTheme}
+              onTheme={onTheme}
+            />
           </CardContent>
         </Card>
         <Card>

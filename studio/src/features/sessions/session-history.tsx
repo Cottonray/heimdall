@@ -1,6 +1,7 @@
+import { Item } from "@/components/ui/item";
 import { useState } from "react";
-import { Search, ArrowUpRight } from "lucide-react";
-import { Input } from "@/components/ui/input";
+import { ArrowUpRight } from "lucide-react";
+import { SearchInput } from "@/components/ui/input";
 import { StatusBadge } from "@/components/status-badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { engines } from "@/lib/labels";
@@ -27,10 +28,8 @@ export function SessionHistory({
             {filtered.length}개 테스트
           </p>
         </div>
-        <div className="relative w-full sm:w-72">
-          <Search className="pointer-events-none absolute left-3 top-3 size-4 text-muted-foreground" />
-          <Input
-            className="pl-9"
+        <div className="w-full sm:w-72">
+          <SearchInput
             aria-label="테스트 검색"
             placeholder="이름 또는 유형 검색"
             value={search}
@@ -43,25 +42,23 @@ export function SessionHistory({
           <ul className="divide-y">
             {filtered.map((s) => (
               <li key={s.id}>
-                <button
-                  type="button"
-                  onClick={() => onSelect(s.id)}
-                  className="flex w-full items-center justify-between gap-4 rounded-lg py-4 text-left hover:bg-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                >
-                  <span className="min-w-0">
-                    <span className="block truncate text-sm font-medium">
-                      {s.name}
+                <Item variant="row" size="row" asChild>
+                  <button type="button" onClick={() => onSelect(s.id)}>
+                    <span className="min-w-0">
+                      <span className="block truncate text-sm font-medium">
+                        {s.name}
+                      </span>
+                      <span className="mt-1 block text-xs text-muted-foreground">
+                        {engines[s.engine].label} · {s.steps.length}개 동작 ·{" "}
+                        {new Date(s.updated).toLocaleString("ko-KR")}
+                      </span>
                     </span>
-                    <span className="mt-1 block text-xs text-muted-foreground">
-                      {engines[s.engine].label} · {s.steps.length}개 동작 ·{" "}
-                      {new Date(s.updated).toLocaleString("ko-KR")}
+                    <span className="flex shrink-0 items-center gap-3">
+                      <StatusBadge state={s.state} />
+                      <ArrowUpRight className="size-4 text-muted-foreground" />
                     </span>
-                  </span>
-                  <span className="flex shrink-0 items-center gap-3">
-                    <StatusBadge state={s.state} />
-                    <ArrowUpRight className="size-4 text-muted-foreground" />
-                  </span>
-                </button>
+                  </button>
+                </Item>
               </li>
             ))}
           </ul>

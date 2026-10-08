@@ -6,8 +6,8 @@
   "scripts": {
     "build": "node --experimental-strip-types build.ts",
     "typecheck": "tsc --noEmit",
-    "lint": "eslint src build.ts eslint.config.ts --max-warnings 0",
-    "format": "prettier --write src build.ts eslint.config.ts",
+    "lint": "eslint src build.ts eslint.config.ts verify-design-lint.ts --max-warnings 0",
+    "format": "prettier --write src build.ts eslint.config.ts verify-design-lint.ts",
     "check": "yarn typecheck && yarn typecheck:server && yarn typecheck:worker && yarn lint && yarn lint:server && yarn lint:verify && yarn test:dashboard && yarn test:security && yarn build",
     "typecheck:server": "tsc -p ../server/tsconfig.json",
     "lint:server": "cd .. && node studio/node_modules/eslint/bin/eslint.js --config eslint.config.ts server/src/studio contracts browser-worker/src --max-warnings 0",

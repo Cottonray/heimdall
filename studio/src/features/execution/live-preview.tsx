@@ -1,3 +1,4 @@
+import { PreviewSurface } from "@/components/ui/preview-surface";
 import { useState } from "react";
 import {
   ArrowLeft,
@@ -61,12 +62,9 @@ export function LivePreview({
       <CardContent>
         <div className="flex min-h-80 items-center justify-center overflow-hidden rounded-lg border bg-muted/40">
           {frame ? (
-            <button
-              type="button"
+            <PreviewSurface
               aria-label="테스트 화면 조작"
-              data-press-feedback="off"
               disabled={disabled}
-              className="block max-w-full disabled:cursor-default"
               onClick={(e) => {
                 const img = e.currentTarget.querySelector("img");
                 if (!img) return;
@@ -91,7 +89,7 @@ export function LivePreview({
                 alt="테스트 대상 화면"
                 className="block max-h-preview max-w-full object-contain"
               />
-            </button>
+            </PreviewSurface>
           ) : (
             <div className="space-y-3 p-12 text-center text-muted-foreground">
               <Monitor className="mx-auto size-8" />

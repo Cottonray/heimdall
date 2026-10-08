@@ -40,7 +40,7 @@ import type { Session, SessionExport } from "../../../contracts/studio";
 
 export function App() {
   const w = useWorkspace();
-  const { theme, setTheme, toggleTheme } = useTheme();
+  const { theme, resolvedTheme, setTheme, toggleTheme } = useTheme();
   const [newOpen, setNewOpen] = useState(false);
   const [exported, setExported] = useState<SessionExport | null>(null);
   useEffect(() => {
@@ -58,7 +58,7 @@ export function App() {
       <LoginPage
         busy={w.busy}
         error={w.error}
-        theme={theme}
+        theme={resolvedTheme}
         onToggleTheme={toggleTheme}
         onLogin={w.store.login}
         onTestLogin={w.store.testLogin}
@@ -89,7 +89,8 @@ export function App() {
           onNavigate={w.store.navigate}
           onNew={() => setNewOpen(true)}
           theme={theme}
-          onToggleTheme={toggleTheme}
+          resolvedTheme={resolvedTheme}
+          onTheme={setTheme}
         />
       }
       <Tabs
@@ -238,6 +239,7 @@ export function App() {
                   ) : id === "settings" ? (
                     <Settings
                       theme={theme}
+                      resolvedTheme={resolvedTheme}
                       onTheme={setTheme}
                       status={w.status}
                       onRefresh={() => void w.store.refresh()}

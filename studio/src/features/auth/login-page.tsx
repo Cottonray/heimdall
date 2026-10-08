@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
-import type { Theme } from "@/features/settings/use-theme";
+import type { ResolvedTheme } from "@/features/settings/use-theme";
 import type { User } from "../../../../contracts/studio";
 export function LoginPage({
   busy,
@@ -17,7 +17,7 @@ export function LoginPage({
 }: {
   busy: boolean;
   error: string;
-  theme: Theme;
+  theme: ResolvedTheme;
   onToggleTheme: () => void;
   onLogin: (name: string, password: string) => Promise<unknown>;
   onTestLogin: (role: User["role"]) => Promise<unknown>;

@@ -1,3 +1,4 @@
+import { Item } from "@/components/ui/item";
 import { Plus, ArrowUpRight, Check, Minus } from "lucide-react";
 import {
   Bar,
@@ -235,29 +236,30 @@ export function Dashboard({
                 const passed = assertions.filter((step) => step.ok).length;
                 return (
                   <li key={session.id}>
-                    <button
-                      type="button"
-                      onClick={() => onSelect(session.id)}
-                      className="flex w-full items-center justify-between gap-4 rounded-lg py-4 text-left transition-colors hover:bg-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                    >
-                      <span className="min-w-0">
-                        <span className="block truncate text-sm font-medium">
-                          {session.name}
+                    <Item variant="row" size="row" asChild>
+                      <button
+                        type="button"
+                        onClick={() => onSelect(session.id)}
+                      >
+                        <span className="min-w-0">
+                          <span className="block truncate text-sm font-medium">
+                            {session.name}
+                          </span>
+                          <span className="mt-1 block text-xs text-muted-foreground">
+                            {engines[session.engine].label} ·{" "}
+                            {session.steps.length}개 동작
+                          </span>
                         </span>
-                        <span className="mt-1 block text-xs text-muted-foreground">
-                          {engines[session.engine].label} ·{" "}
-                          {session.steps.length}개 동작
+                        <span className="flex shrink-0 items-center gap-3">
+                          <span className="text-xs text-muted-foreground">
+                            {assertions.length
+                              ? `${passed} / ${assertions.length} 통과`
+                              : "미검증"}
+                          </span>
+                          <ArrowUpRight className="size-4 text-muted-foreground" />
                         </span>
-                      </span>
-                      <span className="flex shrink-0 items-center gap-3">
-                        <span className="text-xs text-muted-foreground">
-                          {assertions.length
-                            ? `${passed} / ${assertions.length} 통과`
-                            : "미검증"}
-                        </span>
-                        <ArrowUpRight className="size-4 text-muted-foreground" />
-                      </span>
-                    </button>
+                      </button>
+                    </Item>
                   </li>
                 );
               })}

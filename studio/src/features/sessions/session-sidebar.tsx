@@ -5,13 +5,12 @@ import {
   LayoutDashboard,
   History,
   Settings,
-  Moon,
-  Sun,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { HeimdallWordmark } from "@/components/heimdall-wordmark";
 import type { Page } from "@/features/workspace/tabs";
-import type { Theme } from "@/features/settings/use-theme";
+import { ThemeControls } from "@/features/settings/theme-controls";
+import type { Theme, ResolvedTheme } from "@/features/settings/use-theme";
 export function SessionSidebar({
   projectName,
   signedIn,
@@ -19,7 +18,8 @@ export function SessionSidebar({
   onNavigate,
   onNew,
   theme,
-  onToggleTheme,
+  resolvedTheme,
+  onTheme,
 }: {
   projectName: string;
   signedIn: boolean;
@@ -27,19 +27,22 @@ export function SessionSidebar({
   onNavigate: (page: Page) => void;
   onNew: () => void;
   theme: Theme;
-  onToggleTheme: () => void;
+  resolvedTheme: ResolvedTheme;
+  onTheme: (theme: Theme) => void;
 }) {
   return (
     <aside className="flex shrink-0 flex-col border-b bg-sidebar text-sidebar-foreground md:w-56 md:border-b-0 md:border-r">
       <div className="flex items-center justify-between gap-4 p-4 md:block md:space-y-6 md:p-5">
-        <button
+        <Button
+          variant="ghost"
+          size="brand"
           type="button"
           aria-label="heimdall 기본 페이지"
           onClick={() => onNavigate("projects")}
-          className="flex min-w-0 items-center text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          className="min-w-0 justify-start"
         >
           <HeimdallWordmark />
-        </button>
+        </Button>
         {signedIn && projectName && (
           <Button onClick={onNew} className="md:w-full">
             <Plus />새 테스트
@@ -102,15 +105,12 @@ export function SessionSidebar({
           </nav>
         </>
       )}
-      <div className="mt-auto flex gap-1 border-t px-3 py-3 md:flex-col">
-        <Button
-          variant="ghost"
-          onClick={onToggleTheme}
-          className="justify-start"
-        >
-          {theme === "dark" ? <Sun /> : <Moon />}
-          {theme === "dark" ? "라이트 모드" : "다크 모드"}
-        </Button>
+      <div className="mt-auto flex flex-wrap items-center gap-1 border-t px-3 py-3 md:flex-col md:items-stretch">
+        <ThemeControls
+          theme={theme}
+          resolvedTheme={resolvedTheme}
+          onTheme={onTheme}
+        />
         {signedIn && (
           <Button
             variant={active === "settings" ? "secondary" : "ghost"}

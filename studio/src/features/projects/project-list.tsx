@@ -1,3 +1,4 @@
+import { Item } from "@/components/ui/item";
 import { useState } from "react";
 import { Folder, Plus, ArrowUpRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -40,23 +41,20 @@ export function ProjectList({
       </div>
       <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
         {projects.map((project) => (
-          <button
-            key={project.id}
-            type="button"
-            onClick={() => onEnter(project.id)}
-            className="group rounded-xl border bg-card p-6 text-left shadow-sm transition-colors hover:border-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-          >
-            <span className="flex items-center justify-between">
-              <Folder className="size-7 text-primary" />
-              <ArrowUpRight className="size-5 text-muted-foreground group-hover:text-primary" />
-            </span>
-            <span className="mt-8 block truncate text-lg font-semibold">
-              {project.name}
-            </span>
-            <span className="mt-2 block text-sm text-muted-foreground">
-              테스트 {project.tests}개
-            </span>
-          </button>
+          <Item key={project.id} variant="project" size="project" asChild>
+            <button type="button" onClick={() => onEnter(project.id)}>
+              <span className="flex items-center justify-between">
+                <Folder className="size-7 text-primary" />
+                <ArrowUpRight className="size-5 text-muted-foreground group-hover:text-primary" />
+              </span>
+              <span className="mt-8 block truncate text-lg font-semibold">
+                {project.name}
+              </span>
+              <span className="mt-2 block text-sm text-muted-foreground">
+                테스트 {project.tests}개
+              </span>
+            </button>
+          </Item>
         ))}
       </div>
       <Dialog open={open} onOpenChange={setOpen}>

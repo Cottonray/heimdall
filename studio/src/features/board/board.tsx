@@ -221,14 +221,16 @@ export function Board({
                 >
                   <GripVertical />
                 </Button>
-                <button
+                <Button
+                  variant="ghost"
+                  size="xs"
                   type="button"
                   onClick={() => onSelect(tile.id)}
-                  className="min-w-0 flex-1 truncate text-left text-xs font-medium"
+                  className="min-w-0 flex-1 justify-start"
                   title={s?.name}
                 >
-                  {s?.name || "기록 없음"}
-                </button>
+                  <span className="truncate">{s?.name || "기록 없음"}</span>
+                </Button>
                 <Button
                   variant="ghost"
                   size="icon-xs"
