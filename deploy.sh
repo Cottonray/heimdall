@@ -33,12 +33,16 @@ say() { printf '\n\033[1m▶ %s\033[0m\n' "$*"; }
 source "$here/../lib/preflight.sh"
 require_main_merged "$here"
 
+# Build only after the full TypeScript/design checks pass.
+say "React Studio 검증·빌드"
+(cd "$here/studio" && node "$here/../../frontend/.yarn/releases/yarn-4.18.0.cjs" install --immutable && node "$here/../../frontend/.yarn/releases/yarn-4.18.0.cjs" check)
+
 # --- 보낼 것 모으기 ----------------------------------------------------------
 payload=$(mktemp -d)
 trap 'rm -rf "$payload"' EXIT
 
 mkdir -p "$payload/aiqa"
-cp -R "$here/server" "$here/web" "$here/flows" "$here/sample-app" "$here/browser-worker" "$payload/aiqa/"
+cp -R "$here/server" "$here/web" "$here/flows" "$here/sample-app" "$here/browser-worker" "$here/contracts" "$payload/aiqa/"
 cp "$here/Dockerfile" "$here/docker-compose.yml" "$here/entrypoint.sh" "$payload/aiqa/"
 # 로컬에서 yarn install 을 돌려 봤다면 node_modules 가 딸려 간다. 이미지 안에서 새로 깐다
 rm -rf "$payload/aiqa/server/node_modules" "$payload/aiqa/server/.yarn"
