@@ -1,10 +1,27 @@
+import { Trash2 } from "lucide-react";
+import {
+  Select,
+  SelectTrigger,
+  SelectValue,
+  SelectContent,
+  SelectItem,
+} from "@/components/ui/select";
 import { useRef, useState } from "react";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 
-type Row = { key: string; value: string };
+type Row = {
+  key: string;
+  value: string;
+  type: "string" | "number" | "boolean" | "json";
+};
+function rowValue(row: Row) {
+  if (row.type === "string") return row.value;
+  if (row.type === "boolean") return row.value === "true";
+  return JSON.parse(row.value);
+}
 export function jsonError(value: string) {
   try {
     JSON.parse(value);
@@ -40,7 +57,15 @@ export function JsonDataEditor({
         break;
       }
       keys.add(row.key);
-      const invalid = jsonError(row.value);
+      const invalid =
+        row.type === "number"
+          ? !/^-?(?:0|[1-9]\d*)(?:\.\d+)?(?:[eE][+-]?\d+)?$/.test(row.value) ||
+            !Number.isFinite(Number(row.value))
+            ? "숫자를 입력해 주세요."
+            : ""
+          : row.type === "json"
+            ? jsonError(row.value)
+            : "";
       if (invalid) {
         error = `${index + 1}행: ${invalid}`;
         break;
@@ -51,9 +76,7 @@ export function JsonDataEditor({
     if (!error)
       onChange(
         JSON.stringify(
-          Object.fromEntries(
-            next.map((row) => [row.key, JSON.parse(row.value)]),
-          ),
+          Object.fromEntries(next.map((row) => [row.key, rowValue(row)])),
           null,
           2,
         ),
@@ -69,7 +92,15 @@ export function JsonDataEditor({
             setRows(
               Object.entries(parsed).map(([key, item]) => ({
                 key,
-                value: JSON.stringify(item),
+                value: typeof item === "string" ? item : JSON.stringify(item),
+                type:
+                  typeof item === "string"
+                    ? "string"
+                    : typeof item === "number"
+                      ? "number"
+                      : typeof item === "boolean"
+                        ? "boolean"
+                        : "json",
               })),
             );
           setMode(next);
@@ -173,15 +204,16 @@ export function JsonDataEditor({
         </TabsContent>
         <TabsContent value="table" className="space-y-2">
           <p className="text-xs text-muted-foreground">
-            값은 JSON 형식으로 입력해 주세요. 문자열은 "문자", 숫자는 123,
-            배열은 []로 입력해요.
+            형식을 선택하고 값을 입력해 주세요. 배열·객체·null은 JSON 탭에서
+            편집해요.
           </p>
           <div className="max-h-64 overflow-auto rounded-md border">
-            <table className="w-full text-sm">
+            <table className="w-full min-w-[560px] text-sm">
               <thead>
                 <tr className="border-b">
                   <th className="p-2 text-left">키</th>
-                  <th className="p-2 text-left">값 (JSON)</th>
+                  <th className="w-32 p-2 text-left">형식</th>
+                  <th className="p-2 text-left">값</th>
                   <th>
                     <span className="sr-only">삭제</span>
                   </th>
@@ -206,30 +238,97 @@ export function JsonDataEditor({
                       />
                     </td>
                     <td className="p-1">
-                      <Input
-                        aria-label={`${index + 1}행 값`}
-                        value={row.value}
-                        onChange={(event) =>
+                      <Select
+                        value={row.type}
+                        onValueChange={(type: Row["type"]) =>
                           updateRows(
                             rows.map((r, i) =>
                               i === index
-                                ? { ...r, value: event.target.value }
+                                ? {
+                                    ...r,
+                                    type,
+                                    value:
+                                      type === "boolean"
+                                        ? "false"
+                                        : type === "number"
+                                          ? "0"
+                                          : r.value,
+                                  }
                                 : r,
                             ),
                           )
                         }
-                      />
+                      >
+                        <SelectTrigger
+                          className="w-28"
+                          aria-label={`${index + 1}행 형식`}
+                        >
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="string">문자</SelectItem>
+                          <SelectItem value="number">숫자</SelectItem>
+                          <SelectItem value="boolean">Boolean</SelectItem>
+                          {row.type === "json" && (
+                            <SelectItem value="json">JSON</SelectItem>
+                          )}
+                        </SelectContent>
+                      </Select>
+                    </td>
+                    <td className="p-1">
+                      {row.type === "boolean" ? (
+                        <Select
+                          value={row.value}
+                          onValueChange={(value) =>
+                            updateRows(
+                              rows.map((r, i) =>
+                                i === index ? { ...r, value } : r,
+                              ),
+                            )
+                          }
+                        >
+                          <SelectTrigger
+                            className="w-full"
+                            aria-label={`${index + 1}행 값`}
+                          >
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="true">true</SelectItem>
+                            <SelectItem value="false">false</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      ) : (
+                        <Input
+                          readOnly={row.type === "json"}
+                          inputMode={
+                            row.type === "number" ? "decimal" : undefined
+                          }
+                          aria-label={`${index + 1}행 값`}
+                          value={row.value}
+                          onChange={(event) =>
+                            updateRows(
+                              rows.map((r, i) =>
+                                i === index
+                                  ? { ...r, value: event.target.value }
+                                  : r,
+                              ),
+                            )
+                          }
+                        />
+                      )}
                     </td>
                     <td className="p-1">
                       <Button
                         type="button"
                         variant="ghost"
+                        size="icon-sm"
                         aria-label={`${index + 1}행 삭제`}
                         onClick={() =>
                           updateRows(rows.filter((_, i) => i !== index))
                         }
                       >
-                        삭제
+                        <Trash2 className="size-4" />
                       </Button>
                     </td>
                   </tr>
@@ -240,7 +339,9 @@ export function JsonDataEditor({
           <Button
             type="button"
             variant="outline"
-            onClick={() => updateRows([...rows, { key: "", value: '\"\"' }])}
+            onClick={() =>
+              updateRows([...rows, { key: "", value: "", type: "string" }])
+            }
           >
             행 추가
           </Button>
