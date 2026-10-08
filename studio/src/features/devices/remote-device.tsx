@@ -400,18 +400,34 @@ export function RemoteDevice({
           className="flex min-h-0 min-w-0 w-3/5 flex-col"
         >
           <Tabs
-            value={toolTab}
+            value={
+              serial.startsWith("ios:") && toolTab === "camera"
+                ? "web"
+                : toolTab
+            }
             onValueChange={setToolTab}
             variant="flush"
             className="min-h-0 flex-1"
           >
             <PanelTabsList
-              value={toolTab}
+              value={
+                serial.startsWith("ios:") && toolTab === "camera"
+                  ? "web"
+                  : toolTab
+              }
               label="기기 도구"
               items={[
                 { value: "web", label: "웹 디버깅", icon: <Monitor /> },
                 { value: "apps", label: "앱 설치", icon: <Monitor /> },
-                { value: "camera", label: "카메라 설정", icon: <Camera /> },
+                ...(!serial.startsWith("ios:")
+                  ? [
+                      {
+                        value: "camera",
+                        label: "카메라 설정",
+                        icon: <Camera />,
+                      },
+                    ]
+                  : []),
                 { value: "phone", label: "휴대폰 설정", icon: <Monitor /> },
               ]}
             />
@@ -438,17 +454,19 @@ export function RemoteDevice({
                 canControl={remote.canControl}
               />
             </TabsContent>
-            <TabsContent
-              forceMount
-              value="camera"
-              className="min-h-0 flex-1 overflow-auto data-[state=inactive]:hidden"
-            >
-              <CameraSettings
-                serial={serial}
-                viewer={remote.viewerId || ""}
-                canControl={remote.canControl}
-              />
-            </TabsContent>
+            {!serial.startsWith("ios:") && (
+              <TabsContent
+                forceMount
+                value="camera"
+                className="min-h-0 flex-1 overflow-auto data-[state=inactive]:hidden"
+              >
+                <CameraSettings
+                  serial={serial}
+                  viewer={remote.viewerId || ""}
+                  canControl={remote.canControl}
+                />
+              </TabsContent>
+            )}
             <TabsContent
               forceMount
               value="phone"
