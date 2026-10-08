@@ -32,7 +32,7 @@ const tabsListVariants = cva(
         default: "bg-muted",
         line: "gap-1 bg-transparent",
         workspace:
-          "h-12 gap-0 rounded-none bg-transparent p-0 group-data-[orientation=horizontal]/tabs:h-12",
+          "h-12 min-w-0 max-w-full flex-1 justify-start gap-0 overflow-x-auto overflow-y-hidden rounded-none bg-transparent p-0 group-data-[orientation=horizontal]/tabs:h-12",
       },
     },
     defaultVariants: {
