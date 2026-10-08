@@ -94,6 +94,13 @@ export function SessionSidebar({
                 AI 모델 관리
               </Button>
               <Button
+                variant={active === "app-admin" ? "secondary" : "ghost"}
+                onClick={() => onNavigate("app-admin")}
+                className="justify-start"
+              >
+                <Settings2 />앱 관리
+              </Button>
+              <Button
                 variant={active === "device-admin" ? "secondary" : "ghost"}
                 onClick={() => onNavigate("device-admin")}
                 className="justify-start"

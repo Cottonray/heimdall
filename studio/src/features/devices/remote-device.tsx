@@ -1,3 +1,4 @@
+import { AppLibrary } from "@/features/apps/app-library";
 import { ErrorToast } from "@/components/error-toast";
 import { IosWebDebugging } from "./ios-web-debugging";
 import {
@@ -58,6 +59,7 @@ export function RemoteDevice({
     clientY: number;
     at: number;
   } | null>(null);
+  const [toolTab, setToolTab] = useState("web");
   const ios = remote.device?.platform === "ios";
   const disabled = !remote.canControl || remote.busy || !remote.frame;
   const name = remote.device?.model || serial;
@@ -107,11 +109,7 @@ export function RemoteDevice({
           </div>
         </div>
         <div className="flex shrink-0 items-center gap-2">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={remote.reconnect}
-          >
+          <Button variant="outline" size="sm" onClick={remote.reconnect}>
             재연결
           </Button>
           <Button
@@ -340,16 +338,24 @@ export function RemoteDevice({
           aria-label="웹 디버깅"
           className="flex min-h-0 min-w-0 w-3/5 flex-col"
         >
-          <Tabs value="web" variant="flush" className="min-h-0 flex-1">
-            <TabsList
-              variant="inspector"
-              aria-label="기기 도구"
-            >
+          <Tabs
+            value={toolTab}
+            onValueChange={setToolTab}
+            variant="flush"
+            className="min-h-0 flex-1"
+          >
+            <TabsList variant="inspector" aria-label="기기 도구">
               <WorkspaceTab
                 value="web"
+                active={toolTab === "web"}
                 label="웹 디버깅"
                 icon={<Monitor />}
-                active
+              />
+              <WorkspaceTab
+                active={toolTab === "apps"}
+                value="apps"
+                label="앱 설치"
+                icon={<Monitor />}
               />
             </TabsList>
             <TabsContent value="web" className="min-h-0 flex-1 overflow-hidden">
@@ -368,6 +374,13 @@ export function RemoteDevice({
                   discovery={webviews}
                 />
               )}
+            </TabsContent>
+            <TabsContent value="apps" className="min-h-0 flex-1 overflow-auto">
+              <AppLibrary
+                serial={serial}
+                viewerId={remote.viewerId || ""}
+                canControl={remote.canControl}
+              />
             </TabsContent>
           </Tabs>
         </aside>

@@ -5,6 +5,7 @@ export const pages = [
   "device-admin",
   "user-admin",
   "ai-models",
+  "app-admin",
   "dashboard",
   "history",
   "execution",

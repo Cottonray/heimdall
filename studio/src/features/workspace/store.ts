@@ -305,6 +305,7 @@ export class WorkspaceStore {
         "device-admin",
         "user-admin",
         "ai-models",
+        "app-admin",
       ].includes(page)
     )
       this.setProjectScope("");
@@ -319,6 +320,7 @@ export class WorkspaceStore {
         "device-admin",
         "user-admin",
         "ai-models",
+        "app-admin",
       ].includes(page)
     )
       void this.refresh();

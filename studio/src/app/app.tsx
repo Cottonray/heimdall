@@ -1,3 +1,4 @@
+import { AppLibrary } from "@/features/apps/app-library";
 import { PanelResizeHandle } from "@/components/ui/panel-resize-handle";
 import { AiModelAdmin } from "@/features/auth/ai-model-admin";
 import { Community } from "@/features/community/community";
@@ -106,6 +107,7 @@ export function App() {
       id !== "projects" &&
       id !== "devices" &&
       id !== "device-admin" &&
+      id !== "app-admin" &&
       id !== "user-admin" &&
       (isPage(id) || projectSessions.some((s) => s.id === id)),
   );
@@ -119,6 +121,7 @@ export function App() {
       "device-admin",
       "user-admin",
       "ai-models",
+      "app-admin",
     ].includes(w.activeTab) && !!w.projectId;
   return (
     <div className="flex h-dvh flex-col overflow-hidden bg-background text-foreground md:flex-row">
@@ -277,6 +280,12 @@ export function App() {
                     />
                   ) : id === "community" ? (
                     <Community user={w.user!} active={w.activeTab === id} />
+                  ) : id === "app-admin" ? (
+                    w.user?.role === "admin" ? (
+                      <AppLibrary management />
+                    ) : (
+                      <p>관리자만 이용할 수 있어요.</p>
+                    )
                   ) : id === "ai-models" ? (
                     w.user?.role === "admin" ? (
                       <AiModelAdmin />

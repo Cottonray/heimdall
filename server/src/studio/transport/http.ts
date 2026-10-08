@@ -1,3 +1,9 @@
+import {
+  appList,
+  appFile,
+  beginUpload,
+  uploadChunk,
+} from "../infrastructure/app-library.ts";
 import { isIos, iosRequest } from "../infrastructure/ios-bridge.ts";
 import { iosWebDebug } from "../domain/ios-web-debug.ts";
 import { aiModel, saveAiModel } from "../infrastructure/ai-model.ts";
@@ -65,6 +71,7 @@ import {
 } from "../infrastructure/device-lease.ts";
 import { DEVTOOLS_PREFIX, serveDevTools } from "./devtools-assets.ts";
 const debugging = new Set<string>();
+const installing = new Set<string>();
 export async function handle(
   req: IncomingMessage,
   res: ServerResponse,
@@ -90,6 +97,83 @@ export async function handle(
     const url = new URL(req.url || "/", "http://localhost"),
       id = url.searchParams.get("id") || "";
     const auth = await authenticate(req);
+    if (route === "/api/studio/apps" && req.method === "GET") {
+      if (!auth) {
+        send(401, { error: "로그인이 필요해요" });
+        return true;
+      }
+      send(200, await appList());
+      return true;
+    }
+    if (route === "/api/studio/apps/upload") {
+      if (auth?.user.role !== "admin" || !allowedBrowserOrigin(req)) {
+        send(403, { error: "관리자만 업로드할 수 있어요" });
+        return true;
+      }
+      if (req.method !== "POST") {
+        send(405, {});
+        return true;
+      }
+      send(
+        200,
+        id
+          ? await uploadChunk(
+              auth.hash,
+              id,
+              Number(url.searchParams.get("offset")),
+              req,
+            )
+          : await beginUpload(
+              auth.hash,
+              url.searchParams.get("filename") || "",
+              Number(url.searchParams.get("size")),
+            ),
+      );
+      return true;
+    }
+    if (route === "/api/studio/apps/install") {
+      if (!auth || !allowedBrowserOrigin(req)) {
+        send(403, { error: "로그인이 필요해요" });
+        return true;
+      }
+      if (req.method !== "POST") {
+        send(405, {});
+        return true;
+      }
+      const serial = url.searchParams.get("serial") || "";
+      const viewer = url.searchParams.get("viewer") || "";
+      if (!ownsDevice(viewer, serial, auth.hash)) {
+        send(409, { error: "기기를 점유한 상태에서 설치할 수 있어요" });
+        return true;
+      }
+      if (isIos(serial)) {
+        send(400, { error: "APK는 Android 기기에 설치할 수 있어요" });
+        return true;
+      }
+      if (installing.has(serial)) {
+        send(409, { error: "앱을 설치하고 있어요" });
+        return true;
+      }
+      installing.add(serial);
+      try {
+        const { file } = await appFile(id);
+        if (!ownsDevice(viewer, serial, auth.hash))
+          throw new Error("기기 연결을 다시 확인해 주세요");
+        const result = await device.adb(
+          ["-s", serial, "install", "-r", file],
+          180000,
+          true,
+        );
+        if (result.code !== 0 || !result.stdout.toString().includes("Success"))
+          throw new Error(
+            "앱 설치에 실패했어요. APK 서명과 기기 호환성을 확인해 주세요",
+          );
+        send(200, { ok: true });
+      } finally {
+        installing.delete(serial);
+      }
+      return true;
+    }
     if (route === "/api/studio/admin/agent-download") {
       if (auth?.user.role !== "admin")
         send(403, { error: "관리자만 이용할 수 있어요" });
@@ -345,16 +429,29 @@ export async function handle(
         return true;
       }
       const debug = iosWebDebug(data);
-      if (debugging.has(serial)) { send(429, { error: "이전 웹 디버깅이 끝나면 다시 실행해 주세요" }); return true; }
+      if (debugging.has(serial)) {
+        send(429, { error: "이전 웹 디버깅이 끝나면 다시 실행해 주세요" });
+        return true;
+      }
       const hold = reserveDevice(serial, auth.hash);
       debugging.add(serial);
       try {
-        const result = await iosRequest(`/web-debug?serial=${encodeURIComponent(serial)}`, debug);
-        if (!ownsDevice(viewer, serial, auth.hash) || !(await authenticate(req))) {
-          send(409, { error: "기기 점유가 종료됐어요" }); return true;
+        const result = await iosRequest(
+          `/web-debug?serial=${encodeURIComponent(serial)}`,
+          debug,
+        );
+        if (
+          !ownsDevice(viewer, serial, auth.hash) ||
+          !(await authenticate(req))
+        ) {
+          send(409, { error: "기기 점유가 종료됐어요" });
+          return true;
         }
         send(200, JSON.parse(result.toString()));
-      } finally { debugging.delete(serial); hold.release(); }
+      } finally {
+        debugging.delete(serial);
+        hold.release();
+      }
       return true;
     }
 
