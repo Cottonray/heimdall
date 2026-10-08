@@ -143,7 +143,8 @@ test("project home restores global statistics and reopening a test restores its 
   assert.equal(f.store.getSnapshot().projectId, "");
   assert.equal(f.store.getSnapshot().selectedId, "");
   assert.deepEqual(f.store.getSnapshot().status?.sessions, []);
-  assert.ok(f.store.getSnapshot().tabs.includes(a.id));
+  assert.deepEqual(f.store.getSnapshot().tabs, ["projects"]);
+  assert.ok(f.store.getSnapshot().sessions.some((s) => s.id === a.id));
   await f.respond("", [a, b]);
   assert.equal(f.store.getSnapshot().status?.sessions.length, 2);
 
@@ -205,7 +206,7 @@ test("a deep-linked test loads its project dashboard scope after authentication"
   assert.equal(f.store.getSnapshot().loading, false);
 });
 
-test("device farm leaves project scope without losing open work", async (t) => {
+test("device farm clears project tabs while preserving cached work", async (t) => {
   const f = fixture(t);
   const a = session("test-a", "project-a");
   await f.login([a]);
@@ -215,7 +216,8 @@ test("device farm leaves project scope without losing open work", async (t) => {
   assert.equal(f.store.getSnapshot().activeTab, "devices");
   assert.equal(f.store.getSnapshot().projectId, "");
   assert.equal(f.store.getSnapshot().selectedId, "");
-  assert.ok(f.store.getSnapshot().tabs.includes(a.id));
+  assert.deepEqual(f.store.getSnapshot().tabs, ["devices"]);
+  assert.ok(f.store.getSnapshot().sessions.some((s) => s.id === a.id));
   await f.respond("", [a]);
   f.store.enterProject("project-a");
   await f.respond("project-a", [a]);
