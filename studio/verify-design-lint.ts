@@ -83,6 +83,7 @@ const accepted = render(
     <Button variant="outline" size="sm" className="w-full">버튼</Button>
     <Item variant="project" size="project" asChild><button type="button">프로젝트</button></Item>
     <SearchInput aria-label="검색" />
+    <StatusDot state="ready" label="조작 가능" />
     <Switch aria-label="다크 모드" size="sm" checked={false} />
     <Label variant="subtle">시스템 설정 따르기</Label>
     <SelectTrigger variant="ghost" className="w-full" aria-label="화면 테마" />
@@ -95,6 +96,7 @@ const accepted = render(
    import { Card } from "@/components/ui/card";
    import { DropdownMenuContent } from "@/components/ui/dropdown-menu";
    import { Item } from "@/components/ui/item";
+   import { StatusDot } from "@/components/ui/status-dot";
    import { SearchInput } from "@/components/ui/input";
    import { Switch } from "@/components/ui/switch";
    import { Label } from "@/components/ui/label";

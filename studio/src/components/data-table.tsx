@@ -5,7 +5,7 @@ import {
   ArrowUpDown,
   ChevronLeft,
   ChevronRight,
-  MoreHorizontal,
+  MoreVertical,
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -246,7 +246,7 @@ export function DataTable<T>({
                           size="icon-sm"
                           aria-label={`${getRowLabel(row)} 옵션`}
                         >
-                          <MoreHorizontal />
+                          <MoreVertical />
                         </Button>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">

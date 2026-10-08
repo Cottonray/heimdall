@@ -16,7 +16,7 @@ import {
   X,
 } from "lucide-react";
 import { PlatformIcon } from "@/components/platform-icon";
-import { Badge } from "@/components/ui/badge";
+import { StatusDot } from "@/components/ui/status-dot";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { PreviewSurface } from "@/components/ui/preview-surface";
@@ -88,7 +88,10 @@ export function RemoteDevice({
     <main className="flex h-dvh flex-col gap-4 overflow-hidden bg-background p-4 text-foreground">
       <div className="-mx-4 flex shrink-0 items-center justify-between gap-3 border-b px-4 pb-4">
         <div className="flex min-w-0 items-center gap-3">
-          <PlatformIcon platform={remote.device?.platform || "android"} />
+          <div className="flex shrink-0 items-center gap-2">
+            <PlatformIcon platform={remote.device?.platform || "android"} />
+            <StatusDot state={remote.connection} label={status} />
+          </div>
           <div className="min-w-0">
             <h1 className="truncate text-lg font-semibold">{name}</h1>
             <p
@@ -100,9 +103,6 @@ export function RemoteDevice({
           </div>
         </div>
         <div className="flex shrink-0 items-center gap-2">
-          <Badge variant={remote.canControl ? "success" : "outline"}>
-            {status}
-          </Badge>
           <Button
             variant="ghost"
             size="icon-sm"
