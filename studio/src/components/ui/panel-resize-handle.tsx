@@ -17,7 +17,7 @@ export function PanelResizeHandle({ targetId }: { targetId: string }) {
       aria-valuemax={75}
       aria-valuenow={width}
       tabIndex={0}
-      className="relative w-1 shrink-0 cursor-col-resize touch-none bg-border hover:bg-primary focus-visible:bg-primary focus-visible:outline-none"
+      className="relative z-10 w-px shrink-0 cursor-col-resize touch-none bg-border before:absolute before:inset-y-0 before:-inset-x-1 before:content-[''] hover:bg-primary focus-visible:bg-primary focus-visible:outline-none"
       onPointerDown={(event) => {
         if (event.button !== 0) return;
         pointer.current = event.pointerId;
