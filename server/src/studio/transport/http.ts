@@ -1,3 +1,4 @@
+import { posts, savePost } from "../infrastructure/community.ts";
 import {
   deviceMetadata,
   saveDeviceMetadata,
@@ -173,6 +174,14 @@ export async function handle(
       send(200, await listTestData(url.searchParams.get("projectId") || ""));
       return true;
     }
+    if (route === "/api/studio/community" && !auth) {
+      send(401, { error: "로그인이 필요해요" });
+      return true;
+    }
+    if (route === "/api/studio/community" && req.method === "GET") {
+      send(200, await posts());
+      return true;
+    }
     if (route === "/api/studio/notifications" && req.method === "GET") {
       send(200, await notifications(auth!.user.id));
       return true;
@@ -279,6 +288,11 @@ export async function handle(
         throw new Error("요청이 너무 커요");
     }
     const data = JSON.parse(body || "{}");
+    if (route === "/api/studio/community") {
+      await savePost(auth!.user, data);
+      send(200, { ok: true });
+      return true;
+    }
     if (route === "/api/studio/admin/users") {
       await editUser(auth!.user.id, data);
       send(200, { ok: true });

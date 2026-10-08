@@ -231,11 +231,27 @@ export class WorkspaceStore {
       this.select(id);
     });
   navigate = (page: Page) => {
-    if (["projects", "devices", "device-admin", "user-admin"].includes(page))
+    if (
+      [
+        "projects",
+        "devices",
+        "community",
+        "device-admin",
+        "user-admin",
+      ].includes(page)
+    )
       this.setProjectScope("");
     this.select("");
     this.patch(openTab(this.value, page));
-    if (["projects", "devices", "device-admin", "user-admin"].includes(page))
+    if (
+      [
+        "projects",
+        "devices",
+        "community",
+        "device-admin",
+        "user-admin",
+      ].includes(page)
+    )
       void this.refresh();
   };
   moveTab = (from: string, to: string) => {

@@ -1,3 +1,4 @@
+import { MessageSquare } from "lucide-react";
 import {
   Users,
   Settings2,
@@ -69,6 +70,15 @@ export function SessionSidebar({
           >
             <Smartphone />
             디바이스팜
+          </Button>
+          <Button
+            variant={active === "community" ? "secondary" : "ghost"}
+            aria-current={active === "community" ? "page" : undefined}
+            onClick={() => onNavigate("community")}
+            className="justify-start"
+          >
+            <MessageSquare />
+            커뮤니티
           </Button>
           {admin && (
             <>
