@@ -81,7 +81,14 @@ export function SessionSidebar({
             커뮤니티
           </Button>
           {admin && (
-            <>
+            <div
+              role="group"
+              aria-label="관리자 메뉴"
+              className="mt-3 flex w-full flex-wrap gap-1 border-t pt-3 md:flex-col"
+            >
+              <p className="w-full px-3 pb-1 text-xs font-medium text-muted-foreground">
+                관리자
+              </p>
               <Button
                 variant={active === "ai-models" ? "secondary" : "ghost"}
                 onClick={() => onNavigate("ai-models")}
@@ -106,7 +113,7 @@ export function SessionSidebar({
                 <Users />
                 사용자 관리
               </Button>
-            </>
+            </div>
           )}
         </nav>
       )}
