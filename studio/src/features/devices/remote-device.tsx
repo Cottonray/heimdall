@@ -13,6 +13,7 @@ import {
   Volume2,
   Volume1,
   Power,
+  LockKeyhole,
   Camera,
   Video,
   X,
@@ -213,15 +214,19 @@ export function RemoteDevice({
           </div>
           <div className="shrink-0 space-y-3">
             <div className="flex flex-wrap items-center justify-center gap-3">
-              <Button
-                variant="outline"
-                size="icon"
-                aria-label="뒤로"
-                disabled={disabled || ios}
-                onClick={() => void remote.action({ type: "key", key: "back" })}
-              >
-                <ArrowLeft />
-              </Button>
+              {!ios && (
+                <Button
+                  variant="outline"
+                  size="icon"
+                  aria-label="뒤로"
+                  disabled={disabled}
+                  onClick={() =>
+                    void remote.action({ type: "key", key: "back" })
+                  }
+                >
+                  <ArrowLeft />
+                </Button>
+              )}
               <Button
                 variant="outline"
                 size="icon"
@@ -231,22 +236,28 @@ export function RemoteDevice({
               >
                 <Home />
               </Button>
-              <Button
-                variant="outline"
-                size="icon"
-                aria-label="최근 앱"
-                disabled={disabled || ios}
-                onClick={() =>
-                  void remote.action({ type: "key", key: "recent" })
-                }
-              >
-                <Square />
-              </Button>
+              {!ios && (
+                <Button
+                  variant="outline"
+                  size="icon"
+                  aria-label="최근 앱"
+                  disabled={disabled}
+                  onClick={() =>
+                    void remote.action({ type: "key", key: "recent" })
+                  }
+                >
+                  <Square />
+                </Button>
+              )}
               {(
                 [
-                  { key: "volume_up", label: "볼륨 높이기", Icon: Volume2 },
-                  { key: "volume_down", label: "볼륨 낮추기", Icon: Volume1 },
-                  { key: "power", label: "화면 잠금 / 깨우기", Icon: Power },
+                  { key: "volume_down", label: "볼륨 감소", Icon: Volume1 },
+                  { key: "volume_up", label: "볼륨 증가", Icon: Volume2 },
+                  {
+                    key: "power",
+                    label: "화면 잠금 / 깨우기",
+                    Icon: ios ? LockKeyhole : Power,
+                  },
                 ] as const
               ).map(({ key, label, Icon }) => (
                 <Button
@@ -255,7 +266,7 @@ export function RemoteDevice({
                   size="icon"
                   aria-label={label}
                   title={label}
-                  disabled={disabled || ios}
+                  disabled={disabled}
                   onClick={() => void remote.action({ type: "key", key })}
                 >
                   <Icon />
