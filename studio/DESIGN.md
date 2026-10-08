@@ -265,3 +265,4 @@ DataTable의 onRowClick 옵션으로 일반 셀 영역 전체에 행 액션을 �
 ## 원격 기기와 웹 디버깅 (2026-10-09)
 
 기기 화면은 canvas에 최신 영상만 그린다. 캡처·녹화도 같은 canvas를 사용한다. iOS 웹 디버깅은 기존 오른쪽 패널에서 페이지 선택, DOM, 리소스, JavaScript 표현식과 결과를 제공한다. 코드·결과는 공통 Textarea code/output variant를 사용한다. Tabs flush/inspector, Button refresh/notification/danger-ghost/cell, SelectTrigger refresh, TableRow static, TableCell action, CardContent stack, DialogContent download는 기존 화면별 스타일을 옮긴 공통 규격이며 verify-design-lint.ts에서 허용 사례를 검증한다.
+최신 사용자 결정: 추가 데이터는 JSON 입력만 제공한다. JSON/테이블 탭과 형식별 행 편집을 제거하고 기존 Tab 들여쓰기·파싱 오류 표시·저장 차단 및 넓은 모달은 유지한다. 이전 테이블 편집 사양은 폐기한다.
