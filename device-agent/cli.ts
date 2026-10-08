@@ -58,11 +58,12 @@ let stopping = false;
 let connection: WebSocket | undefined;
 const shutdown = new AbortController();
 for (const signal of ["SIGTERM", "SIGINT"] as const)
-  process.on(signal, () => {
+  process.on(signal, async () => {
+    if (stopping) return;
     stopping = true;
     shutdown.abort();
     connection?.close();
-    stop();
+    await stop();
     appiumProcess?.kill();
   });
 type Command = { id: string; path: string; body?: unknown };
@@ -77,8 +78,23 @@ async function connected(endpoint: URL) {
     connection = ws;
     let ready = false;
     let updating = false;
-    const timeout = setTimeout(() => ws.close(), 10000);
+    let receivedAt = Date.now();
+    let finished = false;
+    const finish = () => {
+      if (finished) return;
+      finished = true;
+      clearTimeout(timeout);
+      clearInterval(heartbeat);
+      // Do not wait forever for a close handshake through a stale SSH forward.
+      ws.close();
+      resolve();
+    };
+    const timeout = setTimeout(finish, 10000);
     const heartbeat = setInterval(() => {
+      if (Date.now() - receivedAt > 12000) {
+        finish();
+        return;
+      }
       if (!ready || updating || ws.readyState !== WebSocket.OPEN) return;
       updating = true;
       void inventory()
@@ -98,18 +114,19 @@ async function connected(endpoint: URL) {
       ws.send(JSON.stringify({ agentId: id, token, devices })),
     );
     ws.addEventListener("close", () => {
-      clearTimeout(timeout);
-      clearInterval(heartbeat);
-      resolve();
+      finish();
     });
     // Undici emits close after error; calling close from error recurses while connecting.
     ws.addEventListener("error", () => {});
     ws.addEventListener("message", (event) => {
+      if (finished) return;
+      receivedAt = Date.now();
       try {
         const data = JSON.parse(String(event.data));
         if (data.ready) {
           ready = true;
           clearTimeout(timeout);
+          console.log("마스터 연결 완료");
         }
         if (!Array.isArray(data.commands)) return;
         if (data.commands.length > 32) {

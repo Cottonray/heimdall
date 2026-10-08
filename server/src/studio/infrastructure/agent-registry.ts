@@ -271,7 +271,10 @@ export function connectAgent(ws: WsConnection) {
             .catch(() => ws.close(4401));
           return;
         }
-        if (data.devices) updateDevices(data.devices);
+        if (data.devices) {
+          updateDevices(data.devices);
+          ws.send(JSON.stringify({ heartbeat: true }));
+        }
         const agent = agents.get(agentId);
         if (agent) agent.seen = Date.now();
         if (data.responses !== undefined) {

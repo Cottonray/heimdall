@@ -126,7 +126,7 @@ test("agent WebSocket authenticates, dispatches immediately and rejects pending 
     return ws;
   };
   const message = (ws: WebSocket) =>
-    new Promise<{ ready?: boolean; commands: { id: string; path: string }[] }>((r) =>
+    new Promise<{ ready?: boolean; heartbeat?: boolean; commands: { id: string; path: string }[] }>((r) =>
       ws.addEventListener("message", (e) => r(JSON.parse(String(e.data))), {
         once: true,
       }),
@@ -148,6 +148,9 @@ test("agent WebSocket authenticates, dispatches immediately and rejects pending 
       }),
     );
     assert.equal((await ready).ready, true);
+    const heartbeat = message(ws);
+    ws.send(JSON.stringify({devices: [{serial, platform: "ios", model: "Simulator", ready: true}]}));
+    assert.equal((await heartbeat).heartbeat, true);
     const delivered = message(ws);
     const result = agentRequest(`/action?serial=${serial}`, {
       type: "key",

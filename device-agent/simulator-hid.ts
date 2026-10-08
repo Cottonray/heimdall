@@ -172,8 +172,12 @@ export class SimulatorHid {
       return undefined;
     }
   }
-  stop() {
+  async stop() {
     clearTimeout(this.touchTimeout);
+    if (this.heldTouch)
+      await this.perform({ ...this.heldTouch, phase: "cancel" }).catch(
+        () => {},
+      );
     this.video.stop();
     this.stopped = true;
     this.client?.destroy();

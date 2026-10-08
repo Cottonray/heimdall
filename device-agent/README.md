@@ -24,7 +24,7 @@
 
 ## 마스터 등록
 
-마스터의 `server/agents.local.json` 또는 `HEIMDALL_AGENTS_FILE`에 에이전트별 ID, 토큰 SHA-256 해시, 허용된 serial을 등록한다. 토큰 원문은 서버 응답/배포 패키지에 포함하지 않는다. 설정은 요청마다 읽으므로 수정 후 서버 재시작은 필요 없다.
+마스터의 `/opt/aiqa/server/agents.local.json` 또는 `HEIMDALL_AGENTS_FILE`에 에이전트별 ID, 토큰 SHA-256 해시, 허용된 serial을 등록한다. 토큰 원문은 서버 응답/배포 패키지에 포함하지 않는다. 설정은 요청마다 읽으므로 수정 후 서버 재시작은 필요 없다.
 
 ```json
 {"agents":[{"id":"mac-01","tokenHash":"TOKEN_SHA256_HEX","serials":["ios:SIMULATOR-UUID"]}]}

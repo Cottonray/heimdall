@@ -19,10 +19,10 @@ let size: { width: number; height: number } | undefined;
 const video = new LatestJpeg();
 const hid = new SimulatorHid(udid);
 let nativeCommands = Promise.resolve<unknown>(undefined);
-export function stop() {
+export async function stop() {
   stopInspector();
   video.stop();
-  hid.stop();
+  await hid.stop();
 }
 let commands = Promise.resolve<unknown>(undefined);
 async function request(path: string, body?: unknown) {
