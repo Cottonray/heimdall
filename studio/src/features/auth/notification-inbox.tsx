@@ -87,27 +87,28 @@ export function NotificationInbox({ userId }: { userId: string }) {
         </Button>
       </PopoverTrigger>
       <PopoverContent aria-label="알림함">
-        <div className="flex items-center justify-between gap-3 border-b px-4 py-3">
-          <div className="flex items-center gap-2">
-            <h2 className="text-sm font-semibold">알림함</h2>
+        {unread.length > 0 && (
+          <div className="flex items-center justify-between gap-3 border-b px-4 py-3">
+            <div className="flex items-center gap-2">
+              {unread.length > 0 && (
+                <span className="text-xs text-muted-foreground">
+                  안 읽음 {unread.length}
+                </span>
+              )}
+            </div>
             {unread.length > 0 && (
-              <span className="text-xs text-muted-foreground">
-                안 읽음 {unread.length}
-              </span>
+              <Button
+                size="sm"
+                variant="ghost"
+                disabled={busy}
+                onClick={() => void mark(unread.map((item) => item.id))}
+              >
+                <CheckCheck />
+                모두 읽음
+              </Button>
             )}
           </div>
-          {unread.length > 0 && (
-            <Button
-              size="sm"
-              variant="ghost"
-              disabled={busy}
-              onClick={() => void mark(unread.map((item) => item.id))}
-            >
-              <CheckCheck />
-              모두 읽음
-            </Button>
-          )}
-        </div>
+        )}
         {error && (
           <p role="alert" className="px-4 py-3 text-sm text-destructive">
             {error}
