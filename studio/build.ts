@@ -36,6 +36,11 @@ const hash = createHash("sha256")
   .digest("hex")
   .slice(0, 12);
 const html = (await readFile(root + "/index.html", "utf8"))
+  .replace(
+    "__HEIMDALL_FAVICON__",
+    "data:image/png;base64," +
+      (await readFile(root + "/src/assets/heimdall.png")).toString("base64"),
+  )
   .replaceAll("assets/app.js", "assets/app.js?v=" + hash)
   .replaceAll("assets/app.css", "assets/app.css?v=" + hash);
 await writeFile(out + "/index.html", html);

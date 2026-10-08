@@ -4,7 +4,7 @@ React + shadcn/ui 기반의 QA 워크스페이스. 현재 디자인의 정본은
 
 ## 화면과 브랜드
 
-- 브랜드는 소문자 `heimdall`. 사이드바와 로그인 헤더는 부엉이와 이름이 붙은 `HeimdallWordmark`를 사용한다. 밝은 모드의 검정 글자는 `src/assets/heimdall-wordmark.png`, 다크 모드의 밝은 글자는 `src/assets/heimdall-wordmark-dark.png`이며 부엉이 블루는 유지한다. 글자 없는 부엉이 원본 `src/assets/heimdall.png`는 쇼룸·아이콘 용도로 보존한다.
+- 브랜드는 소문자 `heimdall`. 사이드바와 로그인 헤더는 부엉이와 이름이 붙은 `HeimdallWordmark`를 사용한다. 표시 영역은 후속 요청으로 144×40px에서 128×36px로 줄였다. 파비콘은 글자 없는 부엉이 원본을 사용한다. 밝은 모드의 검정 글자는 `src/assets/heimdall-wordmark.png`, 다크 모드의 밝은 글자는 `src/assets/heimdall-wordmark-dark.png`이며 부엉이 블루는 유지한다. 글자 없는 부엉이 원본 `src/assets/heimdall.png`는 쇼룸·아이콘 용도로 보존한다.
 - 라이트 테마는 흰 배경과 `#2667ad` JB 계열 블루, 다크 테마는 짙은 배경과 `#75ace2`를 사용한다. 실제 색상 값은 `src/styles.css`의 의미 토큰에서만 정의한다.
 - 로그인 페이지 → 프로젝트 목록 → 프로젝트 워크스페이스 순서다. 사이드바는 대시보드·워크스페이스·도메인·테스트 기록 메뉴, 상단은 열린 화면의 탭과 프로필이다.
 - 본문은 남은 화면 전체를 사용한다. 소개 배너, 실시간 연결 배지, 홈서버·샘플 금융 거래 문구, AI 쇼룸 링크, AI 사용 가능 문구는 추가하지 않는다.
