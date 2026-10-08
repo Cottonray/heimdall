@@ -1,4 +1,5 @@
 import {
+  Play,
   Database,
   ListChecks,
   PanelsTopLeft,
@@ -16,6 +17,7 @@ export function SessionSidebar({
   signedIn,
   active,
   onNavigate,
+  onRun,
   theme,
   onTheme,
 }: {
@@ -23,6 +25,7 @@ export function SessionSidebar({
   signedIn: boolean;
   active: string;
   onNavigate: (page: Page) => void;
+  onRun: () => void;
   theme: Theme;
   onTheme: (theme: Theme) => void;
 }) {
@@ -122,6 +125,15 @@ export function SessionSidebar({
             >
               <ListChecks />
               시나리오
+            </Button>
+            <Button
+              variant="ghost"
+              onClick={onRun}
+              className="justify-start"
+              aria-haspopup="dialog"
+            >
+              <Play />
+              테스트 실행
             </Button>
             <Button
               variant={active === "history" ? "secondary" : "ghost"}

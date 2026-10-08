@@ -115,6 +115,7 @@ export function App() {
           signedIn={!!w.user}
           active={w.activeTab}
           onNavigate={w.store.navigate}
+          onRun={() => setNewOpen(true)}
           theme={theme}
           onTheme={setTheme}
         />
