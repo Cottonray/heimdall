@@ -17,6 +17,11 @@ export async function connectInspector(
   let checking = false;
   let permitted = true;
   let messages = Promise.resolve();
+  let authorization: Promise<boolean> | undefined;
+  const check = () =>
+    (authorization ??= authorized().finally(() => {
+      authorization = undefined;
+    }));
   const stop = () => {
     if (closed) return;
     closed = true;
@@ -53,10 +58,11 @@ export async function connectInspector(
         ws.close(1009);
         return;
       }
+      const permission = check();
       messages = messages
         .then(async () => {
           if (closed) return;
-          if (!(await authorized())) {
+          if (!(await permission)) {
             ws.close(4409);
             return;
           }
