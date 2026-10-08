@@ -40,7 +40,9 @@ async function post<T>(path: string, body: unknown): Promise<T> {
 }
 export const api = {
   me: () => fetch(API + "/auth/me").then(json<{ user: User | null }>),
-  login: (role: User["role"], username: string, password: string) =>
+  testLogin: (role: User["role"]) =>
+    post<{ user: User }>("/auth/test-login", { role }),
+  login: (role: User["role"] | undefined, username: string, password: string) =>
     post<{ user: User }>("/auth/login", { role, username, password }),
   logout: () => post("/auth/logout", {}),
   saveDomain: (domain: Partial<Domain>) => post<Domain[]>("/domains", domain),

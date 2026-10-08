@@ -64,9 +64,16 @@ export class WorkspaceStore {
     this.value = { ...this.value, ...patch };
     this.listeners.forEach((fn) => fn());
   }
-  login = (role: User["role"], username: string, password: string) =>
+  testLogin = (role: User["role"]) =>
     this.run(async () => {
-      const { user } = await api.login(role, username, password);
+      const { user } = await api.testLogin(role);
+      this.patch({ user });
+      await this.refresh();
+      this.connect();
+    });
+  login = (username: string, password: string) =>
+    this.run(async () => {
+      const { user } = await api.login(undefined, username, password);
       this.patch({ user });
       await this.refresh();
       this.connect();

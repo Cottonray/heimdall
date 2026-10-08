@@ -1,6 +1,7 @@
 import {
   authenticate,
   login,
+  testLogin,
   logout,
   localRequest,
 } from "../infrastructure/auth.ts";
@@ -53,7 +54,7 @@ export async function handle(
       return true;
     }
     const authRoute =
-      route === "/api/studio/auth/login" || route === "/api/studio/auth/logout";
+      route === "/api/studio/auth/login" || route === "/api/studio/auth/test-login" || route === "/api/studio/auth/logout";
     if (!authRoute && !auth && !localRequest(req)) {
       send(401, { error: "로그인이 필요해요" });
       return true;
@@ -107,6 +108,10 @@ export async function handle(
       if (body.length > 64000) throw new Error("요청이 너무 커요");
     }
     const data = JSON.parse(body || "{}");
+    if (route === "/api/studio/auth/test-login") {
+      send(200, { user: await testLogin(req, res, data.role) });
+      return true;
+    }
     if (route === "/api/studio/auth/login") {
       send(200, { user: await login(req, res, data) });
       return true;

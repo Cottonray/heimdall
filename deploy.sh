@@ -147,7 +147,14 @@ ssh "$main" '
     cfg=$(curl -sS -o /dev/null -w "%{http_code}" https://qa.example/aiqa/api/config)
     studio=$(curl -sS -o /dev/null -w "%{http_code}" https://gateway.example/aiqa/studio/)
     printf "  구형 화면=%s  구형 API=%s  Studio 로그인=%s\n" "$code" "$cfg" "$studio"
-    test "$code" = 410 && test "$cfg" = 410 && test "$studio" = 302
+    test "$code" = 410 && test "$cfg" = 410
+    if [ "$studio" = 200 ]; then
+        auth=$(curl -sS -o /dev/null -w "%{http_code}" https://gateway.example/aiqa/api/studio/status)
+        test "$auth" = 401
+    else
+        test "$studio" = 302
+        echo "  기존 SSO 게이트 유지 중 — 전용 로그인 전환은 메인 nginx 배포에서 확인"
+    fi
 '
 
 say "완료 — https://gateway.example/aiqa/studio/"

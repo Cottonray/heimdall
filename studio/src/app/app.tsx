@@ -3,7 +3,8 @@ import { Profile } from "@/features/auth/profile";
 import { Domains } from "@/features/domains/domains";
 import { ProjectList } from "@/features/projects/project-list";
 import { MoveTestDialog } from "@/features/projects/move-test-dialog";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { LoginPage } from "@/features/auth/login-page";
 import {
   Download,
   RotateCcw,
@@ -42,6 +43,27 @@ export function App() {
   const { theme, setTheme, toggleTheme } = useTheme();
   const [newOpen, setNewOpen] = useState(false);
   const [exported, setExported] = useState<SessionExport | null>(null);
+  useEffect(() => {
+    if (w.loading) return;
+    if (!w.user) history.replaceState(null, "", "/aiqa/studio/login");
+    else if (location.pathname.endsWith("/login"))
+      history.replaceState(
+        null,
+        "",
+        "/aiqa/studio/" + (w.selectedId ? "#" + w.selectedId : ""),
+      );
+  }, [w.user, w.loading, w.selectedId]);
+  if (!w.loading && !w.user)
+    return (
+      <LoginPage
+        busy={w.busy}
+        error={w.error}
+        theme={theme}
+        onToggleTheme={toggleTheme}
+        onLogin={w.store.login}
+        onTestLogin={w.store.testLogin}
+      />
+    );
   const projectSessions = w.sessions.filter(
     (s) => (s.projectId || "default") === w.projectId,
   );
@@ -57,7 +79,11 @@ export function App() {
     <div className="flex h-dvh flex-col overflow-hidden bg-background text-foreground md:flex-row">
       {
         <SessionSidebar
-          projectName={w.activeTab === "projects" || !w.projectId || !w.user ? "" : projectName}
+          projectName={
+            w.activeTab === "projects" || !w.projectId || !w.user
+              ? ""
+              : projectName
+          }
           signedIn={!!w.user}
           active={w.activeTab}
           onNavigate={w.store.navigate}
@@ -120,16 +146,7 @@ export function App() {
             })}
           </TabsList>
           <div className="px-3 py-2">
-            <Profile
-              user={w.user}
-              busy={w.busy}
-              error={w.error}
-              onLogin={async (role, username, password) => {
-                await w.store.login(role, username, password);
-                return !w.store.getSnapshot().error;
-              }}
-              onLogout={w.store.logout}
-            />
+            <Profile user={w.user} busy={w.busy} onLogout={w.store.logout} />
           </div>
         </header>
         <main className="min-h-0 flex-1 overflow-y-auto p-4 md:p-6">

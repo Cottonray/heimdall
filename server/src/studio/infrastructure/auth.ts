@@ -36,6 +36,13 @@ async function ensureAuth() {
     await ensureDb();
     await db!`create table if not exists heimdall_users (id text primary key, username text unique not null, name text not null, role text not null check(role in ('user','admin')), password_hash text not null)`;
     await db!`create table if not exists heimdall_logins (token_hash text primary key, user_id text not null references heimdall_users(id), expires bigint not null)`;
+    if (process.env.AIQA_TEST_LOGIN_ENABLED === "true") {
+      for (const role of ["user", "admin"] as const) {
+        const id = "demo-" + role;
+        const name = role === "admin" ? "테스트 관리자" : "테스트 사용자";
+        await db!`insert into heimdall_users values (${id}, ${id}, ${name}, ${role}, ${await hashPassword(randomBytes(32).toString("hex"))}) on conflict do nothing`;
+      }
+    }
     for (const [username, name, role, password] of [
       ["tester", "테스트 사용자", "user", process.env.AIQA_TEST_USER_PASSWORD],
       ["admin", "관리자", "admin", process.env.AIQA_TEST_ADMIN_PASSWORD],
@@ -109,7 +116,7 @@ export async function login(
     data.password,
     row?.password_hash || "00000000000000000000000000000000:" + "0".repeat(128),
   );
-  if (!row || !valid || row.role !== data.role) {
+  if (!row || !valid || row.id.startsWith("demo-") || (data.role && row.role !== data.role)) {
     failures.set(key, {
       count: (failures.get(key)?.count || 0) + 1,
       until: Date.now() + 900000,
@@ -117,21 +124,30 @@ export async function login(
     throw new Error("아이디 또는 비밀번호를 확인해 주세요");
   }
   failures.delete(key);
+  return issueSession(req, res, {
+    id: String(row.id), username: String(row.username), name: String(row.name), role: row.role as User["role"],
+  });
+}
+export async function testLogin(req: IncomingMessage, res: ServerResponse, role: unknown) {
+  if (process.env.AIQA_TEST_LOGIN_ENABLED !== "true" || !["user", "admin"].includes(String(role)))
+    throw new Error("테스트 로그인을 사용할 수 없어요");
+  await ensureAuth();
+  const rows = await db!`select id,username,name,role from heimdall_users where id=${"demo-" + role}`;
+  const user = rows[0] as User;
+  return issueSession(req, res, user);
+}
+async function issueSession(req: IncomingMessage, res: ServerResponse, user: User) {
   await logout(req, res);
   const token = randomBytes(32).toString("base64url");
-  await db!`insert into heimdall_logins values (${createHash("sha256").update(token).digest("hex")}, ${row.id}, ${Date.now() + 30 * 24 * 3600000})`;
+  await db!`insert into heimdall_logins values (${createHash("sha256").update(token).digest("hex")}, ${user.id}, ${Date.now() + 30 * 24 * 3600000})`;
   await db!`delete from heimdall_logins where expires<${Date.now()}`;
   res.setHeader(
     "Set-Cookie",
     `${COOKIE}=${token}; Path=/aiqa; HttpOnly; Secure; SameSite=Lax; Max-Age=2592000`,
   );
-  return {
-    id: String(row.id),
-    username: String(row.username),
-    name: String(row.name),
-    role: row.role as User["role"],
-  };
+  return user;
 }
+
 export async function logout(req: IncomingMessage, res: ServerResponse) {
   const hash = sessionHash(req);
   if (hash) {

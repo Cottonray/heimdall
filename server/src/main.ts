@@ -49,7 +49,7 @@ const server = http.createServer(async (req, res) => {
     const route = url.pathname.slice(BASE.length)
     try {
         if (await studio.handle(req, res, route)) return
-        if (route === '/studio' || route === '/studio/' || route === '/studio/index.html' || /^\/studio\/assets\/[a-zA-Z0-9._-]+\.(?:js|css|woff2|svg)$/.test(route)) {
+        if (route === '/studio' || route === '/studio/login' || route === '/studio/' || route === '/studio/index.html' || /^\/studio\/assets\/[a-zA-Z0-9._-]+\.(?:js|css|woff2|svg)$/.test(route)) {
             if (!studio.allowed(req)) return json(res, 403, { error: '로그인 후 QA Studio를 이용해 주세요' })
             if (req.method !== 'GET') return json(res, 405, { error: 'method not allowed' })
             if (route === '/studio') {
