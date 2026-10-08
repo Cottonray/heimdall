@@ -13,13 +13,16 @@ try {
     await assert.rejects(()=>call('qa_open',{engine:'web',url:'http://169.254.169.254/latest/meta-data/'}));ok('unregistered destination rejected')
     const [a,b]=await Promise.all([open('web','검증 · 병렬 A'),open('mobile-web','검증 · 병렬 B')])
     await assert.rejects(()=>open('web','overflow'));ok('two browser slots; third rejected')
-    const ws=new WebSocket('ws://127.0.0.1:8080/aiqa/studio/ws');let event=false
+    const ws=new WebSocket('ws://127.0.0.1:8080/aiqa/studio/ws');let event=false, frameSeen=false, resolveAction: ((v:any)=>void)|undefined
     await new Promise<void>((resolve,reject)=>{ws.onopen=()=>resolve();ws.onerror=()=>reject(Error('websocket failed'))})
-    ws.onmessage=e=>{if(JSON.parse(String(e.data)).type==='studio')event=true}
-    await Promise.all([a,b].map((s,i)=>call('qa_action',{id:s.id,action:{type:'click',selector:'#transfer'}}).then(()=>call('qa_action',{id:s.id,action:{type:'fill',selector:'#recipient',value:`테스트${i}`}}))))
+    ws.onmessage=e=>{if(typeof e.data!=='string'){frameSeen=true;return}const m=JSON.parse(e.data);if(m.type==='studio')event=true;if(m.type==='reply')resolveAction?.(m)}
+    ws.send(JSON.stringify({type:'watch',id:a.id}))
+    const reply=await new Promise<any>((resolve,reject)=>{const t=setTimeout(()=>reject(Error('WebSocket action timeout')),15000);resolveAction=m=>{clearTimeout(t);resolve(m)};ws.send(JSON.stringify({type:'action',requestId:'verify',id:a.id,action:{type:'click',selector:'#transfer'}}))});assert.equal(reply.result.ok,true)
+    await call('qa_action',{id:b.id,action:{type:'click',selector:'#transfer'}})
+    await Promise.all([a,b].map((s,i)=>call('qa_action',{id:s.id,action:{type:'fill',selector:'#recipient',value:`테스트${i}`}})))
     const av=await call('qa_observe',{id:a.id}),bv=await call('qa_observe',{id:b.id})
     assert.ok(av.observation.tree.includes('테스트0'));assert.ok(bv.observation.tree.includes('테스트1'));assert.ok(!av.observation.tree.includes('테스트1'));ok('parallel sessions keep inputs isolated')
-    assert.ok(event);ws.close();ok('WebSocket action events received')
+    for(let i=0;i<30&&!frameSeen;i++)await new Promise(r=>setTimeout(r,100));assert.ok(event);assert.ok(frameSeen);ws.close();ok('WebSocket control, frames and events received')
     await call('qa_action',{id:a.id,action:{type:'fill',selector:'#amount',value:'10000'}})
     await call('qa_action',{id:a.id,action:{type:'click',selector:'#review'}})
     assert.equal((await call('qa_action',{id:a.id,action:{type:'assert',text:'입력 확인 완료'}})).ok,true)

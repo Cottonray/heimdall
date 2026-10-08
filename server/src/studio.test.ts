@@ -23,7 +23,7 @@ test('reject executable actions, unbounded input and invalid coordinates', () =>
     assert.throws(()=>validateAction({type:'fill',value:'x'}))
     assert.throws(()=>validateAction({type:'type',value:'x'.repeat(5000)}))
 })
-test('export escapes user text and omits failed operations while retaining assertions', () => {
+test('export escapes user text and retains failed operations and assertions for honest replay', () => {
     const text = "O'Reilly\n김테스트"
     const code=script({engine:'web',name:'검증',url:'http://127.0.0.1:8081/demo/',steps:[
         {ok:true,action:{type:'fill',selector:'#recipient',value:text}},
@@ -32,7 +32,7 @@ test('export escapes user text and omits failed operations while retaining asser
         {ok:true,action:{type:'api',url:'http://127.0.0.1:8081/demo/api/accounts',status:200,contains:'accounts'}},
     ]})
     assert.ok(code.includes(JSON.stringify(text)))
-    assert.ok(!code.includes('missing'))
+    assert.ok(code.includes('missing'))
     assert.ok(code.includes('toBeVisible()'))
     assert.ok(code.includes('toContain("accounts")'))
 })
