@@ -1,3 +1,7 @@
+import {
+  deviceMetadata,
+  saveDeviceMetadata,
+} from "../infrastructure/device-metadata.ts";
 import { handleAgent } from "../infrastructure/agent-registry.ts";
 import { listTestData, saveTestData } from "../infrastructure/test-data.ts";
 import {
@@ -91,6 +95,20 @@ export async function handle(
         res.end(file);
       }
       return true;
+    }
+    if (route === "/api/studio/admin/device-metadata") {
+      if (auth?.user.role !== "admin") {
+        send(403, { error: "관리자만 이용할 수 있어요" });
+        return true;
+      }
+      if (req.method === "GET") {
+        send(200, await deviceMetadata());
+        return true;
+      }
+      if (req.method !== "POST") {
+        send(405, {});
+        return true;
+      }
     }
     if (route === "/api/studio/admin/users") {
       if (auth?.user.role !== "admin")
@@ -254,6 +272,11 @@ export async function handle(
         throw new Error("요청이 너무 커요");
     }
     const data = JSON.parse(body || "{}");
+    if (route === "/api/studio/admin/device-metadata") {
+      await saveDeviceMetadata(data);
+      send(200, { ok: true });
+      return true;
+    }
     if (route === "/api/studio/test-data") {
       await saveTestData(data);
       send(200, { ok: true });

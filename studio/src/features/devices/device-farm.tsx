@@ -1,3 +1,4 @@
+import { DeviceManagement } from "./device-management";
 import { useEffect, useState } from "react";
 import { ExternalLink, RefreshCw, LayoutGrid, List } from "lucide-react";
 import { PageHeader } from "@/components/page-header";
@@ -124,30 +125,32 @@ export function DeviceFarm({
                 <SelectItem value="all">전체</SelectItem>
               </SelectContent>
             </Select>
-            <div
-              role="group"
-              aria-label="보기 방식"
-              className="flex items-center gap-1"
-            >
-              <Button
-                variant={view === "cards" ? "secondary" : "ghost"}
-                size="icon"
-                aria-label="카드보기"
-                aria-pressed={view === "cards"}
-                onClick={() => setView("cards")}
+            {!management && (
+              <div
+                role="group"
+                aria-label="보기 방식"
+                className="flex items-center gap-1"
               >
-                <LayoutGrid />
-              </Button>
-              <Button
-                variant={view === "list" ? "secondary" : "ghost"}
-                size="icon"
-                aria-label="목록보기"
-                aria-pressed={view === "list"}
-                onClick={() => setView("list")}
-              >
-                <List />
-              </Button>
-            </div>
+                <Button
+                  variant={view === "cards" ? "secondary" : "ghost"}
+                  size="icon"
+                  aria-label="카드보기"
+                  aria-pressed={view === "cards"}
+                  onClick={() => setView("cards")}
+                >
+                  <LayoutGrid />
+                </Button>
+                <Button
+                  variant={view === "list" ? "secondary" : "ghost"}
+                  size="icon"
+                  aria-label="목록보기"
+                  aria-pressed={view === "list"}
+                  onClick={() => setView("list")}
+                >
+                  <List />
+                </Button>
+              </div>
+            )}
             <Button
               variant="outline"
               disabled={loading}
@@ -222,6 +225,8 @@ export function DeviceFarm({
             </Card>
           ))}
         </div>
+      ) : management ? (
+        <DeviceManagement devices={visibleDevices} inventoryError={!!error} />
       ) : view === "list" ? (
         <DataTable
           data={visibleDevices}
