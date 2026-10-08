@@ -6,14 +6,6 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-  DialogFooter,
-} from "@/components/ui/dialog";
 import { API } from "@/lib/api";
 import type { User } from "../../../../contracts/studio";
 type Post = {
@@ -86,113 +78,125 @@ export function Community({
   }
   return (
     <div className="space-y-6">
-      <PageHeader
-        title="커뮤니티"
-        description="질문과 테스트 경험을 함께 나눠요."
-        actions={
-          <>
-            <RefreshControl
-              busy={loading}
-              active={active}
-              onRefresh={() => setRevision((value) => value + 1)}
-            />
+      <div hidden={!!reading || !!editing} className="space-y-6">
+        <PageHeader
+          title="커뮤니티"
+          description="질문과 테스트 경험을 함께 나눠요."
+          actions={
+            <>
+              <RefreshControl
+                busy={loading}
+                active={active && !reading && !editing}
+                onRefresh={() => setRevision((value) => value + 1)}
+              />
+              <Button
+                onClick={() => {
+                  setError("");
+                  setEditing({ title: "", content: "" });
+                }}
+              >
+                작성
+              </Button>
+            </>
+          }
+        />
+        {error && (
+          <p role="alert" className="text-sm text-destructive">
+            {error}
+          </p>
+        )}
+        {loading ? (
+          <p role="status">게시글을 불러오고 있어요.</p>
+        ) : (
+          <DataTable
+            data={rows}
+            caption="커뮤니티 게시글"
+            getRowId={(r) => r.id}
+            getRowLabel={(r) => r.title}
+            searchText={(r) => `${r.title} ${r.content} ${r.author}`}
+            searchPlaceholder="제목 · 내용 · 작성자 검색"
+            emptyMessage="아직 게시글이 없어요. 첫 글을 작성해 주세요."
+            rowActions={(r) => [
+              { label: "상세", onSelect: () => setReading(r) },
+              ...(r.authorId === user.id || user.role === "admin"
+                ? [
+                    {
+                      label: "수정",
+                      onSelect: () => {
+                        setError("");
+                        setEditing({ ...r });
+                      },
+                    },
+                  ]
+                : []),
+            ]}
+            columns={[
+              {
+                id: "title",
+                header: "제목",
+                sortValue: (r) => r.title,
+                cell: (r) => (
+                  <Button variant="link" onClick={() => setReading(r)}>
+                    {r.title}
+                  </Button>
+                ),
+              },
+              { id: "author", header: "작성자", cell: (r) => r.author },
+              {
+                id: "created",
+                header: "작성일",
+                sortValue: (r) => Number(r.created),
+                cell: (r) =>
+                  new Date(Number(r.created)).toLocaleString("ko-KR"),
+              },
+            ]}
+          />
+        )}
+      </div>
+      {reading && !editing && (
+        <article className="space-y-6">
+          <Button variant="outline" onClick={() => setReading(null)}>
+            목록
+          </Button>
+          <header className="space-y-3 border-b pb-6">
+            <h1 className="break-words text-2xl font-semibold">
+              {reading.title}
+            </h1>
+            <p className="text-sm text-muted-foreground">
+              {reading.author} ·{" "}
+              {new Date(Number(reading.created)).toLocaleString("ko-KR")}
+            </p>
+          </header>
+          <div className="min-h-64 whitespace-pre-wrap break-words text-sm leading-7">
+            {reading.content}
+          </div>
+          {(reading.authorId === user.id || user.role === "admin") && (
             <Button
+              variant="outline"
               onClick={() => {
                 setError("");
-                setEditing({ title: "", content: "" });
+                setEditing({ ...reading });
               }}
             >
-              작성
+              수정
             </Button>
-          </>
-        }
-      />
-      {error && (
-        <p role="alert" className="text-sm text-destructive">
-          {error}
-        </p>
+          )}
+        </article>
       )}
-      {loading ? (
-        <p role="status">게시글을 불러오고 있어요.</p>
-      ) : (
-        <DataTable
-          data={rows}
-          caption="커뮤니티 게시글"
-          getRowId={(r) => r.id}
-          getRowLabel={(r) => r.title}
-          searchText={(r) => `${r.title} ${r.content} ${r.author}`}
-          searchPlaceholder="제목 · 내용 · 작성자 검색"
-          emptyMessage="아직 게시글이 없어요. 첫 글을 작성해 주세요."
-          rowActions={(r) => [
-            { label: "상세", onSelect: () => setReading(r) },
-            ...(r.authorId === user.id || user.role === "admin"
-              ? [
-                  {
-                    label: "수정",
-                    onSelect: () => {
-                      setError("");
-                      setEditing({ ...r });
-                    },
-                  },
-                ]
-              : []),
-          ]}
-          columns={[
-            {
-              id: "title",
-              header: "제목",
-              sortValue: (r) => r.title,
-              cell: (r) => (
-                <Button variant="link" onClick={() => setReading(r)}>
-                  {r.title}
-                </Button>
-              ),
-            },
-            { id: "author", header: "작성자", cell: (r) => r.author },
-            {
-              id: "created",
-              header: "작성일",
-              sortValue: (r) => Number(r.created),
-              cell: (r) => new Date(Number(r.created)).toLocaleString("ko-KR"),
-            },
-          ]}
-        />
-      )}
-      <Dialog
-        open={!!reading && !editing}
-        onOpenChange={(open) => {
-          if (!open) setReading(null);
-        }}
-      >
-        <DialogContent className="max-h-[85dvh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>{reading?.title}</DialogTitle>
-            <DialogDescription>
-              {reading?.author} ·{" "}
-              {reading &&
-                new Date(Number(reading.created)).toLocaleString("ko-KR")}
-            </DialogDescription>
-          </DialogHeader>
-          <p className="whitespace-pre-wrap break-words text-sm">
-            {reading?.content}
-          </p>
-        </DialogContent>
-      </Dialog>
-      <Dialog
-        open={!!editing}
-        onOpenChange={(open) => {
-          if (!open && !busy) setEditing(null);
-        }}
-      >
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>
-              {editing?.id ? "게시글 수정" : "게시글 작성"}
-            </DialogTitle>
-            <DialogDescription>
-              로그인한 사용자들과 공유할 내용을 적어 주세요.
-            </DialogDescription>
-          </DialogHeader>
+      {editing && (
+        <section className="space-y-6">
+          <PageHeader
+            title={editing.id ? "게시글 수정" : "게시글 작성"}
+            actions={
+              <Button
+                variant="outline"
+                disabled={busy}
+                onClick={() => setEditing(null)}
+              >
+                취소
+              </Button>
+            }
+          />
           {editing && (
             <form
               className="space-y-4"
@@ -231,15 +235,15 @@ export function Community({
                   {error}
                 </p>
               )}
-              <DialogFooter>
+              <div className="flex justify-end">
                 <Button type="submit" disabled={busy}>
                   저장
                 </Button>
-              </DialogFooter>
+              </div>
             </form>
           )}
-        </DialogContent>
-      </Dialog>
+        </section>
+      )}
     </div>
   );
 }
