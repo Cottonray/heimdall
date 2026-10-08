@@ -126,7 +126,7 @@ export function Domains({
                 id="domain-url"
                 type="url"
                 required
-                placeholder="https://example.com"
+                placeholder="https://web.example/"
                 value={editing?.url || ""}
                 onChange={(e) =>
                   setEditing({ ...editing, url: e.target.value })

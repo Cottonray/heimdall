@@ -73,24 +73,45 @@ function fixture(t: TestContext, hash = "") {
     succeed: (sessions: Session[]) => void;
     fail: (code: number) => void;
   }[] = [];
-  t.mock.method(globalThis, "fetch", (input: RequestInfo | URL) => {
-    const url = new URL(String(input), "https://heimdall.test");
-    if (url.pathname.endsWith("/auth/test-login"))
-      return Promise.resolve(Response.json({ user }));
-    assert.equal(url.pathname, "/aiqa/api/studio/status");
-    return new Promise<Response>((resolve) => {
-      requests.push({
-        projectId: url.searchParams.get("projectId") || "",
-        succeed: (sessions) => resolve(Response.json(status(sessions))),
-        fail: (code) =>
-          resolve(Response.json({ error: "stale failure" }, { status: code })),
+  const profileRequests: {
+    path: string;
+    body: unknown;
+    reply: (body: unknown, code?: number) => void;
+  }[] = [];
+  t.mock.method(
+    globalThis,
+    "fetch",
+    (input: RequestInfo | URL, init?: RequestInit) => {
+      const url = new URL(String(input), "https://heimdall.test");
+      if (url.pathname.endsWith("/auth/test-login"))
+        return Promise.resolve(Response.json({ user }));
+      if (url.pathname.startsWith("/aiqa/api/studio/profile"))
+        return new Promise<Response>((resolve) => {
+          profileRequests.push({
+            path: url.pathname,
+            body: JSON.parse(String(init?.body)),
+            reply: (body, code = 200) =>
+              resolve(Response.json(body, { status: code })),
+          });
+        });
+      assert.equal(url.pathname, "/aiqa/api/studio/status");
+      return new Promise<Response>((resolve) => {
+        requests.push({
+          projectId: url.searchParams.get("projectId") || "",
+          succeed: (sessions) => resolve(Response.json(status(sessions))),
+          fail: (code) =>
+            resolve(
+              Response.json({ error: "stale failure" }, { status: code }),
+            ),
+        });
       });
-    });
-  });
+    },
+  );
   const store = new WorkspaceStore();
   return {
     store,
     requests,
+    profileRequests,
     async login(sessions: Session[]) {
       const login = store.testLogin("user");
       await setImmediate();
@@ -181,4 +202,70 @@ test("a deep-linked test loads its project dashboard scope after authentication"
   await f.respond("project-b", [linked]);
   assert.equal(f.store.getSnapshot().selectedId, linked.id);
   assert.equal(f.store.getSnapshot().loading, false);
+});
+
+test("device farm leaves project scope without losing open work", async (t) => {
+  const f = fixture(t);
+  const a = session("test-a", "project-a");
+  await f.login([a]);
+  f.store.select(a.id);
+  await f.respond("project-a", [a]);
+  f.store.navigate("devices");
+  assert.equal(f.store.getSnapshot().activeTab, "devices");
+  assert.equal(f.store.getSnapshot().projectId, "");
+  assert.equal(f.store.getSnapshot().selectedId, "");
+  assert.ok(f.store.getSnapshot().tabs.includes(a.id));
+  await f.respond("", [a]);
+  f.store.enterProject("project-a");
+  await f.respond("project-a", [a]);
+  assert.equal(f.store.getSnapshot().activeTab, "dashboard");
+});
+
+test("saving an avatar updates the signed-in profile and blocks duplicate changes", async (t) => {
+  const f = fixture(t);
+  await f.login([]);
+  const avatar = "data:image/webp;base64,fixture";
+  const saving = f.store.saveProfile(avatar);
+  assert.equal(f.store.getSnapshot().busy, true);
+  assert.equal((await f.store.saveProfile(null)).ok, false);
+  assert.equal(f.profileRequests.length, 1);
+  assert.deepEqual(f.profileRequests[0].body, { avatar });
+  const savedUser = {
+    ...user,
+    avatar: "/aiqa/api/studio/profile/avatar?v=1",
+    avatarUploadAllowed: true,
+  };
+  f.profileRequests.shift()!.reply(savedUser);
+  assert.deepEqual(await saving, { ok: true });
+  assert.deepEqual(f.store.getSnapshot().user, savedUser);
+  assert.equal(f.store.getSnapshot().busy, false);
+
+  const deleting = f.store.saveProfile(null);
+  assert.deepEqual(f.profileRequests[0].body, { avatar: null });
+  f.profileRequests.shift()!.reply({ ...savedUser, avatar: null });
+  assert.equal((await deleting).ok, true);
+  assert.equal(f.store.getSnapshot().user?.avatar, null);
+});
+
+test("password rotation ignores old-cookie failures and resumes polling afterward", async (t) => {
+  const f = fixture(t);
+  await f.login([]);
+  const oldRefresh = f.store.refresh();
+  const oldCookie = f.requests.shift()!;
+  const changing = f.store.changePassword(
+    "current-fixture",
+    "replacement-fixture",
+  );
+  assert.equal(f.profileRequests[0].path, "/aiqa/api/studio/profile/password");
+  await f.store.refresh();
+  assert.equal(f.requests.length, 0);
+  oldCookie.fail(401);
+  await oldRefresh;
+  assert.equal(f.store.getSnapshot().user?.id, user.id);
+  f.profileRequests.shift()!.reply({ ok: true });
+  assert.deepEqual(await changing, { ok: true });
+  assert.equal(f.requests.length, 1);
+  await f.respond("", []);
+  assert.equal(f.store.getSnapshot().user?.id, user.id);
+  assert.equal(f.store.getSnapshot().error, "");
 });

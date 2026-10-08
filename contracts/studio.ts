@@ -3,6 +3,9 @@ export type User = {
   username: string;
   name: string;
   role: "user" | "admin";
+  avatar?: string | null;
+  avatarUploadAllowed?: boolean;
+  passwordChangeAllowed?: boolean;
 };
 export type Domain = { id: string; name: string; url: string; origin: string };
 export type Engine = "web" | "mobile-web" | "api" | "android";
@@ -117,3 +120,12 @@ export interface ToolResults {
   qa_export: SessionExport;
 }
 export type ToolName = keyof ToolResults;
+
+export type DeviceInfo = {
+  serial: string;
+  state: string;
+  kind: "emulator" | "real";
+  model: string;
+  selectable: boolean;
+  current: boolean;
+};

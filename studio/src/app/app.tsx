@@ -1,3 +1,5 @@
+import { ProjectSettings } from "@/features/projects/project-settings";
+import { DeviceFarm } from "@/features/devices/device-farm";
 import { Board } from "@/features/board/board";
 import { Profile } from "@/features/auth/profile";
 import { Domains } from "@/features/domains/domains";
@@ -76,24 +78,23 @@ export function App() {
     w.status?.projects?.find((p) => p.id === w.projectId)?.name ||
     "기본 프로젝트";
   const visibleTabs = w.tabs.filter(
-    (id) => isPage(id) || projectSessions.some((s) => s.id === id),
+    (id) =>
+      id !== "projects" &&
+      id !== "devices" &&
+      (isPage(id) || projectSessions.some((s) => s.id === id)),
   );
   const onTab = (id: string) =>
     isPage(id) ? w.store.navigate(id) : w.store.select(id);
-  const workspaceVisible = w.activeTab !== "projects" && !!w.projectId;
+  const workspaceVisible =
+    !["projects", "devices"].includes(w.activeTab) && !!w.projectId;
   return (
     <div className="flex h-dvh flex-col overflow-hidden bg-background text-foreground md:flex-row">
-      {workspaceVisible && (
+      {w.user && (
         <SessionSidebar
-          projectName={
-            w.activeTab === "projects" || !w.projectId || !w.user
-              ? ""
-              : projectName
-          }
+          projectName={!workspaceVisible ? "" : projectName}
           signedIn={!!w.user}
           active={w.activeTab}
           onNavigate={w.store.navigate}
-          onNew={() => setNewOpen(true)}
           theme={theme}
           onTheme={setTheme}
         />
@@ -118,8 +119,10 @@ export function App() {
                           ? "대시보드"
                           : id === "history"
                             ? "테스트 기록"
-                            : id === "settings"
-                              ? "설정"
+                            : id === "settings" || id === "project-settings"
+                              ? id === "settings"
+                                ? "설정"
+                                : "프로젝트 설정"
                               : w.sessions.find((s) => s.id === id)?.name ||
                                 "테스트";
                 const Icon =
@@ -129,7 +132,7 @@ export function App() {
                       ? LayoutDashboard
                       : id === "history"
                         ? History
-                        : id === "settings"
+                        : id === "settings" || id === "project-settings"
                           ? SettingsIcon
                           : Monitor;
                 return (
@@ -149,11 +152,28 @@ export function App() {
               })}
             </TabsList>
             <div className="px-3 py-2">
-              <Profile user={w.user} busy={w.busy} onLogout={w.store.logout} />
+              <Profile
+                user={w.user}
+                busy={w.busy}
+                onLogout={w.store.logout}
+                onSaveAvatar={w.store.saveProfile}
+                onChangePassword={w.store.changePassword}
+              />
             </div>
           </header>
         )}
         <main className="min-h-0 flex-1 overflow-y-auto p-4 md:p-6">
+          {!workspaceVisible && w.activeTab !== "projects" && w.user && (
+            <div className="mb-6 flex justify-end">
+              <Profile
+                user={w.user}
+                busy={w.busy}
+                onLogout={w.store.logout}
+                onSaveAvatar={w.store.saveProfile}
+                onChangePassword={w.store.changePassword}
+              />
+            </div>
+          )}
           {w.error && (
             <div
               role="alert"
@@ -202,24 +222,25 @@ export function App() {
                       user={w.user}
                       busy={w.busy}
                       loading={w.loading}
-                      theme={theme}
-                      onTheme={setTheme}
                       onLogout={w.store.logout}
-                      onRefresh={() => void w.store.refresh()}
+                      onSaveAvatar={w.store.saveProfile}
+                      onChangePassword={w.store.changePassword}
                       onEnter={w.store.enterProject}
                       onCreate={async (name) => {
                         await w.store.createProject(name);
                         return !w.store.getSnapshot().error;
                       }}
                     />
+                  ) : id === "devices" ? (
+                    <DeviceFarm active={w.activeTab === "devices"} />
                   ) : id === "dashboard" ? (
                     <Dashboard
                       sessions={w.status?.sessions || []}
-                      onNew={() => setNewOpen(true)}
                       onSelect={w.store.select}
                     />
                   ) : id === "history" ? (
                     <SessionHistory
+                      onNew={() => setNewOpen(true)}
                       sessions={projectSessions}
                       onSelect={w.store.select}
                     />
@@ -243,6 +264,18 @@ export function App() {
                       }}
                       onRemove={async (id) => {
                         await w.store.removeDomain(id);
+                        return !w.store.getSnapshot().error;
+                      }}
+                    />
+                  ) : id === "project-settings" ? (
+                    <ProjectSettings
+                      project={
+                        w.status?.projects.find((p) => p.id === w.projectId) ||
+                        null
+                      }
+                      busy={w.busy}
+                      onSave={async (name) => {
+                        await w.store.renameProject(name);
                         return !w.store.getSnapshot().error;
                       }}
                     />

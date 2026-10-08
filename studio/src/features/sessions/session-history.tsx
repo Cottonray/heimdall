@@ -1,6 +1,7 @@
 import { Item } from "@/components/ui/item";
 import { useState } from "react";
-import { ArrowUpRight } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { ArrowUpRight, Plus } from "lucide-react";
 import { SearchInput } from "@/components/ui/input";
 import { StatusBadge } from "@/components/status-badge";
 import { Card, CardContent } from "@/components/ui/card";
@@ -9,8 +10,10 @@ import type { Session } from "../../../../contracts/studio";
 export function SessionHistory({
   sessions,
   onSelect,
+  onNew,
 }: {
   sessions: Session[];
+  onNew: () => void;
   onSelect: (id: string) => void;
 }) {
   const [search, setSearch] = useState("");
@@ -28,13 +31,18 @@ export function SessionHistory({
             {filtered.length}개 테스트
           </p>
         </div>
-        <div className="w-full sm:w-72">
-          <SearchInput
-            aria-label="테스트 검색"
-            placeholder="이름 또는 유형 검색"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-          />
+        <div className="flex w-full flex-wrap items-center gap-3 sm:w-auto">
+          <Button onClick={onNew}>
+            <Plus />새 테스트
+          </Button>
+          <div className="w-full sm:w-72">
+            <SearchInput
+              aria-label="테스트 검색"
+              placeholder="이름 또는 유형 검색"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+            />
+          </div>
         </div>
       </div>
       <Card>

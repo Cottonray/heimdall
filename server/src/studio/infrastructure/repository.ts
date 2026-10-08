@@ -74,19 +74,38 @@ export async function requireProject(id: string) {
   if (!rows.length) throw new Error("프로젝트를 찾지 못했어요");
   return id;
 }
-export async function createProject(name: unknown): Promise<Project> {
+export function normalizeProjectName(name: unknown) {
   if (typeof name !== "string" || !name.trim() || name.trim().length > 80)
     throw new Error("프로젝트 이름을 1~80자로 입력해 주세요");
+  return name.trim();
+}
+export async function createProject(name: unknown): Promise<Project> {
+  const normalized = normalizeProjectName(name);
   await ensureDb();
   const id = randomUUID();
   const rows =
-    await db!`insert into aiqa_projects (id, name) values (${id}, ${name.trim()}) returning created`;
+    await db!`insert into aiqa_projects (id, name) values (${id}, ${normalized}) returning created`;
   return {
     id,
-    name: name.trim(),
+    name: normalized,
     created: new Date(rows[0]!.created).toISOString(),
     tests: 0,
   };
+}
+export async function renameProject(
+  id: unknown,
+  name: unknown,
+): Promise<Project> {
+  if (typeof id !== "string" || !id || id.length > 100)
+    throw new Error("프로젝트를 선택해 주세요");
+  const normalized = normalizeProjectName(name);
+  await ensureDb();
+  const rows =
+    await db!`update aiqa_projects set name=${normalized} where id=${id} returning id`;
+  if (!rows.length) throw new Error("프로젝트를 찾지 못했어요");
+  const project = (await listProjects()).find((item) => item.id === id);
+  if (!project) throw new Error("프로젝트를 찾지 못했어요");
+  return project;
 }
 export async function moveSession(id: string, projectId: string) {
   await requireProject(projectId);

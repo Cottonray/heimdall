@@ -7,7 +7,12 @@ import type {
   User,
   Domain,
 } from "../../../../contracts/studio";
-import { api, ApiError, evidenceUrl } from "@/lib/api";
+import {
+  api,
+  ApiError,
+  evidenceUrl,
+  type ProfileActionResult,
+} from "@/lib/api";
 type Snapshot = {
   sessions: Session[];
   user: User | null;
@@ -45,6 +50,7 @@ export class WorkspaceStore {
   private poll: ReturnType<typeof setInterval> | undefined;
   private stopped = true;
   private refreshVersion = 0;
+  private changingPassword = false;
   private objectUrl = "";
   private pending = new Map<
     string,
@@ -84,6 +90,42 @@ export class WorkspaceStore {
       await api.logout();
       this.resetAuth();
     });
+  saveProfile = async (avatar: string | null): Promise<ProfileActionResult> => {
+    if (this.value.busy)
+      return {
+        ok: false,
+        error: "진행 중인 작업이 끝난 뒤 다시 시도해 주세요.",
+      };
+    const userId = this.value.user?.id;
+    const user = await this.run(() => api.saveProfile(avatar));
+    if (!user) return { ok: false, error: this.value.error };
+    if (this.value.user?.id === userId) {
+      this.patch({ user });
+      if (this.value.loading) void this.refresh();
+    }
+    return { ok: true };
+  };
+  changePassword = async (
+    currentPassword: string,
+    newPassword: string,
+  ): Promise<ProfileActionResult> => {
+    if (this.value.busy)
+      return {
+        ok: false,
+        error: "진행 중인 작업이 끝난 뒤 다시 시도해 주세요.",
+      };
+    this.changingPassword = true;
+    this.refreshVersion++;
+    try {
+      const result = await this.run(() =>
+        api.changePassword(currentPassword, newPassword),
+      );
+      return result ? { ok: true } : { ok: false, error: this.value.error };
+    } finally {
+      this.changingPassword = false;
+      void this.refresh();
+    }
+  };
   private resetAuth() {
     this.refreshVersion++;
     this.patch({
@@ -175,6 +217,13 @@ export class WorkspaceStore {
       await this.refresh();
       this.enterProject(project.id);
     });
+  renameProject = (name: string) =>
+    this.run(async () => {
+      const id = this.value.projectId;
+      if (!id) throw new Error("프로젝트를 선택해 주세요.");
+      await api.renameProject(id, name);
+      await this.refresh();
+    });
   moveSession = (id: string, projectId: string) =>
     this.run(async () => {
       this.update(await api.moveSession(id, projectId));
@@ -182,10 +231,10 @@ export class WorkspaceStore {
       this.select(id);
     });
   navigate = (page: Page) => {
-    if (page === "projects") this.setProjectScope("");
+    if (page === "projects" || page === "devices") this.setProjectScope("");
     this.select("");
     this.patch(openTab(this.value, page));
-    if (page === "projects") void this.refresh();
+    if (page === "projects" || page === "devices") void this.refresh();
   };
   closeTab = (id: string) => {
     const next = closeTab(this.value, id);
@@ -226,7 +275,7 @@ export class WorkspaceStore {
     }
   }
   refresh = async () => {
-    if (!this.value.user) return;
+    if (!this.value.user || this.changingPassword) return;
     const version = ++this.refreshVersion;
     const user = this.value.user;
     const projectId = this.value.projectId;

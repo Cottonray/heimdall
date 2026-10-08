@@ -1,10 +1,12 @@
 export const pages = [
   "projects",
+  "devices",
   "dashboard",
   "history",
   "board",
   "domains",
   "settings",
+  "project-settings",
 ] as const;
 export type Page = (typeof pages)[number];
 export function isPage(id: string): id is Page {

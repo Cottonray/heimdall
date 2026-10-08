@@ -1,11 +1,5 @@
-import { Globe, PanelsTopLeft } from "lucide-react";
-import {
-  Plus,
-  ArrowLeft,
-  LayoutDashboard,
-  History,
-  Settings,
-} from "lucide-react";
+import { Globe, PanelsTopLeft, Folder, Smartphone } from "lucide-react";
+import { ArrowLeft, LayoutDashboard, History, Settings } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { HeimdallWordmark } from "@/components/heimdall-wordmark";
 import type { Page } from "@/features/workspace/tabs";
@@ -16,7 +10,6 @@ export function SessionSidebar({
   signedIn,
   active,
   onNavigate,
-  onNew,
   theme,
   onTheme,
 }: {
@@ -24,7 +17,6 @@ export function SessionSidebar({
   signedIn: boolean;
   active: string;
   onNavigate: (page: Page) => void;
-  onNew: () => void;
   theme: Theme;
   onTheme: (theme: Theme) => void;
 }) {
@@ -42,11 +34,42 @@ export function SessionSidebar({
           <HeimdallWordmark />
         </Button>
         {signedIn && projectName && (
-          <Button onClick={onNew} className="md:w-full">
-            <Plus />새 테스트
+          <Button
+            variant="outline"
+            onClick={() => onNavigate("project-settings")}
+            aria-label={projectName + " 프로젝트 설정"}
+            className="min-w-0 justify-between md:w-full"
+          >
+            <span className="truncate">{projectName}</span>
+            <Settings />
           </Button>
         )}
       </div>
+      {signedIn && !projectName && (
+        <nav
+          aria-label="전체 메뉴"
+          className="flex flex-wrap gap-1 px-3 pb-3 md:flex-1 md:flex-col"
+        >
+          <Button
+            variant={active === "projects" ? "secondary" : "ghost"}
+            aria-current={active === "projects" ? "page" : undefined}
+            onClick={() => onNavigate("projects")}
+            className="justify-start"
+          >
+            <Folder />
+            프로젝트
+          </Button>
+          <Button
+            variant={active === "devices" ? "secondary" : "ghost"}
+            aria-current={active === "devices" ? "page" : undefined}
+            onClick={() => onNavigate("devices")}
+            className="justify-start"
+          >
+            <Smartphone />
+            디바이스팜
+          </Button>
+        </nav>
+      )}
       {signedIn && projectName && (
         <>
           <div className="px-3 pb-3">
@@ -58,9 +81,6 @@ export function SessionSidebar({
               <ArrowLeft />
               프로젝트 목록
             </Button>
-            <p className="mt-3 truncate px-3 text-xs font-medium text-muted-foreground">
-              {projectName}
-            </p>
           </div>
           <nav
             aria-label="워크스페이스 메뉴"

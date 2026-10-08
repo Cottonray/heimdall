@@ -4,7 +4,11 @@ import {
   testLogin,
   logout,
   localRequest,
+  changePassword,
+  readProfileAvatar,
+  updateProfile,
 } from "../infrastructure/auth.ts";
+import { MAX_AVATAR_BYTES } from "../infrastructure/avatar-storage.ts";
 import {
   listDomains,
   saveDomain,
@@ -14,6 +18,7 @@ import type { IncomingMessage, ServerResponse } from "node:http";
 import { readFile } from "node:fs/promises";
 import path from "node:path";
 import * as device from "../../device.ts";
+import * as devices from "../../devices.ts";
 import { get } from "../domain/session.ts";
 import { DIR } from "../infrastructure/config.ts";
 import {
@@ -21,6 +26,7 @@ import {
   listSessions,
   listProjects,
   createProject,
+  renameProject,
   moveSession,
 } from "../infrastructure/repository.ts";
 import { frame } from "../engines/observe.ts";
@@ -67,6 +73,29 @@ export async function handle(
       send(403, { error: "요청 출처를 확인해 주세요" });
       return true;
     }
+    if (route.startsWith("/api/studio/profile") && !auth) {
+      send(401, { error: "로그인이 필요해요" });
+      return true;
+    }
+    if (route === "/api/studio/profile/avatar" && req.method === "GET") {
+      const image = await readProfileAvatar(auth!.user);
+      if (!image) send(404, { error: "프로필 이미지가 없어요" });
+      else {
+        res.writeHead(200, {
+          "content-type": image.mime,
+          "content-length": image.bytes.length,
+          "cache-control": "private, no-store",
+          "x-content-type-options": "nosniff",
+          "content-security-policy": "default-src 'none'; sandbox",
+        });
+        res.end(image.bytes);
+      }
+      return true;
+    }
+    if (route === "/api/studio/devices" && req.method === "GET") {
+      send(200, (await devices.list()).filter((item) => item.selectable));
+      return true;
+    }
     if (route === "/api/studio/status") {
       send(200, {
         browser: await worker("/healthz").catch(() => ({ ok: false })),
@@ -103,9 +132,12 @@ export async function handle(
       return true;
     }
     let body = "";
+    const bodyLimit = route === "/api/studio/profile"
+      ? Math.ceil(MAX_AVATAR_BYTES / 3) * 4 + 1024
+      : 64000;
     for await (const chunk of req) {
       body += chunk;
-      if (body.length > 64000) throw new Error("요청이 너무 커요");
+      if (Buffer.byteLength(body) > bodyLimit) throw new Error("요청이 너무 커요");
     }
     const data = JSON.parse(body || "{}");
     if (route === "/api/studio/auth/test-login") {
@@ -121,6 +153,14 @@ export async function handle(
       send(200, { user: null });
       return true;
     }
+    if (route === "/api/studio/profile") {
+      send(200, await updateProfile(auth!.user, data.avatar));
+      return true;
+    }
+    if (route === "/api/studio/profile/password") {
+      send(200, await changePassword(auth!, res, data));
+      return true;
+    }
     if (route === "/api/studio/domains") {
       if (auth?.user.role !== "admin" && !localRequest(req)) {
         send(403, { error: "관리자만 도메인을 설정할 수 있어요" });
@@ -133,7 +173,8 @@ export async function handle(
       return true;
     }
     if (route === "/api/studio/projects") {
-      send(201, await createProject(data.name));
+      if (data.id === undefined) send(201, await createProject(data.name));
+      else send(200, await renameProject(data.id, data.name));
       return true;
     }
     if (route === "/api/studio/project-assignment") {

@@ -9,6 +9,7 @@ import type {
   Domain,
 } from "../../../contracts/studio";
 export const API = "/aiqa/api/studio";
+export type ProfileActionResult = { ok: boolean; error?: string };
 export class ApiError extends Error {
   constructor(
     message: string,
@@ -45,6 +46,9 @@ export const api = {
   login: (role: User["role"] | undefined, username: string, password: string) =>
     post<{ user: User }>("/auth/login", { role, username, password }),
   logout: () => post("/auth/logout", {}),
+  saveProfile: (avatar: string | null) => post<User>("/profile", { avatar }),
+  changePassword: (currentPassword: string, newPassword: string) =>
+    post<{ ok: true }>("/profile/password", { currentPassword, newPassword }),
   saveDomain: (domain: Partial<Domain>) => post<Domain[]>("/domains", domain),
   removeDomain: (id: string) =>
     post<Domain[]>("/domains", { id, remove: true }),
@@ -60,6 +64,8 @@ export const api = {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ name }),
     }).then(json<Project>),
+  renameProject: (id: string, name: string) =>
+    post<Project>("/projects", { id, name }),
   moveSession: (id: string, projectId: string) =>
     fetch(API + "/project-assignment", {
       method: "POST",
