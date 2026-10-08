@@ -22,7 +22,11 @@ import { API, evidenceUrl } from "@/lib/api";
 import type { Session } from "../../../../contracts/studio";
 type Tile = { id: string; wide: boolean };
 type Layout = { columns: number; tiles: Tile[] };
-function readLayout(key: string, sessions: Session[]): Layout {
+function readLayout(
+  key: string,
+  sessions: Session[],
+  emptyProject: boolean,
+): Layout {
   try {
     const data: unknown = JSON.parse(localStorage.getItem(key) || "null");
     if (
@@ -40,7 +44,10 @@ function readLayout(key: string, sessions: Session[]): Layout {
           ids.add(item.id);
           tiles.push({ id: item.id, wide: item.wide === true });
         }
-      return { columns: Number(data.columns), tiles };
+      return {
+        columns: Number(data.columns),
+        tiles: emptyProject ? [] : tiles,
+      };
     }
   } catch {
     /* Start with recent real tests if no saved layout is readable. */
@@ -118,15 +125,19 @@ export function Board({
   projectId,
   sessions,
   active,
+  emptyProject,
   onSelect,
 }: {
   projectId: string;
   sessions: Session[];
   active: boolean;
+  emptyProject: boolean;
   onSelect: (id: string) => void;
 }) {
   const key = "heimdall.board." + projectId;
-  const [layout, setLayout] = useState(() => readLayout(key, sessions));
+  const [layout, setLayout] = useState(() =>
+    readLayout(key, sessions, emptyProject),
+  );
   const [adding, setAdding] = useState(false);
   useEffect(() => {
     try {

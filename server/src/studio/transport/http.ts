@@ -18,7 +18,7 @@ import type { IncomingMessage, ServerResponse } from "node:http";
 import { readFile } from "node:fs/promises";
 import path from "node:path";
 import * as device from "../../device.ts";
-import * as devices from "../../devices.ts";
+import { listDeviceInventory } from "../infrastructure/device-inventory.ts";
 import { get } from "../domain/session.ts";
 import { DIR } from "../infrastructure/config.ts";
 import {
@@ -32,7 +32,7 @@ import {
 import { frame } from "../engines/observe.ts";
 import { worker } from "../engines/browser.ts";
 import { dispatch } from "../application/dispatch.ts";
-import { allowed } from "./access.ts";
+import { allowed, allowedBrowserOrigin } from "./access.ts";
 import { tools } from "./mcp.ts";
 export async function handle(
   req: IncomingMessage,
@@ -48,7 +48,7 @@ export async function handle(
     res.end(JSON.stringify(body));
   };
   if (!allowed(req)) {
-    send(403, { error: "gateway.example 로그인 후 이용해 주세요" });
+    send(403, { error: "헤임달에 로그인 후 이용해 주세요" });
     return true;
   }
   try {
@@ -68,7 +68,7 @@ export async function handle(
     if (
       req.method === "POST" &&
       !localRequest(req) &&
-      req.headers.origin !== "https://gateway.example"
+      !allowedBrowserOrigin(req)
     ) {
       send(403, { error: "요청 출처를 확인해 주세요" });
       return true;
@@ -93,7 +93,11 @@ export async function handle(
       return true;
     }
     if (route === "/api/studio/devices" && req.method === "GET") {
-      send(200, (await devices.list()).filter((item) => item.selectable));
+      try {
+        send(200, await listDeviceInventory());
+      } catch {
+        send(502, { error: "기기 목록을 확인하지 못했어요. 잠시 후 새로고침해 주세요" });
+      }
       return true;
     }
     if (route === "/api/studio/status") {

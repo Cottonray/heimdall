@@ -128,4 +128,7 @@ export type DeviceInfo = {
   model: string;
   selectable: boolean;
   current: boolean;
+  platform: "android" | "ios";
+  ready: boolean;
+  error?: string;
 };

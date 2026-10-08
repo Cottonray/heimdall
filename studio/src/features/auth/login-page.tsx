@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
+import { APP_ROOT } from "@/lib/paths";
 import type { ResolvedTheme } from "@/features/settings/use-theme";
 import type { User } from "../../../../contracts/studio";
 export function LoginPage({
@@ -28,7 +29,7 @@ export function LoginPage({
     <div className="flex min-h-dvh flex-col bg-background text-foreground">
       <header className="flex items-center justify-between border-b px-6 py-5">
         <a
-          href="/aiqa/studio/"
+          href={APP_ROOT}
           className="flex items-center"
         >
           <HeimdallWordmark />

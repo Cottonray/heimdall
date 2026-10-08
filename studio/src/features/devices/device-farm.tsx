@@ -1,5 +1,7 @@
-import { useEffect, useState } from "react";
-import { RefreshCw, Smartphone } from "lucide-react";
+import { useEffect, useState, type ReactNode } from "react";
+import { RefreshCw } from "lucide-react";
+import { PageHeader } from "@/components/page-header";
+import { PlatformIcon } from "@/components/platform-icon";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -7,7 +9,23 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { API } from "@/lib/api";
 import type { DeviceInfo } from "../../../../contracts/studio";
 
-export function DeviceFarm({ active }: { active: boolean }) {
+function deviceStatus(device: DeviceInfo, lookupFailed: boolean) {
+  if (lookupFailed || device.error) return "상태 확인 불가";
+  if (device.state === "unauthorized") return "승인 대기";
+  if (device.state === "offline") return "오프라인";
+  if (device.state !== "device" || device.ready === undefined)
+    return "상태 확인 불가";
+  if (!device.ready) return "부팅 중";
+  return device.kind === "emulator" ? "실행 중" : "사용 가능";
+}
+
+export function DeviceFarm({
+  active,
+  actions,
+}: {
+  active: boolean;
+  actions?: ReactNode;
+}) {
   const [devices, setDevices] = useState<DeviceInfo[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -15,20 +33,29 @@ export function DeviceFarm({ active }: { active: boolean }) {
   useEffect(() => {
     if (!active) return;
     const controller = new AbortController();
+    let pending = false;
     async function refresh() {
+      if (pending) return;
+      pending = true;
       setLoading(true);
-      setError("");
       try {
         const response = await fetch(API + "/devices", {
-          signal: controller.signal,
+          signal: AbortSignal.any([
+            controller.signal,
+            AbortSignal.timeout(12000),
+          ]),
         });
-        if (!response.ok) throw new Error("디바이스 목록을 불러오지 못했어요.");
+        if (!response.ok) throw new Error("디바이스 상태를 확인하지 못했어요.");
         const next = (await response.json()) as DeviceInfo[];
-        if (!controller.signal.aborted) setDevices(next);
-      } catch (e) {
+        if (!controller.signal.aborted) {
+          setDevices(next);
+          setError("");
+        }
+      } catch {
         if (!controller.signal.aborted)
-          setError(e instanceof Error ? e.message : String(e));
+          setError("디바이스 상태를 확인하지 못했어요.");
       } finally {
+        pending = false;
         if (!controller.signal.aborted) setLoading(false);
       }
     }
@@ -39,24 +66,32 @@ export function DeviceFarm({ active }: { active: boolean }) {
       clearInterval(timer);
     };
   }, [active, revision]);
+  const virtual = devices.filter((device) => device.kind === "emulator").length;
   return (
-    <div className="space-y-6">
-      <div className="flex flex-wrap items-center justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-semibold tracking-tight">디바이스팜</h1>
-          <p className="mt-2 text-sm text-muted-foreground">
-            {devices.filter((d) => d.state === "device").length}대 연결
-          </p>
-        </div>
-        <Button
-          variant="outline"
-          disabled={loading}
-          onClick={() => setRevision((n) => n + 1)}
-        >
-          <RefreshCw />
-          새로고침
-        </Button>
-      </div>
+    <div className="space-y-8">
+      <PageHeader
+        title="디바이스팜"
+        description={
+          error
+            ? "기기 상태 확인 불가"
+            : loading && !devices.length
+              ? "기기 확인 중"
+              : `가상 ${virtual}대 · 실물 ${devices.length - virtual}대`
+        }
+        actions={
+          <>
+            {actions}
+            <Button
+              variant="outline"
+              disabled={loading}
+              onClick={() => setRevision((n) => n + 1)}
+            >
+              <RefreshCw />
+              새로고침
+            </Button>
+          </>
+        }
+      />
       {error && (
         <p role="alert" className="text-sm text-destructive">
           {error}
@@ -66,46 +101,56 @@ export function DeviceFarm({ active }: { active: boolean }) {
         <Skeleton className="h-48 w-full" />
       ) : (
         <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-          {devices.map((device) => (
-            <Card key={device.serial}>
-              <CardHeader>
-                <div className="flex items-center justify-between gap-2">
-                  <Smartphone className="size-5 text-primary" />
-                  <Badge
-                    variant={
-                      device.state === "device" ? "secondary" : "outline"
-                    }
-                  >
-                    {device.state === "device"
-                      ? "연결됨"
-                      : device.state === "unauthorized"
-                        ? "연결 승인 대기"
-                        : "오프라인"}
-                  </Badge>
-                </div>
-                <CardTitle>{device.model || device.serial}</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-2 text-sm text-muted-foreground">
-                  <p>
-                    {device.kind === "emulator"
-                      ? "Android 에뮬레이터"
-                      : "Android 기기"}
-                  </p>
-                  <p data-selectable>{device.serial}</p>
-                  {device.current && (
-                    <Badge variant="outline">현재 테스트 기기</Badge>
-                  )}
-                </div>
-              </CardContent>
-            </Card>
-          ))}
+          {devices.map((device) => {
+            const platform = device.platform || "android";
+            const platformName = platform === "ios" ? "iOS" : "Android";
+            const virtual = device.kind === "emulator";
+            const state = deviceStatus(device, !!error);
+            const ready = state === "실행 중" || state === "사용 가능";
+            return (
+              <Card key={device.serial}>
+                <CardHeader>
+                  <div className="flex items-center justify-between gap-2">
+                    <PlatformIcon platform={platform} />
+                    <Badge variant={ready ? "success" : "outline"}>
+                      {state}
+                    </Badge>
+                  </div>
+                  <CardTitle>
+                    {device.model ||
+                      `${platformName} ${virtual ? "가상 기기" : "실물 기기"}`}
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-3">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <Badge variant="secondary">
+                        {virtual ? "가상 기기" : "실물 기기"}
+                      </Badge>
+                      <span className="text-sm text-muted-foreground">
+                        {platformName}
+                        {virtual
+                          ? platform === "ios"
+                            ? " 시뮬레이터"
+                            : " 에뮬레이터"
+                          : ""}
+                      </span>
+                    </div>
+                    <p
+                      data-selectable
+                      className="break-all text-xs text-muted-foreground"
+                    >
+                      ID · {device.serial}
+                    </p>
+                  </div>
+                </CardContent>
+              </Card>
+            );
+          })}
         </div>
       )}
       {!loading && !error && !devices.length && (
-        <p className="text-sm text-muted-foreground">
-          연결된 디바이스가 없어요.
-        </p>
+        <p className="text-sm text-muted-foreground">표시할 기기가 없어요.</p>
       )}
     </div>
   );

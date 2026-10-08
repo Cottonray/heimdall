@@ -5,7 +5,7 @@ import { Profile } from "@/features/auth/profile";
 import { Domains } from "@/features/domains/domains";
 import { ProjectHome } from "@/features/projects/project-home";
 import { MoveTestDialog } from "@/features/projects/move-test-dialog";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { LoginPage } from "@/features/auth/login-page";
 import {
   Download,
@@ -42,6 +42,7 @@ import { AgentPanel } from "@/features/agent/agent-panel";
 import { DebugPanel } from "@/features/debugging/debug-panel";
 import { ExportDialog } from "@/features/scenarios/export-dialog";
 import { api } from "@/lib/api";
+import { APP_ROOT, LOGIN_PATH } from "@/lib/paths";
 import { engines } from "@/lib/labels";
 import type { Session, SessionExport } from "../../../contracts/studio";
 
@@ -50,14 +51,18 @@ export function App() {
   const { theme, resolvedTheme, setTheme, toggleTheme } = useTheme();
   const [newOpen, setNewOpen] = useState(false);
   const [exported, setExported] = useState<SessionExport | null>(null);
+  const mainRef = useRef<HTMLElement>(null);
+  useEffect(() => {
+    mainRef.current?.scrollTo({ top: 0 });
+  }, [w.activeTab]);
   useEffect(() => {
     if (w.loading) return;
-    if (!w.user) history.replaceState(null, "", "/aiqa/studio/login");
+    if (!w.user) history.replaceState(null, "", LOGIN_PATH);
     else if (location.pathname.endsWith("/login"))
       history.replaceState(
         null,
         "",
-        "/aiqa/studio/" + (w.selectedId ? "#" + w.selectedId : ""),
+        APP_ROOT + (w.selectedId ? "#" + w.selectedId : ""),
       );
   }, [w.user, w.loading, w.selectedId]);
   if (!w.loading && !w.user)
@@ -162,18 +167,23 @@ export function App() {
             </div>
           </header>
         )}
-        <main className="min-h-0 flex-1 overflow-y-auto p-4 md:p-6">
-          {!workspaceVisible && w.activeTab !== "projects" && w.user && (
-            <div className="mb-6 flex justify-end">
-              <Profile
-                user={w.user}
-                busy={w.busy}
-                onLogout={w.store.logout}
-                onSaveAvatar={w.store.saveProfile}
-                onChangePassword={w.store.changePassword}
-              />
-            </div>
-          )}
+        <main
+          ref={mainRef}
+          className="min-h-0 flex-1 overflow-y-auto p-4 md:p-6"
+        >
+          {!workspaceVisible &&
+            !["projects", "devices"].includes(w.activeTab) &&
+            w.user && (
+              <div className="mb-6 flex justify-end">
+                <Profile
+                  user={w.user}
+                  busy={w.busy}
+                  onLogout={w.store.logout}
+                  onSaveAvatar={w.store.saveProfile}
+                  onChangePassword={w.store.changePassword}
+                />
+              </div>
+            )}
           {w.error && (
             <div
               role="alert"
@@ -232,7 +242,18 @@ export function App() {
                       }}
                     />
                   ) : id === "devices" ? (
-                    <DeviceFarm active={w.activeTab === "devices"} />
+                    <DeviceFarm
+                      active={w.activeTab === "devices"}
+                      actions={
+                        <Profile
+                          user={w.user}
+                          busy={w.busy}
+                          onLogout={w.store.logout}
+                          onSaveAvatar={w.store.saveProfile}
+                          onChangePassword={w.store.changePassword}
+                        />
+                      }
+                    />
                   ) : id === "dashboard" ? (
                     <Dashboard
                       sessions={w.status?.sessions || []}
@@ -246,7 +267,17 @@ export function App() {
                     />
                   ) : id === "board" ? (
                     <Board
-                      key={w.projectId}
+                      key={
+                        w.projectId +
+                        (w.status?.projects.find((p) => p.id === w.projectId)
+                          ?.tests === 0
+                          ? ":empty"
+                          : "")
+                      }
+                      emptyProject={
+                        w.status?.projects.find((p) => p.id === w.projectId)
+                          ?.tests === 0
+                      }
                       projectId={w.projectId}
                       sessions={projectSessions}
                       active={w.activeTab === "board"}

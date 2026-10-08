@@ -1,4 +1,5 @@
 import { Item } from "@/components/ui/item";
+import { PageHeader } from "@/components/page-header";
 import { useState, type ReactNode } from "react";
 import { Folder, Plus, ArrowUpRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -30,20 +31,18 @@ export function ProjectList({
   const [name, setName] = useState("");
   return (
     <div className="space-y-8">
-      <div className="flex flex-wrap items-center justify-between gap-4">
-        <div>
-          <h1 className="text-3xl font-semibold tracking-tight">프로젝트</h1>
-          <p className="mt-2 text-sm text-muted-foreground">
-            {projects.length}개 프로젝트
-          </p>
-        </div>
-        <div className="flex flex-wrap items-center gap-2">
-          {actions}
-          <Button onClick={() => setOpen(true)}>
-            <Plus />새 프로젝트
-          </Button>
-        </div>
-      </div>
+      <PageHeader
+        title="프로젝트"
+        description={`${projects.length}개 프로젝트`}
+        actions={
+          <>
+            {actions}
+            <Button onClick={() => setOpen(true)}>
+              <Plus />새 프로젝트
+            </Button>
+          </>
+        }
+      />
       <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
         {projects.map((project) => (
           <Item key={project.id} variant="project" size="project" asChild>

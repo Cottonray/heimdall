@@ -1,6 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import type { IncomingMessage } from "node:http";
+import { allowed, allowedBrowserOrigin } from "../transport/access.ts";
 import {
   hashPassword,
   verifyPassword,
@@ -165,6 +166,49 @@ test("session tokens are hashed and proxy headers cannot claim loopback", () => 
   assert.equal(localRequest(req), false);
   req.headers.cookie = "heimdall_session=invalid";
   assert.equal(sessionHash(req), "");
+});
+test("dedicated Heimdall host requires its own exact browser origin", () => {
+  const request = (
+    host: string,
+    origin?: string,
+    remoteAddress = "172.18.0.2",
+  ) =>
+    ({
+      headers: { host, origin },
+      socket: { remoteAddress },
+    }) as IncomingMessage;
+  for (const host of ["heimdall.example", "gateway.example"]) {
+    assert.equal(allowed(request(host)), true);
+    assert.equal(allowedBrowserOrigin(request(host)), false);
+    assert.equal(allowed(request(host, "https://" + host)), true);
+    assert.equal(allowedBrowserOrigin(request(host, "https://" + host)), true);
+    assert.equal(allowed(request(host, "http://" + host)), false);
+    assert.equal(allowed(request(host, "null")), false);
+  }
+  assert.equal(
+    allowed(request("heimdall.example", "https://gateway.example")),
+    false,
+  );
+  assert.equal(
+    allowed(request("gateway.example", "https://heimdall.example")),
+    false,
+  );
+  assert.equal(
+    allowed(
+      request(
+        "heimdall.example.evil.test",
+        "https://heimdall.example",
+      ),
+    ),
+    false,
+  );
+  assert.equal(allowed(request("localhost", undefined, "127.0.0.1")), true);
+  assert.equal(
+    allowed(
+      request("heimdall.example", "https://evil.test", "127.0.0.1"),
+    ),
+    false,
+  );
 });
 test("domain registration normalizes origins and rejects embedded credentials", () => {
   assert.deepEqual(normalizeDomain("https://EXAMPLE.com/start?mode=test"), {
