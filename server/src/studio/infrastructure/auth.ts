@@ -316,3 +316,29 @@ export async function listUsers() {
   await ensureAuth();
   return await db!`select id, username, name, role from heimdall_users order by username`;
 }
+
+export async function editUser(
+  actorId: string,
+  data: { id?: unknown; name?: unknown; role?: unknown },
+) {
+  if (
+    typeof data.id !== "string" ||
+    typeof data.name !== "string" ||
+    !data.name.trim() ||
+    data.name.length > 80 ||
+    !["user", "admin"].includes(String(data.role))
+  )
+    throw new Error("이름과 권한을 확인해 주세요.");
+  if (data.id === actorId && data.role !== "admin")
+    throw new Error("본인의 관리자 권한은 해제할 수 없어요.");
+  await ensureAuth();
+  await db!.begin(async (sql) => {
+    await sql`lock table heimdall_users in share row exclusive mode`;
+    const [actor] =
+      await sql`select role from heimdall_users where id=${actorId}`;
+    if (actor?.role !== "admin") throw new Error("관리자만 수정할 수 있어요.");
+    const rows =
+      await sql`update heimdall_users set name=${String(data.name).trim()}, role=${String(data.role)} where id=${String(data.id)} returning id`;
+    if (!rows.length) throw new Error("사용자를 찾을 수 없어요.");
+  });
+}

@@ -11,6 +11,7 @@ import {
 import {
   authenticate,
   listUsers,
+  editUser,
   login,
   testLogin,
   logout,
@@ -111,12 +112,18 @@ export async function handle(
       }
     }
     if (route === "/api/studio/admin/users") {
-      if (auth?.user.role !== "admin")
+      if (auth?.user.role !== "admin") {
         send(403, { error: "관리자만 이용할 수 있어요" });
-      else if (req.method !== "GET")
-        send(405, { error: "지원하지 않는 요청이에요" });
-      else send(200, await listUsers());
-      return true;
+        return true;
+      }
+      if (req.method === "GET") {
+        send(200, await listUsers());
+        return true;
+      }
+      if (req.method !== "POST") {
+        send(405, {});
+        return true;
+      }
     }
     if (route === "/api/studio/auth/me") {
       send(200, { user: auth?.user || null });
@@ -272,6 +279,11 @@ export async function handle(
         throw new Error("요청이 너무 커요");
     }
     const data = JSON.parse(body || "{}");
+    if (route === "/api/studio/admin/users") {
+      await editUser(auth!.user.id, data);
+      send(200, { ok: true });
+      return true;
+    }
     if (route === "/api/studio/admin/device-metadata") {
       await saveDeviceMetadata(data);
       send(200, { ok: true });
