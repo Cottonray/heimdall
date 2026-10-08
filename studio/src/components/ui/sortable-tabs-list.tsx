@@ -74,6 +74,10 @@ export function SortableTabsList({
         dragging.current = node.dataset.tabValue!;
         event.dataTransfer.effectAllowed = "move";
         event.dataTransfer.setData("text/plain", dragging.current);
+        // Keep the real tabs' FLIP movement without a second browser drag ghost.
+        const transparent = document.createElement("canvas");
+        transparent.width = transparent.height = 1;
+        event.dataTransfer.setDragImage(transparent, 0, 0);
       }}
       onDragOver={(event) => {
         const from = dragging.current;
