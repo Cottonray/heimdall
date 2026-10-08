@@ -2,12 +2,14 @@ import { useRef, useState } from "react";
 export function PanelResizeHandle({
   targetId,
   label = "웹 디버깅 패널 너비",
+  initialWidth = 60,
 }: {
   targetId: string;
   label?: string;
+  initialWidth?: number;
 }) {
   const pointer = useRef<number | null>(null);
-  const [width, setWidth] = useState(60);
+  const [width, setWidth] = useState(initialWidth);
   const resize = (value: number) => {
     const next = Math.max(25, Math.min(75, value));
     const panel = document.getElementById(targetId);

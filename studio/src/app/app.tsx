@@ -518,10 +518,11 @@ function SessionContent({
         <PanelResizeHandle
           targetId={"session-tools-" + s.id}
           label="스튜디오 작업 패널 너비"
+          initialWidth={70}
         />
         <aside
           id={"session-tools-" + s.id}
-          className="w-2/5 min-w-0 overflow-auto"
+          className="w-7/10 min-w-0 shrink-0 overflow-auto"
         >
           <DebugPanel
             key={"debug-" + s.id}
