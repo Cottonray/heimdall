@@ -1,7 +1,14 @@
 import { useEffect, useState } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Item } from "@/components/ui/item";
-import { Plus, ArrowUpRight, Check, Minus } from "lucide-react";
+import {
+  Table,
+  TableHeader,
+  TableBody,
+  TableRow,
+  TableHead,
+  TableCell,
+} from "@/components/ui/table";
+import { Plus, Check, Minus } from "lucide-react";
 import {
   Bar,
   BarChart,
@@ -129,15 +136,13 @@ export function Dashboard({
           ))}
         </div>
         {onSelect && (
-          <Card>
-            <CardHeader>
-              <Skeleton className="h-5 w-24" />
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <Skeleton className="h-12 w-full" />
-              <Skeleton className="h-12 w-full" />
-            </CardContent>
-          </Card>
+          <section className="space-y-3">
+            <Skeleton className="h-5 w-24" />
+            <div className="space-y-2 border-y py-3">
+              <Skeleton className="h-10 w-full" />
+              <Skeleton className="h-10 w-full" />
+            </div>
+          </section>
         )}
       </div>
     );
@@ -305,53 +310,48 @@ export function Dashboard({
         </Card>
       </div>
       {onSelect && (
-        <Card>
-          <CardHeader>
-            <CardTitle>최근 테스트</CardTitle>
-          </CardHeader>
-          <CardContent>
-            {metrics.recent.length ? (
-              <ul className="divide-y">
-                {metrics.recent.map((session) => {
-                  const assertions = session.steps.filter(isAssertion);
-                  const passed = assertions.filter((step) => step.ok).length;
-                  return (
-                    <li key={session.id}>
-                      <Item variant="row" size="row" asChild>
-                        <button
-                          type="button"
-                          onClick={() => onSelect(session.id)}
-                        >
-                          <span className="min-w-0">
-                            <span className="block truncate text-sm font-medium">
-                              {session.name}
-                            </span>
-                            <span className="mt-1 block text-xs text-muted-foreground">
-                              {engines[session.engine].label} ·{" "}
-                              {session.steps.length}개 동작
-                            </span>
-                          </span>
-                          <span className="flex shrink-0 items-center gap-3">
-                            <span className="text-xs text-muted-foreground">
-                              {assertions.length
-                                ? `${passed} / ${assertions.length} 통과`
-                                : "미검증"}
-                            </span>
-                            <ArrowUpRight className="size-4 text-muted-foreground" />
-                          </span>
-                        </button>
-                      </Item>
-                    </li>
-                  );
-                })}
-              </ul>
-            ) : (
-              <p className="py-6 text-center text-sm text-muted-foreground">
-                첫 테스트를 실행하면 여기에 기록이 쌓입니다.
-              </p>
-            )}
-          </CardContent>
-        </Card>
+        <section className="space-y-3" aria-labelledby="recent-tests-title">
+          <h2 id="recent-tests-title" className="text-base font-semibold">
+            최근 테스트
+          </h2>
+          <Table>
+            <TableHeader>
+              <TableRow className="hover:bg-transparent">
+                <TableHead>테스트 이름</TableHead>
+                <TableHead>유형</TableHead>
+                <TableHead>동작 수</TableHead>
+                <TableHead>검증 결과</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {metrics.recent.map((session) => {
+                const assertions = session.steps.filter(isAssertion);
+                const passed = assertions.filter((step) => step.ok).length;
+                return (
+                  <TableRow key={session.id} className="hover:bg-transparent">
+                    <TableCell className="whitespace-normal break-words">
+                      {session.name}
+                    </TableCell>
+                    <TableCell>{engines[session.engine].label}</TableCell>
+                    <TableCell>{session.steps.length}개</TableCell>
+                    <TableCell>
+                      {assertions.length
+                        ? `${passed} / ${assertions.length} 통과`
+                        : "미검증"}
+                    </TableCell>
+                  </TableRow>
+                );
+              })}
+              {!metrics.recent.length && (
+                <TableRow className="hover:bg-transparent">
+                  <TableCell colSpan={4} variant="empty">
+                    첫 테스트를 실행하면 여기에 기록이 쌓여요.
+                  </TableCell>
+                </TableRow>
+              )}
+            </TableBody>
+          </Table>
+        </section>
       )}
     </div>
   );
