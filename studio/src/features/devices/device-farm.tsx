@@ -1,3 +1,4 @@
+import { RefreshControl } from "@/components/refresh-control";
 import { DeviceManagement } from "./device-management";
 import { useEffect, useState } from "react";
 import { ExternalLink, RefreshCw, LayoutGrid, List } from "lucide-react";
@@ -85,11 +86,9 @@ export function DeviceFarm({
       }
     }
     void refresh();
-    const timer = setInterval(() => void refresh(), 3000);
     window.addEventListener("focus", refresh);
     return () => {
       controller.abort();
-      clearInterval(timer);
       window.removeEventListener("focus", refresh);
     };
   }, [active, revision]);
@@ -151,14 +150,12 @@ export function DeviceFarm({
                 </Button>
               </div>
             )}
-            <Button
-              variant="outline"
-              disabled={loading}
-              onClick={() => setRevision((n) => n + 1)}
-            >
-              <RefreshCw />
-              새로고침
-            </Button>
+            <RefreshControl
+              busy={loading}
+              active={active}
+              defaultInterval={3}
+              onRefresh={() => setRevision((value) => value + 1)}
+            />
           </>
         }
       />

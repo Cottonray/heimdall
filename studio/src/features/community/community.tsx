@@ -1,3 +1,4 @@
+import { RefreshControl } from "@/components/refresh-control";
 import { useEffect, useState } from "react";
 import { DataTable } from "@/components/data-table";
 import { PageHeader } from "@/components/page-header";
@@ -24,7 +25,13 @@ type Post = {
   created: number;
   updated: number;
 };
-export function Community({ user }: { user: User }) {
+export function Community({
+  user,
+  active = true,
+}: {
+  user: User;
+  active?: boolean;
+}) {
   const [rows, setRows] = useState<Post[]>([]),
     [revision, setRevision] = useState(0),
     [loading, setLoading] = useState(true),
@@ -84,13 +91,11 @@ export function Community({ user }: { user: User }) {
         description="질문과 테스트 경험을 함께 나눠요."
         actions={
           <>
-            <Button
-              variant="outline"
-              disabled={loading}
-              onClick={() => setRevision((v) => v + 1)}
-            >
-              새로고침
-            </Button>
+            <RefreshControl
+              busy={loading}
+              active={active}
+              onRefresh={() => setRevision((value) => value + 1)}
+            />
             <Button
               onClick={() => {
                 setError("");

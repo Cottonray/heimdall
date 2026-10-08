@@ -268,7 +268,7 @@ export function App() {
                       }}
                     />
                   ) : id === "community" ? (
-                    <Community user={w.user!} />
+                    <Community user={w.user!} active={w.activeTab === id} />
                   ) : id === "ai-models" ? (
                     w.user?.role === "admin" ? (
                       <AiModelAdmin />
@@ -277,7 +277,7 @@ export function App() {
                     )
                   ) : id === "user-admin" ? (
                     w.user?.role === "admin" ? (
-                      <UserAdmin />
+                      <UserAdmin active={w.activeTab === id} />
                     ) : (
                       <p>관리자만 이용할 수 있어요.</p>
                     )
