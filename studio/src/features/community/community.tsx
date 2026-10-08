@@ -110,6 +110,7 @@ export function Community({
           <p role="status">게시글을 불러오고 있어요.</p>
         ) : (
           <DataTable
+            selectable={false}
             data={rows}
             caption="커뮤니티 게시글"
             getRowId={(r) => r.id}

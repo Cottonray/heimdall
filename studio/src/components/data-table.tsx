@@ -59,6 +59,7 @@ type DataTableProps<T> = {
   searchPlaceholder?: string;
   caption: string;
   emptyMessage?: string;
+  selectable?: boolean;
   rowActions?: (
     row: T,
   ) => { label: string; onSelect: () => void; disabled?: boolean }[];
@@ -73,6 +74,7 @@ export function DataTable<T>({
   searchPlaceholder = "검색",
   caption,
   rowActions,
+  selectable = true,
   emptyMessage = "등록된 항목이 없어요.",
 }: DataTableProps<T>) {
   const [widths, setWidths] = useState<Record<string, number>>({});
@@ -113,7 +115,7 @@ export function DataTable<T>({
             setPage(0);
           }}
         />
-        {selected.size > 0 && (
+        {selectable && selected.size > 0 && (
           <div className="flex items-center gap-3">
             <span role="status" className="text-sm text-muted-foreground">
               {selected.size}개 선택
@@ -132,9 +134,9 @@ export function DataTable<T>({
       </div>
       <Table
         variant="bordered"
-        fillColumnIndex={columns.length}
+        fillColumnIndex={columns.length - (selectable ? 0 : 1)}
         columnWidths={[
-          40,
+          ...(selectable ? [40] : []),
           ...columns.map((column) => widths[column.id]),
           ...(rowActions ? [48] : []),
         ]}
@@ -142,17 +144,19 @@ export function DataTable<T>({
         <TableCaption visuallyHidden>{caption}</TableCaption>
         <TableHeader>
           <TableRow>
-            <TableHead scope="col" variant="selection">
-              <Checkbox
-                aria-label="현재 페이지 전체 선택"
-                title="현재 페이지 전체 선택"
-                checked={pageSelection(selected, pageIds)}
-                disabled={pageIds.length === 0}
-                onCheckedChange={(checked) =>
-                  selectRows(pageIds, checked === true)
-                }
-              />
-            </TableHead>
+            {selectable && (
+              <TableHead scope="col" variant="selection">
+                <Checkbox
+                  aria-label="현재 페이지 전체 선택"
+                  title="현재 페이지 전체 선택"
+                  checked={pageSelection(selected, pageIds)}
+                  disabled={pageIds.length === 0}
+                  onCheckedChange={(checked) =>
+                    selectRows(pageIds, checked === true)
+                  }
+                />
+              </TableHead>
+            )}
             {columns.map((column) => {
               const direction = sort?.id === column.id ? sort.direction : null;
               const Icon =
@@ -162,9 +166,7 @@ export function DataTable<T>({
                     ? ArrowDown
                     : ArrowUpDown;
               const nextAction =
-                direction === "asc"
-                  ? "내림차순 정렬"
-                  : "오름차순 정렬";
+                direction === "asc" ? "내림차순 정렬" : "오름차순 정렬";
               return (
                 <TableHead
                   key={column.id}
@@ -224,17 +226,21 @@ export function DataTable<T>({
             return (
               <TableRow
                 key={id}
-                data-state={selected.has(id) ? "selected" : undefined}
+                data-state={
+                  selectable && selected.has(id) ? "selected" : undefined
+                }
               >
-                <TableCell>
-                  <Checkbox
-                    aria-label={`${getRowLabel(row)} 선택`}
-                    checked={selected.has(id)}
-                    onCheckedChange={(checked) =>
-                      selectRows([id], checked === true)
-                    }
-                  />
-                </TableCell>
+                {selectable && (
+                  <TableCell>
+                    <Checkbox
+                      aria-label={`${getRowLabel(row)} 선택`}
+                      checked={selected.has(id)}
+                      onCheckedChange={(checked) =>
+                        selectRows([id], checked === true)
+                      }
+                    />
+                  </TableCell>
+                )}
                 {columns.map((column) => (
                   <TableCell
                     key={column.id}
@@ -296,7 +302,9 @@ export function DataTable<T>({
           {current.rows.length === 0 && (
             <TableRow>
               <TableCell
-                colSpan={columns.length + 1 + (rowActions ? 1 : 0)}
+                colSpan={
+                  columns.length + (selectable ? 1 : 0) + (rowActions ? 1 : 0)
+                }
                 variant="empty"
               >
                 {query.trim() ? "검색 결과가 없어요." : emptyMessage}
