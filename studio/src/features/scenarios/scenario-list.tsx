@@ -11,7 +11,6 @@ import { TestExecution } from "@/features/sessions/test-execution";
 import { DataTable } from "@/components/data-table";
 import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
-import { engines } from "@/lib/labels";
 import type { Session, Domain, NewSession } from "../../../../contracts/studio";
 export function ScenarioList({
   sessions,
@@ -28,6 +27,20 @@ export function ScenarioList({
   domains: Domain[];
   busy: boolean;
 }) {
+  const domainFor = (session: Session) =>
+    domains.find((domain) => {
+      try {
+        return new URL(domain.url).href === new URL(session.url).href;
+      } catch {
+        return domain.url === session.url;
+      }
+    });
+  const environmentFor = (session: Session) => {
+    const domain = domainFor(session);
+    return domain
+      ? { web: "웹", app: "앱", api: "API" }[domain.environment || "web"]
+      : "—";
+  };
   const [open, setOpen] = useState(false);
   const [error, setError] = useState("");
   return (
@@ -53,10 +66,7 @@ export function ScenarioList({
               <Plus />새 시나리오
             </Button>
           </DialogTrigger>
-          <DialogContent
-            variant="form"
-            showCloseButton={!busy}
-          >
+          <DialogContent variant="form" showCloseButton={!busy}>
             <DialogHeader>
               <DialogTitle>새 시나리오</DialogTitle>
               <DialogDescription>
@@ -92,7 +102,9 @@ export function ScenarioList({
         caption="저장된 시나리오"
         getRowId={(s) => s.id}
         getRowLabel={(s) => s.name}
-        searchText={(s) => s.name}
+        searchText={(s) =>
+          [s.name, domainFor(s)?.name, s.url, environmentFor(s)].join(" ")
+        }
         columns={[
           {
             id: "name",
@@ -105,10 +117,28 @@ export function ScenarioList({
             ),
           },
           {
-            id: "type",
-            header: "유형",
-            sortValue: (s) => s.engine,
-            cell: (s) => engines[s.engine].label,
+            id: "domain",
+            header: "도메인",
+            sortValue: (s) => domainFor(s)?.name || s.url,
+            cell: (s) => (
+              <div className="min-w-0">
+                <p className="truncate">
+                  {domainFor(s)?.name || "미등록 도메인"}
+                </p>
+                <p
+                  className="truncate text-xs text-muted-foreground"
+                  title={s.url}
+                >
+                  {s.url}
+                </p>
+              </div>
+            ),
+          },
+          {
+            id: "environment",
+            header: "환경",
+            sortValue: environmentFor,
+            cell: environmentFor,
           },
           {
             id: "steps",
