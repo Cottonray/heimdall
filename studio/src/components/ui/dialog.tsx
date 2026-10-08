@@ -65,7 +65,7 @@ function DialogContent({
           variant === "form" && "max-h-[85dvh] overflow-y-auto sm:max-w-2xl",
           variant === "download" && "max-h-[85dvh] overflow-y-auto sm:max-w-3xl",
           variant === "settings" &&
-            "flex h-[min(38rem,85dvh)] flex-col overflow-hidden sm:max-w-4xl",
+            "flex h-[85dvh] flex-col overflow-hidden sm:max-w-4xl",
           className,
         )}
         {...props}
