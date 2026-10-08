@@ -58,7 +58,7 @@ export async function ready(): Promise<boolean> {
  * 앱을 띄우는데, 그러면 시나리오의 첫 `launchApp` 이 하는 일과 겹쳐서 어느 쪽 시간인지
  * 흐려진다. 여는 것은 시나리오가 한다.
  */
-export async function open(): Promise<string> {
+export async function open(newCommandTimeout = 120): Promise<string> {
     const value = (await call(
         'POST',
         '/session',
@@ -72,7 +72,7 @@ export async function open(): Promise<string> {
                     // 기기 상태를 건드리지 않는다. 지우는 것은 시나리오의 clearState 몫이다
                     'appium:noReset': true,
                     // 사람이 화면을 보다가 세션이 살아 있는 채로 끊기는 일이 없게 넉넉히
-                    'appium:newCommandTimeout': 120,
+                    'appium:newCommandTimeout': newCommandTimeout,
                     // 애니메이션은 이미 기기 설정으로 꺼 뒀다. 여기서도 못박아 둔다
                     'appium:disableWindowAnimation': true,
                     // 에뮬레이터라 hidden API 정책 경고가 뜨는 판이 있다

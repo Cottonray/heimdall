@@ -38,10 +38,11 @@ payload=$(mktemp -d)
 trap 'rm -rf "$payload"' EXIT
 
 mkdir -p "$payload/aiqa"
-cp -R "$here/server" "$here/web" "$here/flows" "$here/sample-app" "$payload/aiqa/"
+cp -R "$here/server" "$here/web" "$here/flows" "$here/sample-app" "$here/browser-worker" "$payload/aiqa/"
 cp "$here/Dockerfile" "$here/docker-compose.yml" "$here/entrypoint.sh" "$payload/aiqa/"
 # 로컬에서 yarn install 을 돌려 봤다면 node_modules 가 딸려 간다. 이미지 안에서 새로 깐다
 rm -rf "$payload/aiqa/server/node_modules" "$payload/aiqa/server/.yarn"
+rm -rf "$payload/aiqa/browser-worker/node_modules" "$payload/aiqa/browser-worker/.yarn"
 # Yarn 은 저장소가 고정한 판(frontend/.yarnrc.yml 의 yarnPath) 그대로 쓴다. corepack 금지
 cp "$here/../../frontend/.yarn/releases/yarn-4.18.0.cjs" "$payload/aiqa/yarn.cjs"
 # gradle 이 만든 찌꺼기를 들고 가지 않는다 — 빌드는 저쪽 컨테이너 안에서 새로 한다
@@ -106,7 +107,7 @@ say "컨테이너 반영"
 # node 가 새 코드를 읽지 않는데, 설정이 그대로면 `up -d` 는 "이미 최신"이라며 아무것도
 # 하지 않는다 — 배포가 성공했다고 말하면서 옛 코드가 계속 도는 자리다 (2026-09-04 에
 # 두 번 헤맸다). 에뮬레이터가 같이 다시 뜨는 값(1분)을 치르고 확실히 갈아끼운다.
-ssh "$host" 'cd ~/aiqa && docker compose up -d --force-recreate'
+ssh "$host" 'cd ~/aiqa && docker compose build aiqa-browser && docker compose up -d aiqa-db && docker compose up -d --no-deps --force-recreate aiqa aiqa-browser'
 
 say "기동 확인 (에뮬레이터 부팅까지 1~3분)"
 ssh "$host" '

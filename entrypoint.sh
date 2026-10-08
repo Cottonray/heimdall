@@ -200,7 +200,8 @@ supervise() {
             log "!! Appium 이 내려갔어요. 다시 띄웁니다"
             start_appium
         fi
-        if ! kill -0 "$EMU_PID" 2>/dev/null; then
+        # A zombie still answers kill -0; it has already lost the device.
+        if ! kill -0 "$EMU_PID" 2>/dev/null || [ "$(ps -o stat= -p "$EMU_PID" 2>/dev/null | cut -c1)" = Z ]; then
             log "!! 에뮬레이터가 내려갔어요. 다시 띄웁니다"
             adb kill-server >/dev/null 2>&1 || true
             start_emulator

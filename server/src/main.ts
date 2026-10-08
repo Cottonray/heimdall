@@ -25,6 +25,7 @@ import * as runner from './runner.ts'
 import * as llm from './llm.ts'
 import * as stream from './stream.ts'
 import { accept } from './ws.ts'
+import * as studio from './studio.ts'
 
 const BASE = process.env.AIQA_BASE_PATH ?? '/aiqa'
 const PORT = Number(process.env.AIQA_PORT ?? 8080)
@@ -185,6 +186,7 @@ const server = http.createServer(async (req, res) => {
     }
 
     try {
+        if (await studio.handle(req, res, route)) return
         if (req.method === 'GET' && route === '/api/config') {
             const [state, list] = await Promise.all([device.state(), flows.list()])
             json(res, 200, {
@@ -293,7 +295,7 @@ const server = http.createServer(async (req, res) => {
         // 보는 기기를 바꾼다. **허용 목록 밖은 devices.select 가 거절한다** — 공개 화면이라
         // 모르는 사람이 주인의 개인 폰을 고를 수 있으면 안 된다 (devices.ts 첫 주석)
         if (req.method === 'POST' && route === '/api/devices/select') {
-            if (runner.busy()) {
+            if (runner.busy() || control.runnerBusy()) {
                 json(res, 409, { ok: false, error: '시나리오가 도는 중이에요' })
                 return
             }
@@ -310,7 +312,7 @@ const server = http.createServer(async (req, res) => {
         }
 
         if (req.method === 'POST' && route === '/api/app/restart') {
-            if (runner.busy()) {
+            if (runner.busy() || control.runnerBusy()) {
                 json(res, 409, { ok: false, error: '시나리오가 도는 중이에요' })
                 return
             }
@@ -411,6 +413,12 @@ const server = http.createServer(async (req, res) => {
 
 server.on('upgrade', (req, socket, head) => {
     const url = new URL(req.url ?? '/', 'http://localhost')
+    if (url.pathname === `${BASE}/studio/ws`) {
+        if (!studio.allowed(req)) { socket.destroy(); return }
+        const ws = accept(req, socket)
+        if (ws) studio.connect(ws)
+        return
+    }
     if (url.pathname !== `${BASE}/ws` && url.pathname !== '/ws') {
         socket.destroy()
         return

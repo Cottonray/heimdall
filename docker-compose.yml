@@ -6,6 +6,25 @@ name: aiqa
 # 주소:  https://qa.example/aiqa/  (edge nginx 가 넘긴다)
 
 services:
+  aiqa-browser:
+    build:
+      context: .
+      dockerfile: browser-worker/Dockerfile
+    image: aiqa-browser:1.63.0
+    container_name: aiqa-browser
+    init: true
+    restart: unless-stopped
+    mem_limit: 2g
+    shm_size: 512m
+    environment:
+      AIQA_TEST_ORIGINS: ${AIQA_TEST_ORIGINS:-http://127.0.0.1:8081}
+    networks:
+      - internal
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:8081/healthz').then(r=>{if(!r.ok)process.exit(1)}).catch(()=>process.exit(1))"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
   # 시나리오별 걸린 시간 기록 (2026-09-30 timings.json 에서 옮겼다 — docs/rules.md §데이터베이스).
   # 증적(스크린샷·xlsx)은 파일이 결과물이라 여기 두지 않는다. 비밀번호는 홈서버 ~/aiqa/db.env 에만 있다
   aiqa-db:
@@ -31,6 +50,7 @@ services:
   aiqa:
     image: aiqa:${IMAGE_TAG:-latest}
     container_name: aiqa
+    init: true
     restart: unless-stopped
     # **에뮬레이터 한 대가 이 상자 안에 있다.** 안드로이드에 2GB, 나머지가 Maestro 의
     # JVM · Appium(Node) · ffmpeg · 우리 서버 몫이다. 이보다 조이면 시나리오가 도는 동안
@@ -47,6 +67,7 @@ services:
       # nginx 는 접두사를 떼지 않는다 — 앱이 자기 경로를 안다 (홈서버 규약)
       AIQA_BASE_PATH: /aiqa
       AIQA_PORT: 8080
+      AIQA_BROWSER_WORKER_URL: http://aiqa-browser:8081
       AIQA_WEB_DIR: /opt/aiqa/web
       AIQA_FLOW_DIR: /opt/aiqa/flows
       # 시작할 때 보는 기기. 상시로 떠 있는 것은 에뮬레이터 하나다
@@ -86,6 +107,7 @@ services:
       AIQA_OPENROUTER_BASE_URL: ${AIQA_OPENROUTER_BASE_URL:-https://openrouter.ai/api/v1}
       AIQA_LLM_MODEL: ${AIQA_LLM_MODEL:-deepseek/deepseek-v4.1-flash}
     volumes:
+      - ./entrypoint.sh:/opt/aiqa/entrypoint.sh:ro
       # **자주 바뀌는 것은 굽지 않는다.** 서버 소스·화면·시나리오를 마운트해 두면
       # 문구 하나 고치자고 3GB 이미지를 다시 만들 일이 없다 (AICC 의 web/ 과 같은 판단)
       - ./server:/opt/aiqa/server:ro

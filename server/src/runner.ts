@@ -212,7 +212,7 @@ async function begin(
     engine: Engine,
     record = false,
 ): Promise<{ ok: boolean; error?: string; runId?: string }> {
-    if (current) return { ok: false, error: '이미 다른 시나리오가 도는 중이에요' }
+    if (current || control.runnerBusy()) return { ok: false, error: '이미 다른 시나리오 또는 Studio가 기기를 사용하고 있어요' }
 
     // 우리가 직접 도는 갈래(adb·appium)는 **시작하기 전에** 단계를 다 읽는다. 절반쯤
     // 돌다가 "모르는 명령"으로 서는 것보다, 아예 시작하지 않고 이유를 말해 주는 편이 낫다

@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "ai-qa": {
+      "command": "ssh",
+      "args": ["-T", "heimdall-host", "docker", "exec", "-i", "aiqa", "node", "--experimental-strip-types", "/opt/aiqa/server/src/studio-mcp.ts"]
+    }
+  }
+}
