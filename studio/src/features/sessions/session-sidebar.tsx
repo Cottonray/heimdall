@@ -39,7 +39,7 @@ export function SessionSidebar({
       >
         <HeimdallLogo />
         <div>
-          <p className="font-semibold tracking-widest">HEIMDALL</p>
+          <p className="font-semibold tracking-tight">Heimdall</p>
           <p className="text-xs text-muted-foreground">테스트 워크스페이스</p>
         </div>
       </button>
