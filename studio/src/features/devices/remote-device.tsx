@@ -366,7 +366,11 @@ export function RemoteDevice({
                 { value: "apps", label: "앱 설치", icon: <Monitor /> },
               ]}
             />
-            <TabsContent value="web" className="min-h-0 flex-1 overflow-hidden">
+            <TabsContent
+              forceMount
+              value="web"
+              className="min-h-0 flex-1 overflow-hidden data-[state=inactive]:hidden"
+            >
               <WebViewDebugging
                 serial={serial}
                 viewerId={remote.viewerId}
@@ -374,7 +378,11 @@ export function RemoteDevice({
                 discovery={webviews}
               />
             </TabsContent>
-            <TabsContent value="apps" className="min-h-0 flex-1 overflow-auto">
+            <TabsContent
+              forceMount
+              value="apps"
+              className="min-h-0 flex-1 overflow-auto data-[state=inactive]:hidden"
+            >
               <AppLibrary
                 serial={serial}
                 viewerId={remote.viewerId || ""}

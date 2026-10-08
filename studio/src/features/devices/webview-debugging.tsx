@@ -113,12 +113,7 @@ export function WebViewDebugging({
     discovery.targets.find((item) => key(item) === selected) ||
     discovery.targets[0];
   const current =
-    canControl &&
-    !discovery.error &&
-    inspector?.viewer === viewerId &&
-    discovery.targets.some((item) => key(item) === inspector.target)
-      ? inspector
-      : null;
+    canControl && inspector?.viewer === viewerId ? inspector : null;
   async function inspect() {
     if (!target || !canControl) return;
     setInspector(null);
