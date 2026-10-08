@@ -129,3 +129,27 @@
     cursor: pointer;
   }
 }
+
+/* Stable per-user fallback colors, shared by the header and profile editor. */
+[data-slot="avatar-fallback"][data-avatar-color] {
+  color: #fff;
+  font-weight: 600;
+}
+[data-avatar-color="0"] {
+  background-color: #2667ad;
+}
+[data-avatar-color="1"] {
+  background-color: #7653a6;
+}
+[data-avatar-color="2"] {
+  background-color: #237967;
+}
+[data-avatar-color="3"] {
+  background-color: #a14764;
+}
+[data-avatar-color="4"] {
+  background-color: #986522;
+}
+[data-avatar-color="5"] {
+  background-color: #356f86;
+}

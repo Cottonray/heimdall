@@ -1,6 +1,6 @@
 import { useId, useRef, useState } from "react";
-import { Check, LockKeyhole, Trash2, Upload, UserRound } from "lucide-react";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Check, LockKeyhole, Trash2, Upload } from "lucide-react";
+import { UserAvatar } from "./user-avatar";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -73,14 +73,7 @@ export function ProfileEditor({
       <fieldset disabled={locked} className="space-y-4">
         <legend className="mb-4 text-sm font-semibold">프로필 이미지</legend>
         <div className="flex items-center gap-4">
-          <Avatar size="profile">
-            {preview && (
-              <AvatarImage src={preview} alt="프로필 이미지 미리보기" />
-            )}
-            <AvatarFallback>
-              <UserRound className="size-8" />
-            </AvatarFallback>
-          </Avatar>
+          <UserAvatar user={user} size="profile" image={preview} />
           <div className="min-w-0 flex-1 space-y-2">
             <Label htmlFor={id + "-avatar"}>이미지 선택</Label>
             <Input

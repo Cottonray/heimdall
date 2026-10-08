@@ -1,8 +1,8 @@
 import { useState } from "react";
-import { UserRound, LogOut } from "lucide-react";
+import { LogOut } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
+import { UserAvatar } from "./user-avatar";
 import {
   Dialog,
   DialogContent,
@@ -42,19 +42,14 @@ export function Profile({
           variant="ghost"
           disabled={locked}
           onClick={() => setOpen(true)}
-          aria-label={user.name + " 프로필"}
+          aria-label={user.name + " 프로필 · " + role}
         >
-          <Avatar size="sm">
-            {user.avatar && <AvatarImage src={user.avatar} alt="" />}
-            <AvatarFallback>
-              <UserRound />
-            </AvatarFallback>
-          </Avatar>
+          <UserAvatar user={user} size="sm" />
           <span>{user.name}</span>
+          <Badge variant={user.role === "admin" ? "default" : "secondary"}>
+            {role}
+          </Badge>
         </Button>
-        <Badge variant={user.role === "admin" ? "default" : "secondary"}>
-          {role}
-        </Badge>
         <Button
           variant="outline"
           size="sm"

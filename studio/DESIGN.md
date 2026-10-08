@@ -72,3 +72,4 @@ React + shadcn/ui 기반의 QA 워크스페이스. 현재 디자인의 정본은
 공식 근거: [shadcn/ui CLI](https://ui.shadcn.com/docs/cli), [shadcn/lint 규칙](https://github.com/shadcn-ui/lint/blob/main/docs/rules.md).
 
 - 팝업 오버레이는 두 테마 모두 `bg-black/50`을 사용한다. `foreground`는 다크 모드에서 밝은 글자색으로 바뀌므로 배경 차광에 사용하지 않는다.
+- 사용자 이름·Avatar·역할 Badge는 하나의 프로필 Button 안에 둔다. 로그아웃은 별도 Button을 유지한다. 이미지가 없거나 로딩에 실패하면 이름의 첫 글자(grapheme)와 사용자 ID에서 정한 고정 색상을 표시한다. 6색 팔레트는 styles.css에서 공통 관리하며 프로필 편집기에도 같은 글자·색상을 적용한다.

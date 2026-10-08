@@ -39,13 +39,22 @@ function AvatarImage({
 
 function AvatarFallback({
   className,
+  seed,
   ...props
-}: React.ComponentProps<typeof AvatarPrimitive.Fallback>) {
+}: React.ComponentProps<typeof AvatarPrimitive.Fallback> & { seed?: string }) {
+  const color =
+    seed === undefined
+      ? undefined
+      : Array.from(seed).reduce(
+          (hash, char) => (Math.imul(hash, 31) + char.codePointAt(0)!) >>> 0,
+          0,
+        ) % 6;
   return (
     <AvatarPrimitive.Fallback
       data-slot="avatar-fallback"
+      data-avatar-color={color}
       className={cn(
-        "flex size-full items-center justify-center rounded-full bg-muted text-sm text-muted-foreground group-data-[size=sm]/avatar:text-xs",
+        "flex size-full items-center justify-center rounded-full bg-muted text-sm text-muted-foreground group-data-[size=sm]/avatar:text-xs group-data-[size=profile]/avatar:text-3xl",
         className,
       )}
       {...props}
