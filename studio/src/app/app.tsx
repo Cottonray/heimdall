@@ -1,5 +1,6 @@
 import { ProjectSettings } from "@/features/projects/project-settings";
 import { DeviceFarm } from "@/features/devices/device-farm";
+import { RemoteDevice } from "@/features/devices/remote-device";
 import { Board } from "@/features/board/board";
 import { Profile } from "@/features/auth/profile";
 import { Domains } from "@/features/domains/domains";
@@ -51,20 +52,26 @@ export function App() {
   const { theme, resolvedTheme, setTheme, toggleTheme } = useTheme();
   const [newOpen, setNewOpen] = useState(false);
   const [exported, setExported] = useState<SessionExport | null>(null);
+  const [remoteDevice] = useState(
+    () => new URLSearchParams(location.search).get("device") || "",
+  );
   const mainRef = useRef<HTMLElement>(null);
   useEffect(() => {
     mainRef.current?.scrollTo({ top: 0 });
   }, [w.activeTab]);
   useEffect(() => {
     if (w.loading) return;
-    if (!w.user) history.replaceState(null, "", LOGIN_PATH);
+    const deviceQuery = remoteDevice
+      ? "?" + new URLSearchParams({ device: remoteDevice })
+      : "";
+    if (!w.user) history.replaceState(null, "", LOGIN_PATH + deviceQuery);
     else if (location.pathname.endsWith("/login"))
       history.replaceState(
         null,
         "",
-        APP_ROOT + (w.selectedId ? "#" + w.selectedId : ""),
+        APP_ROOT + deviceQuery + (w.selectedId ? "#" + w.selectedId : ""),
       );
-  }, [w.user, w.loading, w.selectedId]);
+  }, [w.user, w.loading, w.selectedId, remoteDevice]);
   if (!w.loading && !w.user)
     return (
       <LoginPage
@@ -75,6 +82,10 @@ export function App() {
         onLogin={w.store.login}
         onTestLogin={w.store.testLogin}
       />
+    );
+  if (w.user && remoteDevice)
+    return (
+      <RemoteDevice serial={remoteDevice} onAuthExpired={w.store.refresh} />
     );
   const projectSessions = w.sessions.filter(
     (s) => (s.projectId || "default") === w.projectId,

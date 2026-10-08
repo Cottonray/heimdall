@@ -223,8 +223,9 @@ async function probeRawFrame(): Promise<DeviceCache['raw']> {
  * 볼 때는 그게 더 곱지만, 여기서는 사람이 눌러 보는 자리라 **그 지연이 곧 조작감**이다.
  * 한 장씩 찍으면 늘 방금 화면이다.
  */
-export async function screenshotJpeg(width: number, quality: number): Promise<Buffer | null> {
-    const raw = await probeRawFrame()
+export async function screenshotJpeg(width: number, quality: number, orientationAware = false): Promise<Buffer | null> {
+    // A remote device may rotate. PNG carries dimensions per frame, unlike the cached raw path.
+    const raw = orientationAware ? null : await probeRawFrame()
     // adb 와 ffmpeg 를 파이프로 잇는다 — 중간 파일도, 픽셀을 Node 로 들여오는 왕복도 없다
     const pipeline = raw
         ? `${ADB} -s ${SERIAL} exec-out screencap | tail -c +${raw.offset + 1} | ` +

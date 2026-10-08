@@ -6,6 +6,8 @@ import { readFile } from 'node:fs/promises'
 import path from 'node:path'
 import { accept } from './ws.ts'
 import * as studio from './studio.ts'
+import { prepareRemoteDevice, RemoteDeviceError } from './studio/infrastructure/remote-device.ts'
+import { connectRemoteDevice } from './studio/transport/remote-device.ts'
 
 const BASE = process.env.AIQA_BASE_PATH ?? '/aiqa'
 const PORT = Number(process.env.AIQA_PORT ?? 8080)
@@ -80,22 +82,34 @@ server.on('upgrade', async (req, socket) => {
         return
     }
     try {
+        const remoteRequested = url.searchParams.has('device')
         const auth = await authenticate(req)
-        if (!auth && !localRequest(req)) {
+        if (!auth && (remoteRequested || !localRequest(req))) {
             socket.write('HTTP/1.1 401 Unauthorized\r\nConnection: close\r\n\r\n')
             socket.destroy()
             return
         }
         const ws = accept(req, socket)
         if (ws) {
-            const guard = async () => localRequest(req) || !!await authenticate(req)
-            studio.connect(ws, guard)
+            const guard = async () => (!remoteRequested && localRequest(req)) || !!await authenticate(req)
             if (auth) {
-                const revoke = (hash: string) => { if (hash === auth.hash) ws.close() }
+                const revoke = (hash: string) => { if (hash === auth.hash) ws.close(4401) }
                 authEvents.on('revoke', revoke)
-                const expiry = setInterval(() => { if (auth.expires <= Date.now()) ws.close() }, 30000)
+                const expiry = setInterval(() => { if (auth.expires <= Date.now()) ws.close(4401) }, 30000)
                 socket.on('close', () => { authEvents.off('revoke', revoke); clearInterval(expiry) })
             }
+            if (remoteRequested) {
+                try {
+                    const remote = await prepareRemoteDevice(url.searchParams.get('device') ?? '')
+                    if (!ws.isOpen) return
+                    if (!await guard()) { ws.close(4401); return }
+                    if (ws.isOpen) connectRemoteDevice(ws, remote, guard)
+                } catch (error) {
+                    const known = error instanceof RemoteDeviceError
+                    ws.send(JSON.stringify({ type: 'error', error: known ? error.message : '기기 상태를 확인하지 못했어요. 다시 열어 주세요' }))
+                    ws.close(known && error.status < 500 ? (error.status === 404 ? 4404 : 4409) : 4503)
+                }
+            } else studio.connect(ws, guard)
         }
     } catch { socket.destroy() }
 })

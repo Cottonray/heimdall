@@ -62,6 +62,7 @@ export function DataTable<T>({
   caption,
   emptyMessage = "등록된 항목이 없어요.",
 }: DataTableProps<T>) {
+  const [widths, setWidths] = useState<Record<string, number>>({});
   const [query, setQuery] = useState("");
   const [sort, setSort] = useState<TableSort>(null);
   const [page, setPage] = useState(0);
@@ -114,7 +115,10 @@ export function DataTable<T>({
           </Button>
         </div>
       </div>
-      <Table variant="bordered">
+      <Table
+        variant="bordered"
+        columnWidths={[40, ...columns.map((column) => widths[column.id])]}
+      >
         <TableCaption visuallyHidden>{caption}</TableCaption>
         <TableHeader>
           <TableRow>
@@ -146,6 +150,14 @@ export function DataTable<T>({
               return (
                 <TableHead
                   key={column.id}
+                  variant="sortable"
+                  resizeLabel={`${column.header} 너비 조절`}
+                  onResize={(width) =>
+                    setWidths((previous) => ({
+                      ...previous,
+                      [column.id]: width,
+                    }))
+                  }
                   scope="col"
                   aria-sort={
                     column.sortValue
@@ -161,7 +173,7 @@ export function DataTable<T>({
                     <Button
                       type="button"
                       variant="ghost"
-                      size="sm"
+                      size="table-header"
                       aria-label={`${column.header} ${nextAction}`}
                       onClick={() => {
                         setSort((previous) =>
@@ -170,11 +182,13 @@ export function DataTable<T>({
                         setPage(0);
                       }}
                     >
-                      {column.header}
+                      <span className="truncate">{column.header}</span>
                       <Icon aria-hidden="true" />
                     </Button>
                   ) : (
-                    column.header
+                    <span className="block truncate px-3 pr-5">
+                      {column.header}
+                    </span>
                   )}
                 </TableHead>
               );

@@ -1,12 +1,14 @@
 import { useEffect, useState } from "react";
-import { RefreshCw } from "lucide-react";
+import { ExternalLink, RefreshCw } from "lucide-react";
 import { PageHeader } from "@/components/page-header";
 import { PlatformIcon } from "@/components/platform-icon";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Item } from "@/components/ui/item";
 import { API } from "@/lib/api";
+import { APP_ROOT } from "@/lib/paths";
 import type { DeviceInfo } from "../../../../contracts/studio";
 
 function deviceStatus(device: DeviceInfo, lookupFailed: boolean) {
@@ -122,44 +124,79 @@ export function DeviceFarm({ active }: { active: boolean }) {
             const virtual = device.kind === "emulator";
             const state = deviceStatus(device, !!error);
             const ready = state === "실행 중" || state === "사용 가능";
+            const name =
+              device.model ||
+              `${platformName} ${virtual ? "가상 기기" : "실물 기기"}`;
+            const remoteUrl =
+              APP_ROOT + "?" + new URLSearchParams({ device: device.serial });
             return (
-              <Card key={device.serial}>
-                <CardHeader>
-                  <div className="flex items-center justify-between gap-2">
-                    <PlatformIcon platform={platform} />
-                    <Badge variant={ready ? "success" : "outline"}>
-                      {state}
-                    </Badge>
-                  </div>
-                  <CardTitle>
-                    {device.model ||
-                      `${platformName} ${virtual ? "가상 기기" : "실물 기기"}`}
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-3">
-                    <div className="flex flex-wrap items-center gap-2">
-                      <Badge variant="secondary">
-                        {virtual ? "가상 기기" : "실물 기기"}
-                      </Badge>
-                      <span className="text-sm text-muted-foreground">
-                        {platformName}
-                        {virtual
-                          ? platform === "ios"
-                            ? " 시뮬레이터"
-                            : " 에뮬레이터"
-                          : ""}
-                      </span>
+              <Item
+                key={device.serial}
+                variant="project"
+                size="project"
+                asChild
+              >
+                <a
+                  href={remoteUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  aria-label={`${name} 원격 조작 새 창 열기`}
+                  onClick={(event) => {
+                    if (
+                      event.metaKey ||
+                      event.ctrlKey ||
+                      event.shiftKey ||
+                      event.altKey
+                    )
+                      return;
+                    event.preventDefault();
+                    window.open(
+                      remoteUrl,
+                      "_blank",
+                      "popup,width=520,height=920,noopener,noreferrer",
+                    );
+                  }}
+                >
+                  <div className="space-y-6">
+                    <div className="space-y-3">
+                      <div className="flex items-center justify-between gap-2">
+                        <PlatformIcon platform={platform} />
+                        <Badge variant={ready ? "success" : "outline"}>
+                          {state}
+                        </Badge>
+                      </div>
+                      <div className="flex items-center justify-between gap-2">
+                        <h2 className="font-semibold">{name}</h2>
+                        <ExternalLink
+                          aria-hidden="true"
+                          className="size-4 shrink-0 text-muted-foreground"
+                        />
+                      </div>
                     </div>
-                    <p
-                      data-selectable
-                      className="break-all text-xs text-muted-foreground"
-                    >
-                      ID · {device.serial}
-                    </p>
+                    <div className="space-y-3">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <Badge variant="secondary">
+                          {virtual ? "가상 기기" : "실물 기기"}
+                        </Badge>
+                        <span className="text-sm text-muted-foreground">
+                          {platformName}
+                          {virtual
+                            ? platform === "ios"
+                              ? " 시뮬레이터"
+                              : " 에뮬레이터"
+                            : ""}
+                        </span>
+                      </div>
+                      <p
+                        data-selectable
+                        className="break-all text-xs text-muted-foreground"
+                      >
+                        ID · {device.serial}
+                      </p>
+                    </div>
                   </div>
-                </CardContent>
-              </Card>
+                </a>
+              </Item>
             );
           })}
         </div>

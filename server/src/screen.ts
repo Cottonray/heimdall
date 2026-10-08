@@ -33,6 +33,9 @@ export type Viewer = {
     ws: WsConnection
     /** 프레임을 받고 싶은지. 목록만 보는 탭은 끌 수 있다 */
     wantsFrames: boolean
+    /** Remote viewers are permanently bound to the requested device. */
+    serial?: string
+    onFrame?: (jpeg: Buffer) => boolean
 }
 
 const viewers = new Map<string, Viewer>()
@@ -41,6 +44,14 @@ let busy = false
 let lastActivity = 0
 let lastFrameHash = ''
 let lastFrame: Buffer | null = null
+let lastFrameSerial = ''
+
+function sendFrame(viewer: Viewer, frame: Buffer, serial: string) {
+    if (!viewer.wantsFrames || !viewer.ws.isOpen || viewer.ws.backlog > MAX_BACKLOG) return
+    if (serial !== device.target() || (viewer.serial && viewer.serial !== serial)) return
+    if (viewer.onFrame && !viewer.onFrame(frame)) return
+    viewer.ws.sendBinary(frame)
+}
 
 /** 프레임 루프가 마지막으로 본 기기 상태. 화면에 뱃지로 나간다 */
 let deviceOnline = false
@@ -58,7 +69,7 @@ let holds = 0
 export function add(viewer: Viewer) {
     viewers.set(viewer.id, viewer)
     // 붙자마자 지난 화면 한 장을 던져 준다 — 첫 프레임까지 검은 화면을 보지 않게
-    if (lastFrame && viewer.wantsFrames) viewer.ws.sendBinary(lastFrame)
+    if (lastFrame) sendFrame(viewer, lastFrame, lastFrameSerial)
     ensureLoop()
 }
 
@@ -77,7 +88,7 @@ export function setWantsFrames(id: string, wants: boolean) {
     if (!v) return
     v.wantsFrames = wants
     if (wants) {
-        if (lastFrame) v.ws.sendBinary(lastFrame)
+        if (lastFrame) sendFrame(v, lastFrame, lastFrameSerial)
         ensureLoop()
     } else if (jpegViewers() === 0 && holds === 0) stopLoop()
 }
@@ -135,6 +146,7 @@ export function lastJpeg(): Buffer | null {
  */
 export function retarget() {
     lastFrame = null
+    lastFrameSerial = ''
     lastFrameHash = ''
     kick(0)
 }
@@ -206,7 +218,10 @@ async function tick() {
 
     busy = true
     try {
-        const jpeg = await device.screenshotJpeg(WIDTH, QUALITY)
+        const serial = device.target()
+        const orientationAware = [...viewers.values()].some((viewer) => viewer.serial === serial)
+        const jpeg = await device.screenshotJpeg(WIDTH, QUALITY, orientationAware)
+        if (serial !== device.target()) return
         // 100바이트짜리 "JPEG" 은 ffmpeg 가 반쯤 실패한 것이다. 화면에 깨진 조각을 보내지 않는다
         if (!jpeg || jpeg.length < 512) {
             if (deviceOnline) {
@@ -226,14 +241,13 @@ async function tick() {
         // 길이만으로 견주지 않는다. JPEG 끝은 늘 FF D9 라 뒤 몇 바이트도 사실상 상수이고,
         // 그러면 크기가 우연히 같은 다른 화면이 통째로 안 나간다. 20KB 해시가 훨씬 싸다.
         const hash = createHash('md5').update(jpeg).digest('base64')
-        if (hash === lastFrameHash) return
+        if (hash === lastFrameHash && lastFrameSerial === serial) return
         lastFrameHash = hash
         lastFrame = jpeg
+        lastFrameSerial = serial
 
         for (const v of viewers.values()) {
-            if (!v.wantsFrames || !v.ws.isOpen) continue
-            if (v.ws.backlog > MAX_BACKLOG) continue
-            v.ws.sendBinary(jpeg)
+            sendFrame(v, jpeg, serial)
         }
     } finally {
         busy = false

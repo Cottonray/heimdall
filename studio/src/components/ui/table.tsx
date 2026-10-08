@@ -6,8 +6,38 @@ import { cn } from "@/lib/utils";
 function Table({
   className,
   variant = "default",
+  columnWidths,
   ...props
-}: React.ComponentProps<"table"> & { variant?: "default" | "bordered" }) {
+}: React.ComponentProps<"table"> & {
+  variant?: "default" | "bordered";
+  columnWidths?: (number | undefined)[];
+}) {
+  const tableRef = React.useRef<HTMLTableElement>(null);
+  React.useLayoutEffect(() => {
+    const table = tableRef.current;
+    const container = table?.parentElement;
+    if (!table || !container || !columnWidths) return;
+    const update = () => {
+      const defaultWidth = Math.min(
+        1200,
+        Math.max(
+          160,
+          (container.clientWidth - 40) / Math.max(1, columnWidths.length - 1),
+        ),
+      );
+      const widths = columnWidths.map(
+        (width, index) => width ?? (index === 0 ? 40 : defaultWidth),
+      );
+      table.style.width = `${widths.reduce((sum, width) => sum + width, 0)}px`;
+      table.querySelectorAll("col").forEach((col, index) => {
+        col.style.width = `${widths[index]}px`;
+      });
+    };
+    update();
+    const observer = new ResizeObserver(update);
+    observer.observe(container);
+    return () => observer.disconnect();
+  }, [columnWidths]);
   return (
     <div
       data-slot="table-container"
@@ -17,10 +47,24 @@ function Table({
       )}
     >
       <table
+        ref={tableRef}
         data-slot="table"
-        className={cn("w-full caption-bottom text-sm", className)}
+        className={cn(
+          "w-full caption-bottom text-sm",
+          columnWidths && "table-fixed",
+          className,
+        )}
         {...props}
-      />
+      >
+        {columnWidths && (
+          <colgroup>
+            {columnWidths.map((_, index) => (
+              <col key={index} />
+            ))}
+          </colgroup>
+        )}
+        {props.children}
+      </table>
     </div>
   );
 }
@@ -74,18 +118,121 @@ function TableRow({ className, ...props }: React.ComponentProps<"tr">) {
 function TableHead({
   className,
   variant = "default",
+  resizeLabel,
+  onResize,
   ...props
-}: React.ComponentProps<"th"> & { variant?: "default" | "selection" }) {
+}: React.ComponentProps<"th"> & {
+  variant?: "default" | "selection" | "sortable";
+  resizeLabel?: string;
+  onResize?: (width: number) => void;
+}) {
+  const headRef = React.useRef<HTMLTableCellElement>(null);
+  const drag = React.useRef<{
+    pointerId: number;
+    x: number;
+    width: number;
+  } | null>(null);
+  const [width, setWidth] = React.useState(160);
+  const resizable = !!onResize;
+  React.useLayoutEffect(() => {
+    const head = headRef.current;
+    if (!head || !resizable) return;
+    const update = () =>
+      setWidth(Math.round(head.getBoundingClientRect().width));
+    update();
+    const observer = new ResizeObserver(update);
+    observer.observe(head);
+    return () => observer.disconnect();
+  }, [resizable]);
+  const resize = (value: number) => {
+    const next = Math.round(Math.max(120, Math.min(1200, value)));
+    setWidth(next);
+    onResize?.(next);
+  };
   return (
     <th
+      ref={headRef}
       data-slot="table-head"
       className={cn(
         "h-10 px-2 text-left align-middle font-medium whitespace-nowrap text-foreground [&:has([role=checkbox])]:pr-0 [&>[role=checkbox]]:translate-y-[2px]",
         variant === "selection" && "w-10",
+        variant === "sortable" && "relative p-0",
+        onResize && "relative",
         className,
       )}
       {...props}
-    />
+    >
+      {props.children}
+      {onResize && (
+        <span
+          role="slider"
+          tabIndex={0}
+          aria-orientation="horizontal"
+          aria-label={resizeLabel}
+          aria-valuemin={120}
+          aria-valuemax={1200}
+          aria-valuenow={width}
+          aria-valuetext={`${width}픽셀`}
+          className="absolute inset-y-0 right-0 z-10 w-2 cursor-col-resize touch-none border-r border-transparent hover:border-primary focus-visible:border-primary focus-visible:outline-none"
+          onClick={(event) => {
+            event.preventDefault();
+            event.stopPropagation();
+          }}
+          onPointerDown={(event) => {
+            if (event.button !== 0 || drag.current) return;
+            event.preventDefault();
+            event.stopPropagation();
+            event.currentTarget.focus({ preventScroll: true });
+            drag.current = {
+              pointerId: event.pointerId,
+              x: event.clientX,
+              width:
+                event.currentTarget.parentElement!.getBoundingClientRect()
+                  .width,
+            };
+            event.currentTarget.setPointerCapture(event.pointerId);
+          }}
+          onPointerMove={(event) => {
+            if (drag.current?.pointerId === event.pointerId) {
+              event.preventDefault();
+              event.stopPropagation();
+              resize(drag.current.width + event.clientX - drag.current.x);
+            }
+          }}
+          onPointerUp={(event) => {
+            if (drag.current?.pointerId !== event.pointerId) return;
+            event.preventDefault();
+            event.stopPropagation();
+            drag.current = null;
+            if (event.currentTarget.hasPointerCapture(event.pointerId))
+              event.currentTarget.releasePointerCapture(event.pointerId);
+          }}
+          onPointerCancel={(event) => {
+            if (drag.current?.pointerId === event.pointerId)
+              drag.current = null;
+          }}
+          onLostPointerCapture={(event) => {
+            if (drag.current?.pointerId === event.pointerId)
+              drag.current = null;
+          }}
+          onKeyDown={(event) => {
+            if (!["ArrowLeft", "ArrowRight", "Home", "End"].includes(event.key))
+              return;
+            event.preventDefault();
+            event.stopPropagation();
+            const current =
+              event.currentTarget.parentElement!.getBoundingClientRect().width;
+            resize(
+              event.key === "Home"
+                ? 120
+                : event.key === "End"
+                  ? 1200
+                  : current + (event.key === "ArrowRight" ? 16 : -16),
+            );
+          }}
+        />
+      )}
+    </th>
   );
 }
 
@@ -98,7 +245,7 @@ function TableCell({
     <td
       data-slot="table-cell"
       className={cn(
-        "p-2 align-middle whitespace-nowrap [&:has([role=checkbox])]:pr-0 [&>[role=checkbox]]:translate-y-[2px]",
+        "overflow-hidden text-ellipsis p-2 align-middle whitespace-nowrap [&:has([role=checkbox])]:pr-0 [&>[role=checkbox]]:translate-y-[2px]",
         variant === "empty" && "h-24 text-center text-muted-foreground",
         className,
       )}

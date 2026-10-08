@@ -49,6 +49,8 @@ export class WsConnection {
     readonly socket: Duplex
     /** 화면이 붙은 시각. 오래 매달린 연결을 걷어낼 때 쓴다 */
     readonly since = Date.now()
+    /** Any client data, including pong, proves that the peer is still reachable. */
+    lastReceivedAt = Date.now()
     private closed = false
     private handlers: WsHandlers = {}
 
@@ -136,6 +138,7 @@ export class WsConnection {
     // ── 받아들이기 ───────────────────────────────────────────────────────────
 
     private feed(chunk: Buffer) {
+        this.lastReceivedAt = Date.now()
         this.buffer = this.buffer.length === 0 ? chunk : Buffer.concat([this.buffer, chunk])
         // 한 번에 여러 프레임이 붙어 올 수 있다. 더 못 읽을 때까지 돌린다
         for (;;) {
