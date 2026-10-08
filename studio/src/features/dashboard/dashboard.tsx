@@ -116,7 +116,7 @@ export function Dashboard({
               <CardHeader>
                 <Skeleton className="h-4 w-24" />
               </CardHeader>
-              <CardContent className="space-y-3">
+              <CardContent variant="stack">
                 <Skeleton className="h-9 w-20" />
                 <Skeleton className="h-3 w-32" />
               </CardContent>
@@ -316,7 +316,7 @@ export function Dashboard({
           </h2>
           <Table>
             <TableHeader>
-              <TableRow className="hover:bg-transparent">
+              <TableRow variant="static">
                 <TableHead>테스트 이름</TableHead>
                 <TableHead>유형</TableHead>
                 <TableHead>동작 수</TableHead>
@@ -328,7 +328,7 @@ export function Dashboard({
                 const assertions = session.steps.filter(isAssertion);
                 const passed = assertions.filter((step) => step.ok).length;
                 return (
-                  <TableRow key={session.id} className="hover:bg-transparent">
+                  <TableRow key={session.id} variant="static">
                     <TableCell className="whitespace-normal break-words">
                       {session.name}
                     </TableCell>
@@ -343,7 +343,7 @@ export function Dashboard({
                 );
               })}
               {!metrics.recent.length && (
-                <TableRow className="hover:bg-transparent">
+                <TableRow variant="static">
                   <TableCell colSpan={4} variant="empty">
                     첫 테스트를 실행하면 여기에 기록이 쌓여요.
                   </TableCell>

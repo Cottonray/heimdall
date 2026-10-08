@@ -90,10 +90,16 @@ const accepted = render(
     <WorkspaceTab value="board" label="워크스페이스" icon={null} active onClose={() => {}} />
     <DialogContent variant="settings"><TabsList variant="settings" /><TabsContent value="device" variant="remote" /><TabsContent value="mcp" variant="settings" /></DialogContent>
     <Card variant="plain" /><DropdownMenuContent variant="profile" /><Button size="avatar" aria-label="프로필 이미지" />
+    <Textarea variant="output" aria-label="결과" /><Textarea variant="code" aria-label="코드" />
+    <Tabs variant="flush"><TabsList variant="inspector" /></Tabs>
+    <Button variant="refresh">새로고침</Button><Button variant="notification" size="icon" aria-label="알림" />
+    <Button variant="danger-ghost" size="icon-sm" aria-label="닫기" /><Button variant="cell" size="fill" aria-label="셀" />
+    <SelectTrigger variant="refresh" aria-label="주기" /><DialogContent variant="download" />
+    <TableRow variant="static"><TableCell variant="action" /></TableRow><CardContent variant="stack" />
     <svg><path fill="var(--primary)" /></svg>
   </div>`,
   `import { Button } from "@/components/ui/button";
-   import { Card } from "@/components/ui/card";
+   import { Card, CardContent } from "@/components/ui/card";
    import { DropdownMenuContent } from "@/components/ui/dropdown-menu";
    import { Item } from "@/components/ui/item";
    import { StatusDot } from "@/components/ui/status-dot";
@@ -101,8 +107,10 @@ const accepted = render(
    import { Switch } from "@/components/ui/switch";
    import { Label } from "@/components/ui/label";
    import { SelectTrigger } from "@/components/ui/select";
-   import { WorkspaceTab, TabsList, TabsContent } from "@/components/ui/tabs";
-   import { DialogContent } from "@/components/ui/dialog";`,
+   import { WorkspaceTab, Tabs, TabsList, TabsContent } from "@/components/ui/tabs";
+   import { DialogContent } from "@/components/ui/dialog";
+   import { Textarea } from "@/components/ui/textarea";
+   import { TableRow, TableCell } from "@/components/ui/table";`,
 );
 const [valid] = await eslint.lintText(accepted, { filePath: screenPath });
 assert.equal(valid.errorCount, 0, JSON.stringify(valid.messages));

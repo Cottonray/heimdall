@@ -9,7 +9,7 @@ import {
 import { RefreshControl } from "@/components/refresh-control";
 import { DeviceManagement } from "./device-management";
 import { useEffect, useState } from "react";
-import { ExternalLink, RefreshCw, LayoutGrid, List } from "lucide-react";
+import { ExternalLink, LayoutGrid, List } from "lucide-react";
 import { PageHeader } from "@/components/page-header";
 import { PlatformIcon } from "@/components/platform-icon";
 import { Button } from "@/components/ui/button";
@@ -155,7 +155,7 @@ export function DeviceFarm({
                 <DialogTrigger asChild>
                   <Button variant="outline">에이전트 다운로드</Button>
                 </DialogTrigger>
-                <DialogContent className="max-h-[85dvh] overflow-y-auto sm:max-w-3xl">
+                <DialogContent variant="download">
                   <DialogHeader>
                     <DialogTitle>에이전트 다운로드</DialogTitle>
                     <DialogDescription>
@@ -168,7 +168,7 @@ export function DeviceFarm({
                       <Button
                         asChild
                         variant="outline"
-                        className="h-auto min-h-9 max-w-full whitespace-normal py-2 text-center"
+                        size="download"
                       >
                         <a href={API + "/admin/agent-download?platform=macos"}>
                           macOS 다운로드 (Apple Silicon · Intel)

@@ -42,7 +42,7 @@ const BIT_RATE = Number(process.env.AIQA_STREAM_BIT_RATE ?? 2_500_000)
  * 기본은 **지연 0 프레임 · 실시간 우선** — 소프트웨어 인코더는 그냥 두면 프레임을 몇 장
  * 물고 있다가 내놓는다. 바꿔 볼 값은 compose 의 AIQA_STREAM_CODEC_OPTIONS
  */
-const CODEC_OPTIONS = process.env.AIQA_STREAM_CODEC_OPTIONS ?? 'latency:int=0,priority:int=0'
+const CODEC_OPTIONS = process.env.AIQA_STREAM_CODEC_OPTIONS ?? 'latency:int=0,priority:int=0,i-frame-interval:int=1'
 const ADB = process.env.AIQA_ADB ?? 'adb'
 /** 보는 사람이 없어진 뒤 이만큼 지나면 인코더를 내린다 — 아무도 안 보는 영상을 만드는 CPU */
 const IDLE_STOP_MS = 20_000
@@ -58,6 +58,7 @@ const F_SESSION = 4
 type Packet = { flags: number; data: Buffer }
 
 const viewers = new Map<string, WsConnection>()
+const awaitingKey = new Set<string>()
 let child: ChildProcess | null = null
 let video: net.Socket | null = null
 let control: net.Socket | null = null
@@ -99,6 +100,7 @@ export function addViewer(id: string, ws: WsConnection) {
 
 export function removeViewer(id: string) {
     viewers.delete(id)
+    awaitingKey.delete(id)
     if (viewers.size === 0 && !idleTimer) {
         idleTimer = setTimeout(() => {
             idleTimer = null
@@ -344,15 +346,20 @@ function sizeBuffer(s: { width: number; height: number }) {
     return b
 }
 
-function broadcast(flags: number, data: Buffer, important: boolean) {
+function broadcast(flags: number, data: Buffer, _important: boolean) {
     const out = frame(flags, data)
     for (const [id, ws] of viewers) {
         if (!ws.isOpen) {
             viewers.delete(id)
+            awaitingKey.delete(id)
             continue
         }
         // 회선이 밀린 사람에게 델타를 더 쌓아 봐야 늦은 그림만 길어진다. 키프레임·설정은 보낸다
-        if (!important && ws.backlog > MAX_BACKLOG) continue
+        if (!(flags & (F_SESSION | F_CONFIG))) {
+            if (ws.backlog > MAX_BACKLOG) { awaitingKey.add(id); continue }
+            if (awaitingKey.has(id) && !(flags & F_KEY)) continue
+            if (flags & F_KEY) awaitingKey.delete(id)
+        }
         ws.sendBinary(out)
     }
 }

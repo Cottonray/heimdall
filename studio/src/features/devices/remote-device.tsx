@@ -1,4 +1,5 @@
 import { ErrorToast } from "@/components/error-toast";
+import { IosWebDebugging } from "./ios-web-debugging";
 import {
   Tabs,
   TabsList,
@@ -42,11 +43,12 @@ export function RemoteDevice({
   const remote = useRemoteDevice(serial, onAuthExpired);
   const webviews = useWebViews(
     serial,
-    remote.connection === "ready" && remote.device?.platform !== "ios",
+    remote.connection === "ready",
     onAuthExpired,
+    remote.viewerId,
   );
   const [text, setText] = useState("");
-  const imageRef = useRef<HTMLImageElement>(null);
+  const imageRef = remote.canvasRef;
   const capture = useScreenCapture(imageRef, remote.connection === "ready");
   const gesture = useRef<{
     pointerId: number;
@@ -75,8 +77,8 @@ export function RemoteDevice({
       event.clientY,
       image.getBoundingClientRect(),
       {
-        width: remote.width || image.naturalWidth,
-        height: remote.height || image.naturalHeight,
+        width: remote.width || image.width,
+        height: remote.height || image.height,
       },
       clamp,
     );
@@ -126,7 +128,7 @@ export function RemoteDevice({
       <div className="flex min-h-0 flex-1">
         <div className="flex min-h-0 min-w-0 flex-1 flex-col gap-4 p-4">
           <div className="flex min-h-0 flex-1 items-center justify-center overflow-hidden rounded-lg border bg-muted/40">
-            {remote.frame ? (
+            {remote.connection === "ready" ? (
               <PreviewSurface
                 variant="remote"
                 aria-label="기기 화면 조작. 누르거나 밀어서 조작"
@@ -188,11 +190,9 @@ export function RemoteDevice({
                     });
                 }}
               >
-                <img
+                <canvas
                   ref={imageRef}
-                  src={remote.frame}
-                  alt={`${name} 화면`}
-                  draggable={false}
+                  aria-label={`${name} 화면`}
                   className="block h-full w-auto max-w-full object-contain"
                 />
               </PreviewSurface>
@@ -340,10 +340,9 @@ export function RemoteDevice({
           aria-label="웹 디버깅"
           className="flex min-h-0 min-w-0 w-3/5 flex-col"
         >
-          <Tabs value="web" className="min-h-0 flex-1 gap-0">
+          <Tabs value="web" variant="flush" className="min-h-0 flex-1">
             <TabsList
-              variant="workspace"
-              className="max-h-12 w-full shrink-0 flex-none border-b bg-muted/40"
+              variant="inspector"
               aria-label="기기 도구"
             >
               <WorkspaceTab
@@ -355,9 +354,12 @@ export function RemoteDevice({
             </TabsList>
             <TabsContent value="web" className="min-h-0 flex-1 overflow-hidden">
               {ios ? (
-                <p className="text-sm text-muted-foreground">
-                  iOS 웹 인스펙터는 아직 지원하지 않아요.
-                </p>
+                <IosWebDebugging
+                  serial={serial}
+                  viewerId={remote.viewerId}
+                  canControl={remote.canControl}
+                  discovery={webviews}
+                />
               ) : (
                 <WebViewDebugging
                   serial={serial}

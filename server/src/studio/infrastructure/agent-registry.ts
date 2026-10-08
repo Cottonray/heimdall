@@ -4,6 +4,7 @@ import type { IncomingMessage, ServerResponse } from "node:http";
 import type { DeviceInfo } from "../../../../contracts/studio.ts";
 type Command = { id: string; path: string; body?: unknown };
 type Agent = { seen: number; devices: DeviceInfo[]; commands: Command[] };
+const waiting = new Map<string, () => void>();
 const agents = new Map<string, Agent>();
 const pending = new Map<
   string,
@@ -46,6 +47,7 @@ export function agentRequest(path: string, body?: unknown): Promise<Buffer> {
     );
     pending.set(id, { agentId, resolve, reject, timer });
     agent.commands.push({ id, path, body });
+    waiting.get(agentId)?.();
   });
 }
 export async function handleAgent(req: IncomingMessage, res: ServerResponse) {
@@ -149,7 +151,23 @@ export async function handleAgent(req: IncomingMessage, res: ServerResponse) {
         item.resolve(Buffer.from(result.result, "base64"));
       else item.reject(new Error("슬레이브 조작을 완료하지 못했어요"));
     }
-    const commands = agent.commands.splice(0);
+    if (data.wait === true && agent.commands.length === 0 && !res.destroyed) {
+      await new Promise<void>((resolve) => {
+        const finish = () => {
+          clearTimeout(timer);
+          res.off("close", finish);
+          if (waiting.get(permitted.id) === finish)
+            waiting.delete(permitted.id);
+          resolve();
+        };
+        const timer = setTimeout(finish, 4000);
+        waiting.get(permitted.id)?.();
+        waiting.set(permitted.id, finish);
+        res.once("close", finish);
+      });
+    }
+    if (res.destroyed) return;
+    const commands = data.responseOnly === true ? [] : agent.commands.splice(0);
     send(200, { commands });
   } catch {
     send(503, { error: "에이전트 등록 설정을 확인해 주세요" });

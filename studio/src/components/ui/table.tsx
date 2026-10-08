@@ -151,12 +151,13 @@ function TableFooter({ className, ...props }: React.ComponentProps<"tfoot">) {
   );
 }
 
-function TableRow({ className, ...props }: React.ComponentProps<"tr">) {
+function TableRow({ className, variant = "default", ...props }: React.ComponentProps<"tr"> & { variant?: "default" | "static" }) {
   return (
     <tr
       data-slot="table-row"
       className={cn(
         "border-b transition-colors hover:bg-muted/50 has-aria-expanded:bg-muted/50 data-[state=selected]:bg-muted",
+        variant === "static" && "hover:bg-transparent",
         className,
       )}
       {...props}
@@ -311,7 +312,7 @@ function TableCell({
   onClick,
   variant = "default",
   ...props
-}: React.ComponentProps<"td"> & { variant?: "default" | "empty" }) {
+}: React.ComponentProps<"td"> & { variant?: "default" | "empty" | "action" }) {
   return (
     <td
       data-slot="table-cell"
@@ -337,6 +338,7 @@ function TableCell({
       }}
       className={cn(
         "overflow-hidden text-ellipsis p-2 align-middle whitespace-nowrap [&:has([role=checkbox])]:pr-0 [&>[role=checkbox]]:translate-y-[2px]",
+        variant === "action" && "relative text-primary hover:bg-accent/50",
         variant === "empty" && "h-24 text-center text-muted-foreground",
         className,
       )}

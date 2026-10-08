@@ -50,13 +50,13 @@ test("filter and sort operate before pagination without changing original order"
   assert.deepEqual(ids(view().rows), ids(data.slice(0, 10)));
 });
 
-test("sort cycles through both directions and original order; equal values remain stable", () => {
+test("sort toggles between ascending and descending; equal values remain stable", () => {
   let sort: TableSort = nextTableSort(null, "name");
   assert.equal(view({ sort }).rows[0].name, "도메인 1");
   sort = nextTableSort(sort, "name");
   assert.equal(view({ sort }).rows[0].name, "도메인 23");
   sort = nextTableSort(sort, "name");
-  assert.equal(sort, null);
+  assert.deepEqual(sort, { id: "name", direction: "asc" });
   const grouped = view({
     sort: { id: "group", direction: "desc" },
     pageSize: 50,

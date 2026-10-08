@@ -10,7 +10,7 @@ function save(blob: Blob, extension: string) {
 }
 
 export function useScreenCapture(
-  image: RefObject<HTMLImageElement | null>,
+  image: RefObject<HTMLCanvasElement | null>,
   connected: boolean,
 ) {
   const recorder = useRef<MediaRecorder | null>(null);
@@ -19,10 +19,10 @@ export function useScreenCapture(
   const cleanup = useRef<() => void>(() => {});
   function canvas() {
     const source = image.current;
-    if (!source?.naturalWidth) throw new Error("기기 화면을 기다려 주세요.");
+    if (!source?.width) throw new Error("기기 화면을 기다려 주세요.");
     const target = document.createElement("canvas");
-    target.width = source.naturalWidth;
-    target.height = source.naturalHeight;
+    target.width = source.width;
+    target.height = source.height;
     target.getContext("2d")!.drawImage(source, 0, 0);
     return target;
   }
@@ -58,7 +58,7 @@ export function useScreenCapture(
       let bytes = 0;
       const draw = setInterval(() => {
         const source = image.current;
-        if (source?.naturalWidth)
+        if (source?.width)
           target
             .getContext("2d")!
             .drawImage(source, 0, 0, target.width, target.height);

@@ -86,8 +86,8 @@ function ProjectSettingsForm({
         </header>
         <div className="max-w-xl">
           <dl className="space-y-4 text-sm">
-            <div className="grid grid-cols-[6rem_1fr] gap-3">
-              <dt className="text-muted-foreground">생성일</dt>
+            <div className="flex gap-3">
+              <dt className="w-24 shrink-0 text-muted-foreground">생성일</dt>
               <dd>
                 <time dateTime={project.created}>
                   {new Date(project.created).toLocaleDateString("ko-KR", {
@@ -98,8 +98,8 @@ function ProjectSettingsForm({
                 </time>
               </dd>
             </div>
-            <div className="grid grid-cols-[6rem_1fr] gap-3">
-              <dt className="text-muted-foreground">테스트 수</dt>
+            <div className="flex gap-3">
+              <dt className="w-24 shrink-0 text-muted-foreground">테스트 수</dt>
               <dd>{project.tests.toLocaleString("ko-KR")}개</dd>
             </div>
           </dl>

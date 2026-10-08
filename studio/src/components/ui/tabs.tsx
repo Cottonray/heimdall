@@ -10,8 +10,9 @@ import { Button } from "@/components/ui/button";
 function Tabs({
   className,
   orientation = "horizontal",
+  variant = "default",
   ...props
-}: React.ComponentProps<typeof TabsPrimitive.Root>) {
+}: React.ComponentProps<typeof TabsPrimitive.Root> & { variant?: "default" | "flush" }) {
   return (
     <TabsPrimitive.Root
       data-slot="tabs"
@@ -19,6 +20,7 @@ function Tabs({
       orientation={orientation}
       className={cn(
         "group/tabs flex gap-2 data-[orientation=horizontal]:flex-col",
+        variant === "flush" && "gap-0",
         className,
       )}
       {...props}
@@ -35,6 +37,7 @@ const tabsListVariants = cva(
         line: "gap-1 bg-transparent",
         workspace:
           "h-12 min-w-0 max-w-full flex-1 justify-start gap-0 overflow-x-auto overflow-y-hidden rounded-none bg-transparent p-0 group-data-[orientation=horizontal]/tabs:h-12",
+        inspector: "h-12 w-full shrink-0 flex-none justify-start gap-0 rounded-none border-b bg-muted/40 p-0 group-data-[orientation=horizontal]/tabs:h-12",
         settings:
           "w-40 shrink-0 justify-start gap-2 rounded-none border-r bg-transparent p-0 pr-3 group-data-[orientation=vertical]/tabs:h-full [&_[data-slot=tabs-trigger]]:h-10 [&_[data-slot=tabs-trigger]]:flex-none",
       },
@@ -85,13 +88,14 @@ function TabsContent({
   variant = "default",
   ...props
 }: React.ComponentProps<typeof TabsPrimitive.Content> & {
-  variant?: "default" | "remote" | "settings";
+  variant?: "default" | "remote" | "settings" | "table";
 }) {
   return (
     <TabsPrimitive.Content
       data-slot="tabs-content"
       className={cn(
         "flex-1 outline-none",
+        variant === "table" && "space-y-2",
         variant === "remote" &&
           "flex min-h-0 flex-col gap-3 data-[state=inactive]:hidden",
         variant === "settings" &&

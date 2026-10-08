@@ -193,7 +193,7 @@ export function JsonDataEditor({
               onChange(event.target.value);
               onValidityChange(!jsonError(event.target.value));
             }}
-            className="font-mono"
+            variant="code"
           />
           {!parseError && !isObject && (
             <p className="mt-2 text-xs text-muted-foreground">
@@ -202,13 +202,13 @@ export function JsonDataEditor({
             </p>
           )}
         </TabsContent>
-        <TabsContent value="table" className="space-y-2">
+        <TabsContent value="table" variant="table">
           <p className="text-xs text-muted-foreground">
             형식을 선택하고 값을 입력해 주세요. 배열·객체·null은 JSON 탭에서
             편집해요.
           </p>
           <div className="max-h-64 overflow-auto rounded-md border">
-            <table className="w-full min-w-[560px] text-sm">
+            <table className="w-full min-w-140 text-sm">
               <thead>
                 <tr className="border-b">
                   <th className="p-2 text-left">키</th>

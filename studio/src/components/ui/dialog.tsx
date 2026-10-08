@@ -53,7 +53,7 @@ function DialogContent({
   ...props
 }: React.ComponentProps<typeof DialogPrimitive.Content> & {
   showCloseButton?: boolean;
-  variant?: "default" | "settings";
+  variant?: "default" | "settings" | "download" | "form";
 }) {
   return (
     <DialogPortal data-slot="dialog-portal">
@@ -62,6 +62,8 @@ function DialogContent({
         data-slot="dialog-content"
         className={cn(
           "fixed top-[50%] left-[50%] z-50 grid grid-cols-[minmax(0,1fr)] w-full max-w-[calc(100%-2rem)] translate-x-[-50%] translate-y-[-50%] gap-4 rounded-lg border bg-background p-6 shadow-lg duration-200 outline-none data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:zoom-out-95 data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:zoom-in-95 sm:max-w-lg",
+          variant === "form" && "max-h-[85dvh] overflow-y-auto sm:max-w-2xl",
+          variant === "download" && "max-h-[85dvh] overflow-y-auto sm:max-w-3xl",
           variant === "settings" &&
             "flex h-[min(38rem,85dvh)] flex-col overflow-hidden sm:max-w-4xl",
           className,

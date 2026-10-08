@@ -14,14 +14,13 @@ export function ErrorToast({ message }: { message?: string }) {
   return (
     <div
       role="alert"
-      className="fixed left-1/2 top-4 z-[100] flex w-max max-w-[calc(100vw-2rem)] -translate-x-1/2 items-center gap-3 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800 shadow-lg dark:border-red-900 dark:bg-red-950 dark:text-red-200"
+      className="fixed left-1/2 top-4 z-100 flex w-11/12 max-w-xl -translate-x-1/2 items-center gap-3 rounded-lg border border-destructive/20 bg-background px-4 py-3 text-sm text-destructive shadow-lg"
     >
       <AlertCircle aria-hidden="true" className="size-4 shrink-0" />
       <p className="min-w-0 break-words leading-5">{message}</p>
       <Button
-        variant="ghost"
+        variant="danger-ghost"
         size="icon-sm"
-        className="shrink-0 text-inherit hover:bg-red-100 dark:hover:bg-red-900"
         aria-label="오류 알림 닫기"
         onClick={() => setVisible(false)}
       >

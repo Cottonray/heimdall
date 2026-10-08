@@ -1,3 +1,5 @@
+import { isIos, iosRequest } from "../infrastructure/ios-bridge.ts";
+import { iosWebDebug } from "../domain/ios-web-debug.ts";
 import { aiModel, saveAiModel } from "../infrastructure/ai-model.ts";
 import {
   posts,
@@ -56,11 +58,13 @@ import { allowed, allowedBrowserOrigin } from "./access.ts";
 import { tools } from "./mcp.ts";
 import { discoverWebViews, openWebView } from "../infrastructure/webviews.ts";
 import {
+  reserveDevice,
   deviceUsage,
   deviceOwned,
   ownsDevice,
 } from "../infrastructure/device-lease.ts";
 import { DEVTOOLS_PREFIX, serveDevTools } from "./devtools-assets.ts";
+const debugging = new Set<string>();
 export async function handle(
   req: IncomingMessage,
   res: ServerResponse,
@@ -245,7 +249,23 @@ export async function handle(
         send(401, { error: "로그인이 필요해요" });
         return true;
       }
-      send(200, await discoverWebViews(url.searchParams.get("serial") || ""));
+      const serial = url.searchParams.get("serial") || "";
+      if (isIos(serial)) {
+        if (
+          !ownsDevice(url.searchParams.get("viewer") || "", serial, auth.hash)
+        ) {
+          send(409, { error: "기기를 점유한 창에서 웹뷰를 확인해 주세요" });
+          return true;
+        }
+        send(
+          200,
+          JSON.parse(
+            (
+              await iosRequest(`/webviews?serial=${encodeURIComponent(serial)}`)
+            ).toString(),
+          ),
+        );
+      } else send(200, await discoverWebViews(serial));
       return true;
     }
     if (route === "/api/studio/inspector" && req.method === "GET") {
@@ -317,6 +337,27 @@ export async function handle(
         throw new Error("요청이 너무 커요");
     }
     const data = JSON.parse(body || "{}");
+    if (route === "/api/studio/ios-web-debug" && req.method === "POST") {
+      const serial = url.searchParams.get("serial") || "";
+      const viewer = url.searchParams.get("viewer") || "";
+      if (!auth || !isIos(serial) || !ownsDevice(viewer, serial, auth.hash)) {
+        send(409, { error: "기기를 점유한 창에서 웹 디버깅을 실행해 주세요" });
+        return true;
+      }
+      const debug = iosWebDebug(data);
+      if (debugging.has(serial)) { send(429, { error: "이전 웹 디버깅이 끝나면 다시 실행해 주세요" }); return true; }
+      const hold = reserveDevice(serial, auth.hash);
+      debugging.add(serial);
+      try {
+        const result = await iosRequest(`/web-debug?serial=${encodeURIComponent(serial)}`, debug);
+        if (!ownsDevice(viewer, serial, auth.hash) || !(await authenticate(req))) {
+          send(409, { error: "기기 점유가 종료됐어요" }); return true;
+        }
+        send(200, JSON.parse(result.toString()));
+      } finally { debugging.delete(serial); hold.release(); }
+      return true;
+    }
+
     if (route === "/api/studio/admin/ai-model") {
       await saveAiModel(data);
       send(200, await aiModel());

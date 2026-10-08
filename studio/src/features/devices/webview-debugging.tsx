@@ -19,6 +19,7 @@ export function useWebViews(
   serial: string,
   connected: boolean,
   onAuthExpired: () => void,
+  viewer = "",
 ) {
   const [result, setResult] = useState<WebViewDiscovery>({
     targets: [],
@@ -38,7 +39,7 @@ export function useWebViews(
       setLoading(true);
       try {
         const response = await fetch(
-          `${API}/webviews?${new URLSearchParams({ serial })}`,
+          `${API}/webviews?${new URLSearchParams({ serial, viewer })}`,
           {
             signal: AbortSignal.any([
               controller.signal,
@@ -71,12 +72,14 @@ export function useWebViews(
       }
     }
     void refresh();
-    const timer = setInterval(() => void refresh(), 3000);
+    const timer = serial.startsWith("ios:")
+      ? undefined
+      : setInterval(() => void refresh(), 3000);
     return () => {
       controller.abort();
       clearInterval(timer);
     };
-  }, [serial, connected, revision, onAuthExpired]);
+  }, [serial, connected, revision, onAuthExpired, viewer]);
   return {
     ...result,
     error,

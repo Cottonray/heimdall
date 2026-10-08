@@ -54,7 +54,7 @@ export function ScenarioList({
             </Button>
           </DialogTrigger>
           <DialogContent
-            className="max-h-[85dvh] overflow-y-auto sm:max-w-2xl"
+            variant="form"
             showCloseButton={!busy}
           >
             <DialogHeader>

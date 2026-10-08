@@ -65,11 +65,11 @@ function CardAction({ className, ...props }: React.ComponentProps<"div">) {
   );
 }
 
-function CardContent({ className, ...props }: React.ComponentProps<"div">) {
+function CardContent({ className, variant = "default", ...props }: React.ComponentProps<"div"> & { variant?: "default" | "stack" }) {
   return (
     <div
       data-slot="card-content"
-      className={cn("px-6", className)}
+      className={cn("px-6", variant === "stack" && "space-y-3", className)}
       {...props}
     />
   );

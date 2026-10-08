@@ -58,7 +58,7 @@ export function RefreshControl({
       >
         <SelectTrigger
           aria-label="새로고침 주기"
-          className="h-full w-28 rounded-r-none border-0 bg-transparent shadow-none focus-visible:ring-inset data-[size=default]:h-full"
+          variant="refresh"
         >
           <SelectValue />
         </SelectTrigger>
@@ -71,10 +71,9 @@ export function RefreshControl({
         </SelectContent>
       </Select>
       <Button
-        variant="outline"
+        variant="refresh"
         disabled={busy}
         onClick={onRefresh}
-        className="h-full rounded-l-none border-0 border-l border-input bg-transparent shadow-none focus-visible:border-input focus-visible:ring-inset dark:border-input dark:bg-transparent"
       >
         <RefreshCw className={busy ? "animate-spin" : undefined} />
         새로고침

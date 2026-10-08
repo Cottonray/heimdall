@@ -17,10 +17,16 @@ const buttonVariants = cva(
           "bg-secondary text-secondary-foreground hover:bg-secondary/80",
         ghost:
           "hover:bg-accent hover:text-accent-foreground dark:hover:bg-accent/50",
+        notification: "relative rounded-full text-muted-foreground hover:bg-accent hover:text-foreground data-[state=open]:bg-accent data-[state=open]:text-foreground",
+        "danger-ghost": "text-destructive hover:bg-destructive/10 hover:text-destructive focus-visible:ring-destructive/40",
+        refresh: "h-full rounded-l-none border-0 border-l border-input bg-transparent shadow-none focus-visible:border-input focus-visible:ring-inset dark:border-input dark:bg-transparent hover:bg-accent",
+        cell: "absolute inset-0 cursor-pointer rounded-none p-0 focus-visible:ring-2 focus-visible:ring-inset",
         link: "text-primary underline-offset-4 hover:underline",
       },
       size: {
         default: "h-9 px-4 py-2 has-[>svg]:px-3",
+        download: "h-auto min-h-9 max-w-full whitespace-normal py-2 text-center",
+        fill: "h-full w-full p-0",
         "table-header":
           "h-10 w-full justify-between rounded-none px-3 pr-5 text-left",
         avatar:

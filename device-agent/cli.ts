@@ -51,54 +51,64 @@ try {
   });
   await delay(2000);
 }
-const { inventory, perform } = await import("./ios.ts");
+const { inventory, perform, stop } = await import("./ios.ts");
 const token = (await readFile(tokenFile, "utf8")).trim();
-let responses: { id: string; result?: string; error?: string }[] = [];
 let stopping = false;
+const shutdown = new AbortController();
 for (const signal of ["SIGTERM", "SIGINT"] as const)
   process.on(signal, () => {
     stopping = true;
+    shutdown.abort();
+    stop();
     appiumProcess?.kill();
   });
+type Command = { id: string; path: string; body?: unknown };
+let devices = await inventory();
+let lastInventory = Date.now();
+async function exchange(body: object) {
+  const response = await fetch(url, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify({ agentId: id, devices, responses: [], ...body }),
+    signal: AbortSignal.any([shutdown.signal, AbortSignal.timeout(8000)]),
+  });
+  if (!response.ok) throw new Error(`마스터 응답 ${response.status}`);
+  return (await response.json()) as { commands: Command[] };
+}
+async function executeCommand(command: Command) {
+  let result: { id: string; result?: string; error?: string };
+  try {
+    result = {
+      id: command.id,
+      result: (await perform(command.path, command.body)).toString("base64"),
+    };
+  } catch {
+    result = { id: command.id, error: "시뮬레이터 요청을 완료하지 못했어요" };
+  }
+  // Results use a separate request: never wait behind the command long poll.
+  for (let attempt = 0; attempt < 3 && !stopping; attempt++) {
+    try {
+      await exchange({ responseOnly: true, responses: [result] });
+      return;
+    } catch {
+      await delay(200);
+    }
+  }
+}
 console.log(`Heimdall server ${id} → ${url.origin}`);
 while (!stopping) {
   try {
-    const batch = responses.splice(0, 1);
-    const devices = await inventory();
-    let response: Response;
-    try {
-      response = await fetch(url, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({ agentId: id, devices, responses: batch }),
-        signal: AbortSignal.timeout(8000),
-      });
-      if (response.status === 413) batch.splice(0);
-      if (!response.ok) throw new Error(`마스터 응답 ${response.status}`);
-    } catch (error) {
-      responses.unshift(...batch);
-      throw error;
+    if (Date.now() - lastInventory > 5000) {
+      devices = await inventory();
+      lastInventory = Date.now();
     }
-    const { commands } = (await response.json()) as {
-      commands: { id: string; path: string; body?: unknown }[];
-    };
-    for (const command of commands) {
-      void perform(command.path, command.body)
-        .then((result) =>
-          responses.push({ id: command.id, result: result.toString("base64") }),
-        )
-        .catch(() =>
-          responses.push({
-            id: command.id,
-            error: "시뮬레이터 조작을 완료하지 못했어요",
-          }),
-        );
-    }
-    await delay(300);
+    const { commands } = await exchange({ wait: true });
+    for (const command of commands) void executeCommand(command);
   } catch (error) {
+    if (stopping) break;
     console.error(error instanceof Error ? error.message : "마스터 연결 실패");
     await delay(2000);
   }

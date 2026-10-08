@@ -104,7 +104,7 @@ services:
       AIQA_STREAM_MAX_FPS: ${AIQA_STREAM_MAX_FPS:-24}
       AIQA_STREAM_BIT_RATE: ${AIQA_STREAM_BIT_RATE:-2500000}
       AIQA_STREAM_DEBUG: ${AIQA_STREAM_DEBUG:-0}
-      AIQA_STREAM_CODEC_OPTIONS: ${AIQA_STREAM_CODEC_OPTIONS:-latency:int=0,priority:int=0}
+      AIQA_STREAM_CODEC_OPTIONS: ${AIQA_STREAM_CODEC_OPTIONS:-latency:int=0,priority:int=0,i-frame-interval:int=1}
       # **카메라에 물릴 것.** image(기본·신분증 촬영) · video(얼굴 인증처럼 움직여야 하는 것) · none
       AIQA_CAMERA_SOURCE: ${AIQA_CAMERA_SOURCE:-image}
       # 세 번째 갈래(Appium). 같은 컨테이너 안이라 loopback 이다 — 밖으로 열지 않는다

@@ -26,9 +26,10 @@ export function ProjectTestData({ projectId }: { projectId: string }) {
   const [entries, setEntries] = useState<Entry[]>([]);
   const [editing, setEditing] = useState<Partial<Entry> | null>(null);
   const [contentValid, setContentValid] = useState(true);
+  const isEditing = !!editing;
   useEffect(() => {
     setContentValid(true);
-  }, [editing?.id, !!editing]);
+  }, [editing?.id, isEditing]);
   const [removing, setRemoving] = useState<Entry | null>(null);
   const [revision, setRevision] = useState(0);
   const [busy, setBusy] = useState(false);
@@ -176,7 +177,7 @@ export function ProjectTestData({ projectId }: { projectId: string }) {
           if (!open && !busy) setEditing(null);
         }}
       >
-        <DialogContent className="max-h-[85dvh] overflow-y-auto sm:max-w-3xl">
+        <DialogContent variant="download">
           <DialogHeader>
             <DialogTitle>테스트데이터</DialogTitle>
             <DialogDescription>

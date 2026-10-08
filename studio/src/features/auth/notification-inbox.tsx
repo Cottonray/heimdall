@@ -72,13 +72,12 @@ export function NotificationInbox({ userId }: { userId: string }) {
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
         <Button
-          variant="ghost"
+          variant="notification"
           size="icon"
-          className="relative size-9 rounded-full text-muted-foreground hover:bg-accent hover:text-foreground data-[state=open]:bg-accent data-[state=open]:text-foreground"
           title="알림함"
           aria-label={`알림함${unread.length ? ` · 안 읽은 알림 ${unread.length}개` : ""}`}
         >
-          <Bell aria-hidden="true" className="size-[18px]" />
+          <Bell aria-hidden="true" className="size-4.5" />
           {unread.length > 0 && (
             <span
               aria-hidden="true"

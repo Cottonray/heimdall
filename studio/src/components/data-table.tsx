@@ -340,20 +340,15 @@ export function DataTable<T>({
                 {columns.map((column) => (
                   <TableCell
                     key={column.id}
-                    className={
-                      column.onCellClick
-                        ? "relative text-primary hover:bg-accent/50"
-                        : undefined
-                    }
+                    variant={column.onCellClick ? "action" : "default"}
                   >
                     {column.onCellClick ? (
                       <>
                         <span className="pointer-events-none">
                           {column.cell(row)}
                         </span>
-                        <button
-                          type="button"
-                          className="absolute inset-0 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring"
+                        <Button
+                          type="button" variant="cell" size="fill"
                           aria-label={
                             column.cellActionLabel?.(row) ??
                             `${getRowLabel(row)} 상세`
@@ -409,7 +404,7 @@ export function DataTable<T>({
           )}
         </TableBody>
       </Table>
-      <div className="grid grid-cols-2 items-center gap-4 md:grid-cols-[1fr_auto_1fr]">
+      <div className="grid grid-cols-2 items-center gap-4 md:grid-cols-3">
         <p role="status" className="text-sm text-muted-foreground">
           총 {current.count}개
           {current.pageCount > 1

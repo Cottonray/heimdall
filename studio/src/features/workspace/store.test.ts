@@ -9,6 +9,7 @@ import type {
   User,
 } from "../../../../contracts/studio.ts";
 
+Object.defineProperty(globalThis, "location", { configurable: true, value: new URL("https://heimdall.test/aiqa/studio/") });
 const bundle = await build({
   entryPoints: [fileURLToPath(new URL("./store.ts", import.meta.url))],
   bundle: true,
@@ -55,8 +56,8 @@ function status(sessions: Session[]): StudioStatus {
 }
 function fixture(t: TestContext, hash = "") {
   for (const [key, value] of Object.entries({
-    location: { hash, pathname: "/aiqa/studio/" },
-    history: { replaceState() {} },
+    location: new URL("https://heimdall.test/aiqa/studio/" + hash),
+    history: { replaceState() {}, pushState() {} },
   })) {
     const original = Object.getOwnPropertyDescriptor(globalThis, key);
     Object.defineProperty(globalThis, key, {

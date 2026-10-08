@@ -1,3 +1,4 @@
+import { createVideoRenderer } from "./video-decoder";
 import { useEffect, useRef, useState } from "react";
 import type { DeviceInfo } from "../../../../contracts/studio";
 import {
@@ -64,6 +65,7 @@ export function useRemoteDevice(serial: string, onAuthExpired: () => void) {
   });
   const [busy, setBusy] = useState(false);
   const [revision, setRevision] = useState(0);
+  const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const socket = useRef<WebSocket | null>(null);
   const pending = useRef<{
     id: string;
@@ -73,7 +75,7 @@ export function useRemoteDevice(serial: string, onAuthExpired: () => void) {
 
   useEffect(() => {
     let disposed = false;
-    let objectUrl = "";
+    let closeRenderer = () => {};
     let retry: ReturnType<typeof setTimeout> | undefined;
     let handshake: ReturnType<typeof setTimeout> | undefined;
     let attempt = 0;
@@ -87,6 +89,7 @@ export function useRemoteDevice(serial: string, onAuthExpired: () => void) {
     function disconnect() {
       clearTimeout(retry);
       clearTimeout(handshake);
+      closeRenderer();
       const ws = socket.current;
       socket.current = null;
       ws?.close();
@@ -104,6 +107,70 @@ export function useRemoteDevice(serial: string, onAuthExpired: () => void) {
       url.searchParams.set("device", serial);
       const ws = new WebSocket(url);
       socket.current = ws;
+      ws.binaryType = "arraybuffer";
+      let videoTimer: ReturnType<typeof setTimeout> | undefined;
+      let frameSeen = false;
+      let videoSeen = false;
+      let drawing = false;
+      let latestJpeg: ArrayBuffer | undefined;
+      const rendered = () => {
+        if (!frameSeen) {
+          frameSeen = true;
+          setState((previous) => ({ ...previous, frame: "ready" }));
+        }
+      };
+      const renderer = createVideoRenderer(
+        () => canvasRef.current,
+        () => {
+          videoSeen = true;
+          clearTimeout(videoTimer);
+          rendered();
+        },
+        (width, height) =>
+          setState((previous) => ({ ...previous, width, height })),
+        () => {
+          if (ws.readyState === WebSocket.OPEN)
+            ws.send(JSON.stringify({ type: "video", enabled: false }));
+        },
+      );
+      closeRenderer = () => {
+        renderer.close();
+        clearTimeout(videoTimer);
+        latestJpeg = undefined;
+      };
+      async function drawJpeg() {
+        if (drawing) return;
+        drawing = true;
+        try {
+          while (latestJpeg && !disposed && socket.current === ws) {
+            const data = latestJpeg;
+            latestJpeg = undefined;
+            const bitmap = await createImageBitmap(
+              new Blob([data], { type: "image/jpeg" }),
+            );
+            try {
+              const target = canvasRef.current;
+              if (target && !disposed && socket.current === ws) {
+                if (
+                  target.width !== bitmap.width ||
+                  target.height !== bitmap.height
+                ) {
+                  target.width = bitmap.width;
+                  target.height = bitmap.height;
+                }
+                target.getContext("2d")?.drawImage(bitmap, 0, 0);
+                rendered();
+              }
+            } finally {
+              bitmap.close();
+            }
+          }
+        } catch {
+          /* Skip damaged frames. */
+        } finally {
+          drawing = false;
+        }
+      }
       handshake = setTimeout(() => {
         if (socket.current !== ws) return;
         setState((previous) => ({
@@ -112,14 +179,15 @@ export function useRemoteDevice(serial: string, onAuthExpired: () => void) {
         }));
         ws.close();
       }, 15000);
-      ws.onmessage = (event: MessageEvent<Blob | string>) => {
+      ws.onmessage = (event: MessageEvent<ArrayBuffer | string>) => {
         if (disposed || socket.current !== ws) return;
-        if (event.data instanceof Blob) {
-          const previousUrl = objectUrl;
-          objectUrl = URL.createObjectURL(event.data);
-          const nextUrl = objectUrl;
-          setState((previous) => ({ ...previous, frame: nextUrl }));
-          if (previousUrl) URL.revokeObjectURL(previousUrl);
+        if (event.data instanceof ArrayBuffer) {
+          const bytes = new Uint8Array(event.data);
+          if (bytes[0] === 0x48) renderer.feed(bytes);
+          else {
+            latestJpeg = event.data;
+            void drawJpeg();
+          }
           return;
         }
         try {
@@ -133,6 +201,18 @@ export function useRemoteDevice(serial: string, onAuthExpired: () => void) {
           } else if (message.type === "ready") {
             clearTimeout(handshake);
             attempt = 0;
+            if (
+              message.device?.platform === "android" &&
+              typeof VideoDecoder !== "undefined"
+            ) {
+              ws.send(JSON.stringify({ type: "video", enabled: true }));
+              videoTimer = setTimeout(() => {
+                if (!videoSeen && ws.readyState === WebSocket.OPEN) {
+                  renderer.close();
+                  ws.send(JSON.stringify({ type: "video", enabled: false }));
+                }
+              }, 5000);
+            }
             setState((previous) => ({
               ...previous,
               connection: "ready",
@@ -182,6 +262,7 @@ export function useRemoteDevice(serial: string, onAuthExpired: () => void) {
       ws.onclose = (event) => {
         if (disposed || socket.current !== ws) return;
         clearTimeout(handshake);
+        closeRenderer();
         socket.current = null;
         finishAction(false);
         setState((previous) => ({
@@ -214,7 +295,6 @@ export function useRemoteDevice(serial: string, onAuthExpired: () => void) {
       document.removeEventListener("visibilitychange", visibilityChanged);
       window.removeEventListener("pagehide", disconnect);
       disconnect();
-      if (objectUrl) URL.revokeObjectURL(objectUrl);
     };
   }, [serial, revision, onAuthExpired]);
 
@@ -263,6 +343,7 @@ export function useRemoteDevice(serial: string, onAuthExpired: () => void) {
   }
   return {
     ...state,
+    canvasRef,
     busy,
     canControl,
     action,

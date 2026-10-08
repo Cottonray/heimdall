@@ -1,3 +1,4 @@
+import * as stream from "../../stream.ts";
 import { isIos, iosRequest, iosControl } from "../infrastructure/ios-bridge.ts";
 import { randomUUID } from "node:crypto";
 import type { DeviceLease } from "../infrastructure/device-lease.ts";
@@ -60,26 +61,34 @@ export function connectRemoteDevice(
         add(client) {
           let pending = false;
           const tick = async () => {
-            if (pending || !client.ws.isOpen) return;
+            if (pending || !client.ws.isOpen || client.ws.backlog > 128 * 1024)
+              return;
             pending = true;
             try {
               const png = await iosRequest(
                 `/frame?serial=${encodeURIComponent(serial)}`,
               );
-              if (client.ws.isOpen) client.ws.sendBinary(png);
+              if (
+                client.ws.isOpen &&
+                client.ws.backlog < 128 * 1024 &&
+                client.onFrame?.(png) !== false
+              )
+                client.ws.sendBinary(png);
             } catch {
               client.ws.close(1011);
             } finally {
               pending = false;
             }
           };
-          const timer = setInterval(() => void tick(), 500);
+          const timer = setInterval(() => void tick(), 80);
           clients.set(client.id, timer);
           void tick();
         },
       },
     };
   }
+  const supportsVideo = deps === runtime && !isIos(remote.device.serial);
+  let video = false;
   const viewerId = lease?.viewerId || randomUUID();
   const connectionId = randomUUID();
   const serial = remote.device.serial;
@@ -141,6 +150,7 @@ export function connectRemoteDevice(
       closed = true;
       stop();
       deps.frames.remove(connectionId);
+      if (video) stream.removeViewer(connectionId);
       // An already-started ADB command has a 10s bound. Keep its lock until it exits.
       if (!pending) {
         if (!lease) deps.control.forget(viewerId);
@@ -159,6 +169,21 @@ export function connectRemoteDevice(
         send({ type: "error", error: "요청 형식을 확인해 주세요" });
         return;
       }
+      if (message.type === "video" && supportsVideo) {
+        const enabled = message.enabled === true;
+        if (enabled !== video) {
+          video = enabled;
+          if (video) stream.addViewer(connectionId, ws);
+          else stream.removeViewer(connectionId);
+          screen.setWantsFrames(connectionId, !video);
+          if (!video) {
+            size = remote.size;
+            send({ type: "display", ...size });
+            deps.frames.kick();
+          }
+        }
+        return;
+      }
       if (message.type !== "action") return;
       const requestId = message.requestId;
       if (typeof requestId !== "string" || requestId.length > 100) return;
@@ -172,6 +197,7 @@ export function connectRemoteDevice(
       queue = queue
         .then(async () => {
           if (closed || !ws.isOpen || !targetUnchanged()) return;
+          if (video && stream.videoSize()) size = stream.videoSize()!;
           const action = remoteAction(message.action, size);
           if (!(await authorized())) {
             fail("다시 로그인해 주세요", 4401);
@@ -186,7 +212,29 @@ export function connectRemoteDevice(
                 ? "테스트가 실행 중이에요"
                 : "다른 사용자가 조작 중이에요",
             );
-          await deps.perform(serial, action);
+          let injected = false;
+          if (video && stream.ready() && serial === device.target()) {
+            if (action.type === "tap")
+              injected = await stream.tap(action.x, action.y, size);
+            else if (action.type === "swipe")
+              injected = await stream.swipe(
+                action.x1,
+                action.y1,
+                action.x2,
+                action.y2,
+                action.ms,
+                size,
+              );
+            else if (action.type === "key")
+              injected = await stream.key(action.key);
+            else if (action.type === "text")
+              injected = stream.text(action.text);
+          }
+          if (!injected) {
+            if (video && (action.type === "tap" || action.type === "swipe"))
+              throw new Error("영상 연결을 기다려 주세요");
+            await deps.perform(serial, action);
+          }
           if (closed || !targetUnchanged()) return;
           deps.frames.kick();
           reply(true);
@@ -200,7 +248,7 @@ export function connectRemoteDevice(
         .finally(() => {
           pending -= 1;
           if (closed && !pending) {
-            deps.control.forget(viewerId);
+            if (!lease) deps.control.forget(viewerId);
             lease?.release();
           }
         });
