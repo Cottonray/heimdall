@@ -1,3 +1,11 @@
+import {
+  Dialog,
+  DialogTrigger,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from "@/components/ui/dialog";
 import { RefreshControl } from "@/components/refresh-control";
 import { DeviceManagement } from "./device-management";
 import { useEffect, useState } from "react";
@@ -150,6 +158,50 @@ export function DeviceFarm({
                 </Button>
               </div>
             )}
+            {management && (
+              <Dialog>
+                <DialogTrigger asChild>
+                  <Button variant="outline">에이전트 다운로드</Button>
+                </DialogTrigger>
+                <DialogContent>
+                  <DialogHeader>
+                    <DialogTitle>에이전트 다운로드</DialogTitle>
+                    <DialogDescription>
+                      기기가 연결된 컴퓨터에서 실행하면 이 서버의 디바이스팜에
+                      등록돼요.
+                    </DialogDescription>
+                  </DialogHeader>
+                  <div className="space-y-4">
+                    <div className="flex flex-wrap gap-2">
+                      <Button asChild variant="outline">
+                        <a href={API + "/admin/agent-download?platform=macos"}>
+                          macOS 다운로드 (Apple Silicon · Intel)
+                        </a>
+                      </Button>
+                      <Button variant="outline" disabled>
+                        Windows 준비 중
+                      </Button>
+                    </div>
+                    <p className="text-sm text-muted-foreground">
+                      동일한 macOS 패키지로 Apple Silicon(arm64)과 Intel(x64)을
+                      지원해요. iOS 시뮬레이터용 CLI예요. Node.js · Xcode ·
+                      Appium이 필요하며 설치 및 등록 방법은 동봉된 README를
+                      확인해 주세요.
+                    </p>
+                    <pre className="overflow-x-auto rounded-md bg-muted p-3 text-sm">
+                      <code>
+                        heimdall server --master {window.location.origin}
+                      </code>
+                    </pre>
+                    <p className="text-sm text-muted-foreground">
+                      폐쇄망에서는 사내 마스터 주소를 입력해 주세요. 실행 전에
+                      에이전트 ID·인증 토큰·허용 기기를 등록해야 해요.
+                    </p>
+                  </div>
+                </DialogContent>
+              </Dialog>
+            )}
+
             <RefreshControl
               busy={loading}
               active={active}
@@ -159,40 +211,6 @@ export function DeviceFarm({
           </>
         }
       />
-      {management && (
-        <Card>
-          <CardHeader>
-            <h2 className="font-semibold">에이전트 다운로드</h2>
-            <p className="text-sm text-muted-foreground">
-              기기가 연결된 컴퓨터에서 실행하면 이 서버의 디바이스팜에 등록돼요.
-            </p>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="flex flex-wrap gap-2">
-              <Button asChild variant="outline">
-                <a href={API + "/admin/agent-download?platform=macos"}>
-                  macOS 다운로드
-                </a>
-              </Button>
-              <Button variant="outline" disabled>
-                Windows 준비 중
-              </Button>
-            </div>
-            <p className="text-sm text-muted-foreground">
-              macOS 패키지는 iOS 시뮬레이터용 CLI예요. Node.js · Xcode ·
-              Appium이 필요하며 설치 및 등록 방법은 동봉된 README를 확인해
-              주세요.
-            </p>
-            <pre className="overflow-x-auto rounded-md bg-muted p-3 text-sm">
-              <code>heimdall server --master {window.location.origin}</code>
-            </pre>
-            <p className="text-sm text-muted-foreground">
-              폐쇄망에서는 사내 마스터 주소를 입력해 주세요. 실행 전에 에이전트
-              ID·인증 토큰·허용 기기를 등록해야 해요.
-            </p>
-          </CardContent>
-        </Card>
-      )}
       {error && (
         <p role="alert" className="text-sm text-destructive">
           {error}

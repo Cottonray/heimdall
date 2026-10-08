@@ -2,6 +2,10 @@
 
 슬레이브에서 `heimdall server --master https://마스터주소`를 실행한다. 연결은 슬레이브 → 마스터 HTTP(S) 요청만 사용한다. 공개 포트와 SSH는 필요하지 않다. 10초 동안 heartbeat가 없으면 마스터가 해당 기기를 오프라인으로 표시한다.
 
+## macOS 아키텍처
+
+동일한 ZIP이 Apple Silicon(arm64)과 Intel(x64)을 지원한다. 실행 파일은 Node.js용 JavaScript 번들이며 특정 CPU용 바이너리나 절대 Homebrew 경로를 포함하지 않는다. 각 Mac 아키텍처에 맞는 Node.js와 Xcode/Simulator, Appium을 설치하고 PATH에서 실행한다. Simulator 런타임은 해당 Mac의 Xcode가 지원하는 버전을 사용한다. Apple Silicon에서 원격 연결을 확인했으며 Intel 실기기 실행은 아직 확인하지 않았다.
+
 ## macOS 설치
 
 현재 패키지는 Node.js 22.18+에서 실행하는 CLI다. Node, Xcode/Simulator, Appium 3와 XCUITest 드라이버가 사전에 설치되어 있어야 한다. 폐쇄망에서는 이 도구들과 Simulator runtime도 반입해야 한다. 이 ZIP만으로 모든 의존성이 설치되지는 않는다.
