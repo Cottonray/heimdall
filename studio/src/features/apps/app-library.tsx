@@ -44,11 +44,10 @@ export function AppLibrary({
     setError("");
     setMessage("");
     try {
-      if (
-        !file.name.toLowerCase().endsWith(".apk") ||
-        file.size > 300 * 1024 * 1024
-      )
-        throw new Error("300MB 이하 APK 파일을 선택해 주세요");
+      if (!/\.(apk|zip)$/i.test(file.name) || file.size > 300 * 1024 * 1024)
+        throw new Error(
+          "300MB 이하 APK 또는 시뮬레이터 앱 ZIP을 선택해 주세요",
+        );
       const params = new URLSearchParams({
         filename: file.name,
         size: String(file.size),
@@ -106,9 +105,9 @@ export function AppLibrary({
             <input
               ref={input}
               type="file"
-              accept=".apk"
+              accept=".apk,.zip"
               className="hidden"
-              aria-label="APK 업로드"
+              aria-label="앱 파일 업로드"
               onChange={(e) => void upload(e.target.files?.[0])}
               disabled={busy}
             />
@@ -129,8 +128,8 @@ export function AppLibrary({
       </div>
       <p className="text-sm text-muted-foreground">
         {management
-          ? "Android APK를 업로드해요. 파일당 최대 300MB예요."
-          : "등록된 APK를 현재 Android 기기에 설치해요."}
+          ? "Android APK 또는 iOS 시뮬레이터용 .app을 압축한 ZIP을 업로드해요. 최대 300MB예요."
+          : "현재 기기에 맞는 앱을 설치해요. iOS 시뮬레이터는 .app ZIP을 사용해요."}
       </p>
       {error && (
         <p role="alert" className="text-sm text-destructive">
@@ -143,7 +142,15 @@ export function AppLibrary({
         </p>
       )}
       <DataTable
-        data={apps}
+        data={
+          management
+            ? apps
+            : apps.filter(
+                (a) =>
+                  a.platform ===
+                  (serial.startsWith("ios:") ? "ios" : "android"),
+              )
+        }
         caption="등록 앱"
         getRowId={(a) => a.id}
         getRowLabel={(a) => a.name}
@@ -155,6 +162,11 @@ export function AppLibrary({
             header: "앱",
             sortValue: (a) => a.name,
             cell: (a) => a.name,
+          },
+          {
+            id: "platform",
+            header: "환경",
+            cell: (a) => (a.platform === "ios" ? "iOS 시뮬레이터" : "Android"),
           },
           {
             id: "size",
@@ -178,9 +190,7 @@ export function AppLibrary({
                   cell: (a: App) => (
                     <Button
                       size="sm"
-                      disabled={
-                        busy || !canControl || serial.startsWith("ios:")
-                      }
+                      disabled={busy || !canControl}
                       onClick={() => void install(a)}
                     >
                       설치

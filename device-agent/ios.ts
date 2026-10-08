@@ -1,3 +1,4 @@
+import { installApp } from "./app-install.ts";
 import { iosWebDebug } from "../server/src/studio/domain/ios-web-debug.ts";
 import { remoteAction } from "../server/src/studio/domain/remote-device.ts";
 import { execFile } from "node:child_process";
@@ -126,6 +127,7 @@ async function run(path: string, body?: unknown): Promise<Buffer> {
   const url = new URL(path, "http://localhost");
   if (url.searchParams.get("serial") !== serial)
     throw new Error("허용되지 않은 기기예요");
+  if (url.pathname === "/app-install") return installApp(udid!, body);
   const dimensions = await prepare();
   if (url.pathname === "/prepare") {
     await hid.prepare();

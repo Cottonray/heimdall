@@ -21,7 +21,7 @@ type App = {
   filename: string;
   size: number;
   created: string;
-  platform: "android";
+  platform: "android" | "ios";
 };
 const uploads = new Map<
   string,
@@ -45,7 +45,10 @@ export async function appFile(id: string) {
   const app = JSON.parse(
     await readFile(path.join(root, id + ".json"), "utf8"),
   ) as App;
-  return { app, file: path.join(root, id + ".apk") };
+  return {
+    app,
+    file: path.join(root, id + (app.platform === "ios" ? ".zip" : ".apk")),
+  };
 }
 export async function beginUpload(
   owner: string,
@@ -53,13 +56,13 @@ export async function beginUpload(
   size: number,
 ) {
   if (
-    !filename.toLowerCase().endsWith(".apk") ||
+    !/\.(apk|zip)$/i.test(filename) ||
     filename.length > 200 ||
     !Number.isSafeInteger(size) ||
     size < 4 ||
     size > MAX
   )
-    throw new Error("300MB 이하 APK 파일을 선택해 주세요");
+    throw new Error("300MB 이하 APK 또는 시뮬레이터 앱 ZIP을 선택해 주세요");
   await mkdir(root, { recursive: true });
   for (const [id, item] of uploads)
     if (!item.busy && Date.now() - item.seen > 3600000) {
@@ -70,11 +73,11 @@ export async function beginUpload(
     throw new Error("진행 중인 업로드를 먼저 완료해 주세요");
   const app: App = {
     id: randomUUID(),
-    name: path.basename(filename).replace(/\.apk$/i, ""),
+    name: path.basename(filename).replace(/\.(apk|zip)$/i, ""),
     filename: path.basename(filename),
     size,
     created: new Date().toISOString(),
-    platform: "android",
+    platform: filename.toLowerCase().endsWith(".zip") ? "ios" : "android",
   };
   await writeFile(path.join(root, app.id + ".part"), "", {
     mode: 0o600,
@@ -135,14 +138,25 @@ export async function uploadChunk(
           ["-Z1", path.join(root, id + ".part")],
           { timeout: 15000, maxBuffer: 8 * 1024 * 1024 },
         );
-        if (!stdout.split("\n").includes("AndroidManifest.xml"))
+        if (
+          u.app.platform === "android"
+            ? !stdout.split("\n").includes("AndroidManifest.xml")
+            : !stdout
+                .split("\n")
+                .some((name) => /^[^/]+\.app\/Info\.plist$/.test(name))
+        )
           throw new Error("APK");
       } catch {
         uploads.delete(id);
         await rm(path.join(root, id + ".part"), { force: true });
-        throw new Error("Android APK 파일을 확인해 주세요");
+        throw new Error(
+          "APK 또는 최상위 .app이 포함된 ZIP 파일을 확인해 주세요",
+        );
       }
-      await rename(path.join(root, id + ".part"), path.join(root, id + ".apk"));
+      await rename(
+        path.join(root, id + ".part"),
+        path.join(root, id + (u.app.platform === "ios" ? ".zip" : ".apk")),
+      );
       await writeFile(path.join(root, id + ".json"), JSON.stringify(u.app), {
         mode: 0o600,
       });

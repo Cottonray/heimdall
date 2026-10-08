@@ -45,7 +45,9 @@ export function agentRequest(path: string, body?: unknown): Promise<Buffer> {
         agent.commands = agent.commands.filter((c) => c.id !== id);
         reject(new Error("슬레이브 응답이 없어요"));
       },
-      path.startsWith("/prepare") ? 180000 : 15000,
+      path.startsWith("/prepare") || path.startsWith("/app-install")
+        ? 180000
+        : 15000,
     );
     pending.set(id, { agentId, resolve, reject, timer });
     const socket = sockets.get(agentId);

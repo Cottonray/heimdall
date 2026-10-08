@@ -42,7 +42,7 @@ import {
   removeDomain,
 } from "../infrastructure/domains.ts";
 import type { IncomingMessage, ServerResponse } from "node:http";
-import { readFile } from "node:fs/promises";
+import { readFile, open } from "node:fs/promises";
 import path from "node:path";
 import * as device from "../../device.ts";
 import { listDeviceInventory } from "../infrastructure/device-inventory.ts";
@@ -146,28 +146,60 @@ export async function handle(
         send(409, { error: "기기를 점유한 상태에서 설치할 수 있어요" });
         return true;
       }
-      if (isIos(serial)) {
-        send(400, { error: "APK는 Android 기기에 설치할 수 있어요" });
-        return true;
-      }
       if (installing.has(serial)) {
         send(409, { error: "앱을 설치하고 있어요" });
         return true;
       }
       installing.add(serial);
       try {
-        const { file } = await appFile(id);
+        const { file, app } = await appFile(id);
+        if ((app.platform === "ios") !== isIos(serial))
+          throw new Error("기기에 맞는 플랫폼의 앱을 선택해 주세요");
         if (!ownsDevice(viewer, serial, auth.hash))
           throw new Error("기기 연결을 다시 확인해 주세요");
-        const result = await device.adb(
-          ["-s", serial, "install", "-r", file],
-          180000,
-          true,
-        );
-        if (result.code !== 0 || !result.stdout.toString().includes("Success"))
-          throw new Error(
-            "앱 설치에 실패했어요. APK 서명과 기기 호환성을 확인해 주세요",
+        if (isIos(serial)) {
+          const route = "/app-install?serial=" + encodeURIComponent(serial);
+          await iosRequest(route, { phase: "begin", id, size: app.size });
+          const handle = await open(file, "r");
+          try {
+            let offset = 0;
+            const buffer = Buffer.alloc(384 * 1024);
+            while (offset < app.size) {
+              if (!ownsDevice(viewer, serial, auth.hash))
+                throw new Error("기기 점유가 해제됐어요");
+              const { bytesRead } = await handle.read(
+                buffer,
+                0,
+                Math.min(buffer.length, app.size - offset),
+                offset,
+              );
+              if (!bytesRead) throw new Error("앱 파일을 읽지 못했어요");
+              await iosRequest(route, {
+                phase: "chunk",
+                id,
+                offset,
+                data: buffer.subarray(0, bytesRead).toString("base64"),
+              });
+              offset += bytesRead;
+            }
+            await iosRequest(route, { phase: "finish", id });
+          } finally {
+            await handle.close();
+          }
+        } else {
+          const result = await device.adb(
+            ["-s", serial, "install", "-r", file],
+            180000,
+            true,
           );
+          if (
+            result.code !== 0 ||
+            !result.stdout.toString().includes("Success")
+          )
+            throw new Error(
+              "앱 설치에 실패했어요. APK 서명과 기기 호환성을 확인해 주세요",
+            );
+        }
         send(200, { ok: true });
       } finally {
         installing.delete(serial);
