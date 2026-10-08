@@ -1,4 +1,8 @@
 import {
+  readPhoneSettings,
+  updatePhoneSettings,
+} from "../infrastructure/phone-settings.ts";
+import {
   cameraAvailable,
   applyCameraImage,
 } from "../infrastructure/camera-image.ts";
@@ -101,7 +105,11 @@ export async function handle(
     const url = new URL(req.url || "/", "http://localhost"),
       id = url.searchParams.get("id") || "";
     const auth = await authenticate(req);
-    if (route === "/api/studio/camera" && req.method === "GET") {
+    if (
+      (route === "/api/studio/camera" ||
+        route === "/api/studio/phone-settings") &&
+      req.method === "GET"
+    ) {
       const serial = url.searchParams.get("serial") || "";
       if (
         !auth ||
@@ -110,7 +118,12 @@ export async function handle(
         send(403, { error: "기기를 점유한 창에서 이용해 주세요." });
         return true;
       }
-      send(200, await cameraAvailable(serial));
+      send(
+        200,
+        route.endsWith("phone-settings")
+          ? await readPhoneSettings(serial)
+          : await cameraAvailable(serial),
+      );
       return true;
     }
     if (route === "/api/studio/apps" && req.method === "GET") {
@@ -486,6 +499,17 @@ export async function handle(
         throw new Error("요청이 너무 커요");
     }
     const data = JSON.parse(body || "{}");
+    if (route === "/api/studio/phone-settings") {
+      const serial = url.searchParams.get("serial") || "";
+      const viewer = url.searchParams.get("viewer") || "";
+      const authorized = () => !!auth && ownsDevice(viewer, serial, auth.hash);
+      if (!allowedBrowserOrigin(req) || !authorized()) {
+        send(403, { error: "기기를 점유한 창에서 적용해 주세요." });
+        return true;
+      }
+      send(200, await updatePhoneSettings(serial, data, authorized));
+      return true;
+    }
     if (route === "/api/studio/camera") {
       const serial = url.searchParams.get("serial") || "";
       const viewer = url.searchParams.get("viewer") || "";

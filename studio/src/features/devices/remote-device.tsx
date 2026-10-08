@@ -1,3 +1,4 @@
+import { PhoneSettings } from "./phone-settings";
 import { CameraSettings } from "./camera-settings";
 import { AppLibrary } from "@/features/apps/app-library";
 import { ErrorToast } from "@/components/error-toast";
@@ -411,6 +412,7 @@ export function RemoteDevice({
                 { value: "web", label: "웹 디버깅", icon: <Monitor /> },
                 { value: "apps", label: "앱 설치", icon: <Monitor /> },
                 { value: "camera", label: "카메라 설정", icon: <Camera /> },
+                { value: "phone", label: "휴대폰 설정", icon: <Monitor /> },
               ]}
             />
             <TabsContent
@@ -442,6 +444,17 @@ export function RemoteDevice({
               className="min-h-0 flex-1 overflow-auto data-[state=inactive]:hidden"
             >
               <CameraSettings
+                serial={serial}
+                viewer={remote.viewerId || ""}
+                canControl={remote.canControl}
+              />
+            </TabsContent>
+            <TabsContent
+              forceMount
+              value="phone"
+              className="min-h-0 flex-1 overflow-auto data-[state=inactive]:hidden"
+            >
+              <PhoneSettings
                 serial={serial}
                 viewer={remote.viewerId || ""}
                 canControl={remote.canControl}

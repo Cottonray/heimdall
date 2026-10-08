@@ -7,7 +7,11 @@ const exec = promisify(execFile);
 let busy = false;
 async function cameraPath(serial: string) {
   if (serial !== "emulator-5554")
-    throw new Error("현재 서버의 Android 에뮬레이터에서만 지원해요.");
+    throw new Error(
+      serial.startsWith("ios:")
+        ? "현재 iOS Simulator는 외부 이미지를 카메라 입력으로 넣는 기능을 지원하지 않아요."
+        : "현재 서버의 Android 에뮬레이터에서만 지원해요.",
+    );
   for (const pid of await readdir("/proc")) {
     if (!/^\d+$/.test(pid)) continue;
     const args = await readFile(`/proc/${pid}/cmdline`)
