@@ -1,5 +1,5 @@
 import { Item } from "@/components/ui/item";
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
 import { Folder, Plus, ArrowUpRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -18,9 +18,11 @@ export function ProjectList({
   busy,
   onEnter,
   onCreate,
+  actions,
 }: {
   projects: Project[];
   busy: boolean;
+  actions?: ReactNode;
   onEnter: (id: string) => void;
   onCreate: (name: string) => Promise<boolean>;
 }) {
@@ -35,9 +37,12 @@ export function ProjectList({
             {projects.length}개 프로젝트
           </p>
         </div>
-        <Button onClick={() => setOpen(true)}>
-          <Plus />새 프로젝트
-        </Button>
+        <div className="flex flex-wrap items-center gap-2">
+          {actions}
+          <Button onClick={() => setOpen(true)}>
+            <Plus />새 프로젝트
+          </Button>
+        </div>
       </div>
       <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
         {projects.map((project) => (

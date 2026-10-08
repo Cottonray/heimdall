@@ -4,6 +4,8 @@ import * as React from "react";
 import { cva, type VariantProps } from "class-variance-authority";
 import { cn } from "@/lib/utils";
 import { Tabs as TabsPrimitive } from "radix-ui";
+import { X } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
 function Tabs({
   className,
@@ -69,7 +71,6 @@ function TabsTrigger({
         "group-data-[variant=line]/tabs-list:bg-transparent group-data-[variant=line]/tabs-list:data-[state=active]:bg-transparent dark:group-data-[variant=line]/tabs-list:data-[state=active]:border-transparent dark:group-data-[variant=line]/tabs-list:data-[state=active]:bg-transparent",
         "data-[state=active]:bg-background data-[state=active]:text-foreground dark:data-[state=active]:border-input dark:data-[state=active]:bg-input/30 dark:data-[state=active]:text-foreground",
         "after:absolute after:bg-foreground after:opacity-0 after:transition-opacity group-data-[orientation=horizontal]/tabs:after:inset-x-0 group-data-[orientation=horizontal]/tabs:after:bottom-[-5px] group-data-[orientation=horizontal]/tabs:after:h-0.5 group-data-[orientation=vertical]/tabs:after:inset-y-0 group-data-[orientation=vertical]/tabs:after:-right-1 group-data-[orientation=vertical]/tabs:after:w-0.5 group-data-[variant=line]/tabs-list:data-[state=active]:after:opacity-100",
-        "group-data-[variant=workspace]/tabs-list:h-12 group-data-[variant=workspace]/tabs-list:rounded-none group-data-[variant=workspace]/tabs-list:px-4 group-data-[variant=workspace]/tabs-list:data-[state=active]:border-t-primary group-data-[variant=workspace]/tabs-list:data-[state=active]:border-t-2",
         className,
       )}
       {...props}
@@ -90,4 +91,59 @@ function TabsContent({
   );
 }
 
-export { Tabs, TabsList, TabsTrigger, TabsContent, tabsListVariants };
+function WorkspaceTab({
+  value,
+  label,
+  icon,
+  active,
+  onClose,
+}: {
+  value: string;
+  label: string;
+  icon: React.ReactNode;
+  active: boolean;
+  onClose?: () => void;
+}) {
+  return (
+    <div
+      data-slot="workspace-tab"
+      data-state={active ? "active" : "inactive"}
+      className="flex h-12 shrink-0 items-center border-r border-t-2 border-t-transparent text-muted-foreground transition-colors hover:bg-accent/50 data-[state=active]:border-t-primary data-[state=active]:bg-background data-[state=active]:text-foreground"
+    >
+      <TabsPrimitive.Trigger
+        value={value}
+        title={label}
+        className="inline-flex h-full min-w-0 flex-1 items-center justify-center gap-2 px-3 py-2 text-sm font-medium outline-none hover:text-foreground focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0"
+        onKeyDown={(event) => {
+          if (event.key === "Delete" && onClose) {
+            event.preventDefault();
+            onClose();
+          }
+        }}
+      >
+        {icon}
+        <span className="max-w-40 truncate">{label}</span>
+      </TabsPrimitive.Trigger>
+      {onClose && (
+        <Button
+          variant="ghost"
+          size="icon-xs"
+          className="mr-2"
+          aria-label={label + " 탭 닫기"}
+          onClick={onClose}
+        >
+          <X />
+        </Button>
+      )}
+    </div>
+  );
+}
+
+export {
+  Tabs,
+  TabsList,
+  TabsTrigger,
+  TabsContent,
+  WorkspaceTab,
+  tabsListVariants,
+};

@@ -79,7 +79,7 @@ export function DebugPanel({
                       <span className="flex size-7 shrink-0 items-center justify-center rounded-md bg-muted text-xs text-muted-foreground">
                         {step.n}
                       </span>
-                      <div className="min-w-0 flex-1">
+                      <div data-selectable className="min-w-0 flex-1">
                         <div className="flex flex-wrap items-center gap-2">
                           <p className="text-sm font-medium">{a.verb}</p>
                           <Badge variant="secondary">{step.actor}</Badge>

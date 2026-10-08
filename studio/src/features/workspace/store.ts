@@ -44,6 +44,7 @@ export class WorkspaceStore {
   private retry: ReturnType<typeof setTimeout> | undefined;
   private poll: ReturnType<typeof setInterval> | undefined;
   private stopped = true;
+  private refreshVersion = 0;
   private objectUrl = "";
   private pending = new Map<
     string,
@@ -84,6 +85,7 @@ export class WorkspaceStore {
       this.resetAuth();
     });
   private resetAuth() {
+    this.refreshVersion++;
     this.patch({
       user: null,
       sessions: [],
@@ -93,6 +95,8 @@ export class WorkspaceStore {
       activeTab: "projects",
       tabs: ["projects"],
       frame: "",
+      loading: false,
+      connected: false,
     });
     history.replaceState(null, "", location.pathname);
     clearTimeout(this.retry);
@@ -149,8 +153,19 @@ export class WorkspaceStore {
     this.objectUrl = URL.createObjectURL(blob);
     this.patch({ frame: this.objectUrl });
   };
+  private setProjectScope(projectId: string) {
+    if (projectId === this.value.projectId) return false;
+    this.refreshVersion++;
+    this.patch({
+      projectId,
+      status: this.value.status ? { ...this.value.status, sessions: [] } : null,
+      loading: true,
+      error: "",
+    });
+    return true;
+  }
   enterProject = (projectId: string) => {
-    this.patch({ projectId });
+    this.setProjectScope(projectId);
     this.navigate("dashboard");
     void this.refresh();
   };
@@ -163,13 +178,14 @@ export class WorkspaceStore {
   moveSession = (id: string, projectId: string) =>
     this.run(async () => {
       this.update(await api.moveSession(id, projectId));
-      await this.refresh();
       this.enterProject(projectId);
       this.select(id);
     });
   navigate = (page: Page) => {
+    if (page === "projects") this.setProjectScope("");
     this.select("");
     this.patch(openTab(this.value, page));
+    if (page === "projects") void this.refresh();
   };
   closeTab = (id: string) => {
     const next = closeTab(this.value, id);
@@ -181,6 +197,10 @@ export class WorkspaceStore {
     }
   };
   select = (id: string) => {
+    const session = this.value.sessions.find((s) => s.id === id);
+    const scopeChanged = session
+      ? this.setProjectScope(session.projectId || "default")
+      : false;
     this.releaseFrame();
     this.patch({
       ...openTab(this.value, id || "projects"),
@@ -190,9 +210,9 @@ export class WorkspaceStore {
     history.replaceState(null, "", location.pathname + (id ? "#" + id : ""));
     if (this.ws?.readyState === WebSocket.OPEN)
       this.ws.send(JSON.stringify({ type: "watch", id }));
-    const session = this.value.sessions.find((s) => s.id === id);
     if (session?.state === "closed") this.showSaved(session);
     else if (session) void this.loadFrame(id);
+    if (scopeChanged) void this.refresh();
   };
   private async loadFrame(id: string) {
     try {
@@ -207,27 +227,28 @@ export class WorkspaceStore {
   }
   refresh = async () => {
     if (!this.value.user) return;
+    const version = ++this.refreshVersion;
+    const user = this.value.user;
+    const projectId = this.value.projectId;
+    const isCurrent = () =>
+      version === this.refreshVersion &&
+      projectId === this.value.projectId &&
+      user === this.value.user;
     try {
-      const user = this.value.user;
-      const projectId = this.value.projectId;
       const status = await api.status(projectId);
-      if (projectId !== this.value.projectId || user !== this.value.user)
-        return;
+      if (!isCurrent()) return;
       this.patch({ status, loading: false });
       for (const session of status.sessions) this.update(session);
-      if (!this.value.projectId && this.value.selectedId) {
-        const selected = status.sessions.find(
+      if (this.value.selectedId) {
+        const selected = this.value.sessions.find(
           (s) => s.id === this.value.selectedId,
         );
-        if (selected)
-          this.patch({ projectId: selected.projectId || "default" });
+        if (!selected) this.navigate("projects");
+        else if ((selected.projectId || "default") !== this.value.projectId)
+          this.select(selected.id);
       }
-      if (
-        this.value.selectedId &&
-        !status.sessions.some((s) => s.id === this.value.selectedId)
-      )
-        this.select("");
     } catch (e) {
+      if (!isCurrent()) return;
       this.patch({ loading: false });
       this.fail(e);
     }
@@ -359,6 +380,7 @@ export class WorkspaceStore {
     this.poll = setInterval(() => void this.refresh(), 15000);
     return () => {
       this.stopped = true;
+      this.refreshVersion++;
       clearTimeout(this.retry);
       clearInterval(this.poll);
       this.ws?.close();

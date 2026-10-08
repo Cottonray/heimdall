@@ -41,10 +41,12 @@ export function Dashboard({
   sessions,
   onNew,
   onSelect,
+  overview = false,
 }: {
   sessions: Session[];
-  onNew: () => void;
-  onSelect: (id: string) => void;
+  onNew?: () => void;
+  onSelect?: (id: string) => void;
+  overview?: boolean;
 }) {
   const metrics = buildMetrics(sessions);
   const coverageData = [
@@ -81,14 +83,24 @@ export function Dashboard({
     <div className="space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-semibold tracking-tight">테스트 현황</h1>
+          {overview ? (
+            <h2 className="text-2xl font-semibold tracking-tight">
+              테스트 현황
+            </h2>
+          ) : (
+            <h1 className="text-2xl font-semibold tracking-tight">
+              테스트 현황
+            </h1>
+          )}
           <p className="mt-1 text-sm text-muted-foreground">
-            최근 {metrics.total}개 테스트 기준
+            {overview && "전체 프로젝트 · "}최근 {metrics.total}개 테스트 기준
           </p>
         </div>
-        <Button onClick={onNew}>
-          <Plus />새 테스트
-        </Button>
+        {onNew && (
+          <Button onClick={onNew}>
+            <Plus />새 테스트
+          </Button>
+        )}
       </div>
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         {stats.map((stat) => (
@@ -224,53 +236,55 @@ export function Dashboard({
           </CardContent>
         </Card>
       </div>
-      <Card>
-        <CardHeader>
-          <CardTitle>최근 테스트</CardTitle>
-        </CardHeader>
-        <CardContent>
-          {metrics.recent.length ? (
-            <ul className="divide-y">
-              {metrics.recent.map((session) => {
-                const assertions = session.steps.filter(isAssertion);
-                const passed = assertions.filter((step) => step.ok).length;
-                return (
-                  <li key={session.id}>
-                    <Item variant="row" size="row" asChild>
-                      <button
-                        type="button"
-                        onClick={() => onSelect(session.id)}
-                      >
-                        <span className="min-w-0">
-                          <span className="block truncate text-sm font-medium">
-                            {session.name}
+      {onSelect && (
+        <Card>
+          <CardHeader>
+            <CardTitle>최근 테스트</CardTitle>
+          </CardHeader>
+          <CardContent>
+            {metrics.recent.length ? (
+              <ul className="divide-y">
+                {metrics.recent.map((session) => {
+                  const assertions = session.steps.filter(isAssertion);
+                  const passed = assertions.filter((step) => step.ok).length;
+                  return (
+                    <li key={session.id}>
+                      <Item variant="row" size="row" asChild>
+                        <button
+                          type="button"
+                          onClick={() => onSelect(session.id)}
+                        >
+                          <span className="min-w-0">
+                            <span className="block truncate text-sm font-medium">
+                              {session.name}
+                            </span>
+                            <span className="mt-1 block text-xs text-muted-foreground">
+                              {engines[session.engine].label} ·{" "}
+                              {session.steps.length}개 동작
+                            </span>
                           </span>
-                          <span className="mt-1 block text-xs text-muted-foreground">
-                            {engines[session.engine].label} ·{" "}
-                            {session.steps.length}개 동작
+                          <span className="flex shrink-0 items-center gap-3">
+                            <span className="text-xs text-muted-foreground">
+                              {assertions.length
+                                ? `${passed} / ${assertions.length} 통과`
+                                : "미검증"}
+                            </span>
+                            <ArrowUpRight className="size-4 text-muted-foreground" />
                           </span>
-                        </span>
-                        <span className="flex shrink-0 items-center gap-3">
-                          <span className="text-xs text-muted-foreground">
-                            {assertions.length
-                              ? `${passed} / ${assertions.length} 통과`
-                              : "미검증"}
-                          </span>
-                          <ArrowUpRight className="size-4 text-muted-foreground" />
-                        </span>
-                      </button>
-                    </Item>
-                  </li>
-                );
-              })}
-            </ul>
-          ) : (
-            <p className="py-6 text-center text-sm text-muted-foreground">
-              첫 테스트를 실행하면 여기에 기록이 쌓입니다.
-            </p>
-          )}
-        </CardContent>
-      </Card>
+                        </button>
+                      </Item>
+                    </li>
+                  );
+                })}
+              </ul>
+            ) : (
+              <p className="py-6 text-center text-sm text-muted-foreground">
+                첫 테스트를 실행하면 여기에 기록이 쌓입니다.
+              </p>
+            )}
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 }

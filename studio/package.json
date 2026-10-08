@@ -13,7 +13,7 @@
     "lint:server": "cd .. && node studio/node_modules/eslint/bin/eslint.js --config eslint.config.ts server/src/studio contracts browser-worker/src --max-warnings 0",
     "typecheck:worker": "tsc -p ../browser-worker/tsconfig.json",
     "lint:verify": "node --experimental-strip-types verify-design-lint.ts",
-    "test:dashboard": "node --experimental-strip-types --test src/features/dashboard/metrics.test.ts src/features/workspace/tabs.test.ts",
+    "test:dashboard": "node --experimental-strip-types --test src/features/dashboard/metrics.test.ts src/features/workspace/tabs.test.ts src/features/workspace/store.test.ts",
     "test:security": "node --experimental-strip-types --test ../server/src/studio/infrastructure/auth.test.ts"
   },
   "dependencies": {

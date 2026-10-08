@@ -86,6 +86,7 @@ const accepted = render(
     <Switch aria-label="다크 모드" size="sm" checked={false} />
     <Label variant="subtle">시스템 설정 따르기</Label>
     <SelectTrigger variant="ghost" className="w-full" aria-label="화면 테마" />
+    <WorkspaceTab value="board" label="워크스페이스" icon={null} active onClose={() => {}} />
     <svg><path fill="var(--primary)" /></svg>
   </div>`,
   `import { Button } from "@/components/ui/button";
@@ -93,7 +94,8 @@ const accepted = render(
    import { SearchInput } from "@/components/ui/input";
    import { Switch } from "@/components/ui/switch";
    import { Label } from "@/components/ui/label";
-   import { SelectTrigger } from "@/components/ui/select";`,
+   import { SelectTrigger } from "@/components/ui/select";
+   import { WorkspaceTab } from "@/components/ui/tabs";`,
 );
 const [valid] = await eslint.lintText(accepted, { filePath: screenPath });
 assert.equal(valid.errorCount, 0, JSON.stringify(valid.messages));

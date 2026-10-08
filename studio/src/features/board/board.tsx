@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react";
 import {
   Plus,
-  GripVertical,
   Maximize2,
   X,
   ArrowLeft,
@@ -129,7 +128,6 @@ export function Board({
   const key = "heimdall.board." + projectId;
   const [layout, setLayout] = useState(() => readLayout(key, sessions));
   const [adding, setAdding] = useState(false);
-  const [dragging, setDragging] = useState("");
   useEffect(() => {
     try {
       localStorage.setItem(key, JSON.stringify(layout));
@@ -195,32 +193,12 @@ export function Board({
           return (
             <li
               key={tile.id}
-              onDragOver={(e) => e.preventDefault()}
-              onDrop={(e) => {
-                e.preventDefault();
-                if (dragging) move(dragging, index);
-                setDragging("");
-              }}
               className={cn(
                 "min-w-0 overflow-hidden rounded-lg border bg-card",
                 tile.wide && "sm:col-span-2",
               )}
             >
               <div className="flex items-center gap-2 border-b p-3">
-                <Button
-                  variant="ghost"
-                  size="icon-xs"
-                  aria-label={(s?.name || "화면") + " 순서 이동"}
-                  draggable
-                  onDragStart={(e) => {
-                    setDragging(tile.id);
-                    e.dataTransfer.effectAllowed = "move";
-                    e.dataTransfer.setData("text/plain", tile.id);
-                  }}
-                  onDragEnd={() => setDragging("")}
-                >
-                  <GripVertical />
-                </Button>
                 <Button
                   variant="ghost"
                   size="xs"

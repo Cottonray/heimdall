@@ -107,6 +107,22 @@
   }
   body {
     @apply m-0 font-sans antialiased;
+    -webkit-tap-highlight-color: transparent;
+    -webkit-user-select: none;
+    user-select: none;
+  }
+  /* Keep editing and copying test evidence available inside the app chrome. */
+  :where(
+    input,
+    textarea,
+    [contenteditable]:not([contenteditable="false"]),
+    pre,
+    code,
+    output,
+    [data-selectable]
+  ) {
+    -webkit-user-select: text;
+    user-select: text;
   }
   button:not(:disabled),
   a {
