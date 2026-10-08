@@ -3,13 +3,6 @@ import { Save } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-  Card,
-  CardHeader,
-  CardTitle,
-  CardDescription,
-  CardContent,
-} from "@/components/ui/card";
 import type { Project } from "../../../../contracts/studio";
 
 type ProjectSettingsProps = {
@@ -30,15 +23,15 @@ function ProjectSettingsForm({
   const locked = busy || pending;
   const changed = name.trim() !== project.name;
   return (
-    <div className="flex flex-col gap-5 [&>*]:w-full">
-      <Card>
-        <CardHeader>
-          <CardTitle>프로젝트 이름</CardTitle>
-          <CardDescription>
+    <div className="space-y-8">
+      <section className="space-y-4">
+        <header className="space-y-1">
+          <h2 className="text-base font-semibold">프로젝트 이름</h2>
+          <p className="text-sm text-muted-foreground">
             프로젝트 목록과 워크스페이스에 표시할 이름이에요.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
+          </p>
+        </header>
+        <div className="max-w-xl">
           <form
             className="space-y-5"
             onSubmit={async (event) => {
@@ -85,15 +78,15 @@ function ProjectSettingsForm({
               )}
             </div>
           </form>
-        </CardContent>
-      </Card>
-      <Card>
-        <CardHeader>
-          <CardTitle>프로젝트 정보</CardTitle>
-        </CardHeader>
-        <CardContent>
+        </div>
+      </section>
+      <section className="space-y-4">
+        <header className="space-y-1">
+          <h2 className="text-base font-semibold">프로젝트 정보</h2>
+        </header>
+        <div className="max-w-xl">
           <dl className="space-y-4 text-sm">
-            <div className="flex justify-between gap-3">
+            <div className="grid grid-cols-[6rem_1fr] gap-3">
               <dt className="text-muted-foreground">생성일</dt>
               <dd>
                 <time dateTime={project.created}>
@@ -105,13 +98,13 @@ function ProjectSettingsForm({
                 </time>
               </dd>
             </div>
-            <div className="flex justify-between gap-3">
+            <div className="grid grid-cols-[6rem_1fr] gap-3">
               <dt className="text-muted-foreground">테스트 수</dt>
               <dd>{project.tests.toLocaleString("ko-KR")}개</dd>
             </div>
           </dl>
-        </CardContent>
-      </Card>
+        </div>
+      </section>
     </div>
   );
 }
