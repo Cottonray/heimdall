@@ -36,9 +36,10 @@ try {
     const mobile=await open('android','검증 · Appium Android')
     const node=mobile.observation.tree.find((n:any)=>n.text && /[가-힣]/.test(n.text))
     assert.ok(node,'no native UI text');assert.equal((await call('qa_action',{id:mobile.id,action:{type:'assert',text:node.text}})).ok,true)
+    assert.equal((await call('qa_action',{id:mobile.id,action:{type:'click',selector:'search_open'}})).ok,true)
     assert.ok((await fetch(`${base}/frame?id=${mobile.id}`)).ok)
     await assert.rejects(()=>open('android','occupied'));await close(mobile.id);ok('Appium native assertion, frame and exclusive reservation')
     const rpc=await fetch(base+'/mcp',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({jsonrpc:'2.0',id:1,method:'tools/list'})}).then(r=>r.json()) as any
-    assert.ok(rpc.result.tools.some((x:any)=>x.name==='qa_pause'));assert.equal(rpc.result.tools.length,10);ok('MCP tool inventory available')
+    assert.ok(rpc.result.tools.some((x:any)=>x.name==='qa_pause'));assert.equal(rpc.result.tools.length,9);ok('MCP tool inventory available')
     console.log(JSON.stringify(report,null,2))
 } finally {for(const id of owned)await call('qa_close',{id}).catch(()=>{})}

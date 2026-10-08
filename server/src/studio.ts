@@ -32,7 +32,24 @@ async function persist(s: Session) {
     await db!`insert into aiqa_studio (id, body, updated) values (${s.id}, ${db!.json(publicSession(s))}, ${s.updated}) on conflict (id) do update set body=excluded.body, updated=excluded.updated`
     for (const ws of clients) if (ws.isOpen && ws.backlog < 65536) ws.send(JSON.stringify({ type: 'studio', session: compact(publicSession(s)) }))
 }
-export function connect(ws: WsConnection) { clients.add(ws); ws.on({ onClose: () => clients.delete(ws) }); ws.send(JSON.stringify({ type: 'ready' })) }
+export function connect(ws: WsConnection) {
+    clients.add(ws)
+    let watched = '', sending = false
+    const timer = setInterval(async () => {
+        if (!watched || sending || !ws.isOpen || ws.backlog > 128000) return
+        sending = true
+        try { const id = watched, b = await frame(get(id)); if (id === watched) ws.sendBinary(b) } catch {} finally { sending = false }
+    }, 900)
+    timer.unref()
+    ws.on({ onClose: () => { clients.delete(ws); clearInterval(timer) }, onMessage: raw => {
+        try {
+            const msg = JSON.parse(raw)
+            if (msg.type === 'watch') { watched = /^[a-f0-9-]{36}$/.test(msg.id) ? msg.id : ''; return }
+            if (msg.type === 'action') void dispatch('qa_action', { id: msg.id, action: msg.action }).then(result => ws.send(JSON.stringify({ type:'reply', requestId:msg.requestId, result }))).catch(e => ws.send(JSON.stringify({ type:'reply', requestId:msg.requestId, error:String(e) })))
+        } catch {}
+    } })
+    ws.send(JSON.stringify({ type: 'ready' }))
+}
 export function allowed(req: IncomingMessage) {
     const local = ['127.0.0.1', '::1', '::ffff:127.0.0.1'].includes(req.socket.remoteAddress || '')
     const host = req.headers.host?.split(':')[0]
@@ -74,7 +91,12 @@ async function open(data: any) {
     try {
         if (engine === 'android') { if (!(await device.state()).booted) throw new Error('Android 기기가 준비되지 않았어요'); s.appiumId = await appium.open(1200); await appium.launch(s.appiumId, device.APP_ID, false); device.invalidateDump() }
         else await worker('/open', { id: s.id, url: s.url, mobile: engine === 'mobile-web' })
-        await observe(s); s.state = 'manual'; s.message = '직접 조작하거나 AI에게 목표를 알려 주세요'; await persist(s); return publicSession(s)
+        await observe(s)
+        if (engine === 'android') {
+            for (let i=0;i<12 && !s.observation.tree.some((n:any)=>n.text || n.desc);i++) { await new Promise(r=>setTimeout(r,300)); await observe(s) }
+            if (!s.observation.tree.some((n:any)=>n.text || n.desc)) throw new Error('앱의 화면 요소가 아직 준비되지 않았어요. 다시 열어 주세요')
+        }
+        s.state = 'manual'; s.message = '직접 조작하거나 AI에게 목표를 알려 주세요'; await persist(s); return publicSession(s)
     } catch (e) { sessions.delete(s.id); if (s.appiumId) await appium.close(s.appiumId); if (engine === 'android') { mobileReserved = false; control.unlockRunner() } else await worker('/close', { id: s.id }).catch(() => {}); throw e }
 }
 async function android(s: Session, a: Action) {
