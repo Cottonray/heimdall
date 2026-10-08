@@ -155,7 +155,7 @@ export function DeviceFarm({
                 <DialogTrigger asChild>
                   <Button variant="outline">에이전트 다운로드</Button>
                 </DialogTrigger>
-                <DialogContent>
+                <DialogContent className="max-h-[85dvh] overflow-y-auto sm:max-w-3xl">
                   <DialogHeader>
                     <DialogTitle>에이전트 다운로드</DialogTitle>
                     <DialogDescription>
@@ -165,7 +165,11 @@ export function DeviceFarm({
                   </DialogHeader>
                   <div className="min-w-0 space-y-4">
                     <div className="flex flex-wrap gap-2">
-                      <Button asChild variant="outline">
+                      <Button
+                        asChild
+                        variant="outline"
+                        className="h-auto min-h-9 max-w-full whitespace-normal py-2 text-center"
+                      >
                         <a href={API + "/admin/agent-download?platform=macos"}>
                           macOS 다운로드 (Apple Silicon · Intel)
                         </a>
@@ -180,7 +184,7 @@ export function DeviceFarm({
                       Appium이 필요하며 설치 및 등록 방법은 동봉된 README를
                       확인해 주세요.
                     </p>
-                    <pre className="max-w-full overflow-x-auto rounded-md bg-muted p-3 text-sm">
+                    <pre className="max-w-full whitespace-pre-wrap break-all rounded-md bg-muted p-3 text-sm">
                       <code>
                         heimdall server --master {window.location.origin}
                       </code>
