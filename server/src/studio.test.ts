@@ -47,3 +47,19 @@ test('persisted JSON objects and transitional string rows preserve saved history
     assert.deepEqual(readSessionBody(JSON.stringify(body)),body)
     assert.throws(()=>readSessionBody({id:'bad'}))
 })
+
+
+test('AI verification retry is cleared after a real successful assertion', async()=>{
+    const {agent}=await import('./studio/application/agent.ts')
+    const s:import('./studio/domain/types.ts').Session={id:'test',name:'test',engine:'web',url:'http://test',state:'manual',message:'',created:'',updated:0,steps:[],working:false,ai:false,epoch:0,tail:Promise.resolve()}
+    const prompts:string[]=[]
+    await agent(s,'verify',{
+        observe:async()=>({tree:'result'}),persist:async()=>{},
+        complete:async(prompt)=>{prompts.push(prompt);return prompts.length===2?{action:{type:'assert',text:'result'}}:{done:true}},
+        action:async(session,action,actor)=>{const step={n:1,at:'',actor,action,ok:true,ms:1};session.steps.push(step);return step}
+    })
+    for(let i=0;i<20&&s.ai;i++)await new Promise(resolve=>setImmediate(resolve))
+    assert.equal(s.state,'passed');assert.equal(s.steps.length,1);assert.equal(prompts.length,3)
+    assert.ok(prompts[1].includes('Your last done response'))
+    assert.ok(!prompts[2].includes('Your last done response'))
+})

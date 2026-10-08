@@ -35,10 +35,7 @@ require_main_merged "$here"
 
 # Build only after the full TypeScript/design checks pass.
 say "React Studio 검증·빌드"
-for workspace in server browser-worker studio; do
-    (cd "$here/$workspace" && PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD=1 YARN_NODE_LINKER=node-modules node "$here/../../frontend/.yarn/releases/yarn-4.18.0.cjs" install --immutable)
-done
-(cd "$here/studio" && node "$here/../../frontend/.yarn/releases/yarn-4.18.0.cjs" check)
+node --experimental-strip-types "$here/check.ts"
 
 # --- 보낼 것 모으기 ----------------------------------------------------------
 payload=$(mktemp -d)
