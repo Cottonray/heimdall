@@ -29,7 +29,22 @@ export function DeviceFarm({ active }: { active: boolean }) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [revision, setRevision] = useState(0);
-  const [view, setView] = useState<"cards" | "list">("cards");
+  const [view, setView] = useState<"cards" | "list">(() => {
+    try {
+      return localStorage.getItem("heimdall-device-view") === "list"
+        ? "list"
+        : "cards";
+    } catch {
+      return "cards";
+    }
+  });
+  useEffect(() => {
+    try {
+      localStorage.setItem("heimdall-device-view", view);
+    } catch {
+      /* Storage can be unavailable in private browsing. */
+    }
+  }, [view]);
   const [filter, setFilter] = useState<DeviceFilter>("available");
   useEffect(() => {
     if (!active) return;
@@ -215,7 +230,8 @@ export function DeviceFarm({ active }: { active: boolean }) {
               id: "open",
               header: "연결",
               cell: (device) =>
-                deviceStatus(device, !!error) === "사용가능" ? (
+                deviceStatus(device, !!error) === "사용가능" ||
+                device.ownedByMe ? (
                   <Button variant="outline" size="sm" asChild>
                     <a
                       href={remoteUrl(device)}
@@ -242,7 +258,7 @@ export function DeviceFarm({ active }: { active: boolean }) {
             const platformName = platform === "ios" ? "iOS" : "Android";
             const virtual = device.kind === "emulator";
             const state = deviceStatus(device, !!error);
-            const ready = state === "사용가능";
+            const ready = state === "사용가능" || !!device.ownedByMe;
             const name =
               device.model ||
               `${platformName} ${virtual ? "가상 기기" : "실물 기기"}`;

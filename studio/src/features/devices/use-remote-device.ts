@@ -16,7 +16,18 @@ export type DeviceAction =
       y2: number;
       ms: number;
     }
-  | { type: "key"; key: "home" | "back" | "recent" | "enter" | "del" }
+  | {
+      type: "key";
+      key:
+        | "home"
+        | "back"
+        | "recent"
+        | "enter"
+        | "del"
+        | "volume_up"
+        | "volume_down"
+        | "power";
+    }
   | { type: "text"; text: string };
 type RemoteState = {
   connection: "connecting" | "ready" | "paused" | "closed";

@@ -8,7 +8,8 @@ export function deviceStatus(device: DeviceInfo, lookupFailed = false) {
     return "상태 확인 불가";
   if (!device.ready) return "부팅 중";
   if (!device.current) return "연결 지원 대기";
-  if (device.usage === "in-use") return "사용 중";
+  if (device.usage === "in-use")
+    return device.ownedByMe ? "사용 중 · 나" : "사용 중";
   return device.usage === "available" ? "사용가능" : "상태 확인 불가";
 }
 export function matchesDeviceFilter(
@@ -19,6 +20,8 @@ export function matchesDeviceFilter(
   const status = deviceStatus(device, lookupFailed);
   return (
     filter === "all" ||
-    (filter === "available" ? status === "사용가능" : status === "사용 중")
+    (filter === "available"
+      ? status === "사용가능" || status === "사용 중 · 나"
+      : status.startsWith("사용 중"))
   );
 }

@@ -1,3 +1,6 @@
+import { ProjectTestData } from "@/features/projects/test-data";
+import { ScenarioList } from "@/features/scenarios/scenario-list";
+import { NotificationInbox } from "@/features/auth/notification-inbox";
 import { ProjectSettings } from "@/features/projects/project-settings";
 import { DeviceFarm } from "@/features/devices/device-farm";
 import { RemoteDevice } from "@/features/devices/remote-device";
@@ -127,22 +130,27 @@ export function App() {
               <TabsList variant="workspace" aria-label="열린 작업">
                 {(w.user ? visibleTabs : ["projects"]).map((id) => {
                   const label =
-                    id === "board"
-                      ? "워크스페이스"
-                      : id === "domains"
-                        ? "도메인"
-                        : id === "projects"
-                          ? "프로젝트"
-                          : id === "dashboard"
-                            ? "대시보드"
-                            : id === "history"
-                              ? "테스트 기록"
-                              : id === "settings" || id === "project-settings"
-                                ? id === "settings"
-                                  ? "설정"
-                                  : "프로젝트 설정"
-                                : w.sessions.find((s) => s.id === id)?.name ||
-                                  "테스트";
+                    id === "test-data"
+                      ? "테스트데이터"
+                      : id === "scenarios"
+                        ? "시나리오"
+                        : id === "board"
+                          ? "워크스페이스"
+                          : id === "domains"
+                            ? "도메인"
+                            : id === "projects"
+                              ? "프로젝트"
+                              : id === "dashboard"
+                                ? "대시보드"
+                                : id === "history"
+                                  ? "테스트 기록"
+                                  : id === "settings" ||
+                                      id === "project-settings"
+                                    ? id === "settings"
+                                      ? "설정"
+                                      : "프로젝트 설정"
+                                    : w.sessions.find((s) => s.id === id)
+                                        ?.name || "테스트";
                   const Icon =
                     id === "projects"
                       ? Folder
@@ -170,7 +178,10 @@ export function App() {
                 })}
               </TabsList>
             )}
-            <div className="ml-auto px-3 py-2">
+            <div className="ml-auto flex items-center gap-1 px-3 py-2">
+              {w.user && (
+                <NotificationInbox key={w.user.id} userId={w.user.id} />
+              )}
               <Profile
                 user={w.user}
                 busy={w.busy}
@@ -228,9 +239,7 @@ export function App() {
                   {id === "projects" ? (
                     <ProjectHome
                       status={w.status}
-                      sessions={w.status?.sessions || []}
                       busy={w.busy}
-                      loading={w.loading}
                       onEnter={w.store.enterProject}
                       onCreate={async (name) => {
                         await w.store.createProject(name);
@@ -249,6 +258,17 @@ export function App() {
                       onNew={() => setNewOpen(true)}
                       sessions={projectSessions}
                       onSelect={w.store.select}
+                    />
+                  ) : id === "test-data" ? (
+                    <ProjectTestData
+                      key={w.projectId}
+                      projectId={w.projectId}
+                    />
+                  ) : id === "scenarios" ? (
+                    <ScenarioList
+                      sessions={projectSessions}
+                      onSelect={w.store.select}
+                      onNew={() => setNewOpen(true)}
                     />
                   ) : id === "board" ? (
                     <Board
@@ -284,17 +304,34 @@ export function App() {
                       }}
                     />
                   ) : id === "project-settings" ? (
-                    <ProjectSettings
-                      project={
-                        w.status?.projects.find((p) => p.id === w.projectId) ||
-                        null
-                      }
-                      busy={w.busy}
-                      onSave={async (name) => {
-                        await w.store.renameProject(name);
-                        return !w.store.getSnapshot().error;
-                      }}
-                    />
+                    <div className="space-y-8">
+                      <ProjectSettings
+                        project={
+                          w.status?.projects.find(
+                            (p) => p.id === w.projectId,
+                          ) || null
+                        }
+                        busy={w.busy}
+                        onSave={async (name) => {
+                          await w.store.renameProject(name);
+                          return !w.store.getSnapshot().error;
+                        }}
+                      />
+                      <Domains
+                        domains={w.status?.domains || []}
+                        admin={w.user?.role === "admin"}
+                        busy={w.busy}
+                        error={w.error}
+                        onSave={async (domain) => {
+                          await w.store.saveDomain(domain);
+                          return !w.store.getSnapshot().error;
+                        }}
+                        onRemove={async (domainId) => {
+                          await w.store.removeDomain(domainId);
+                          return !w.store.getSnapshot().error;
+                        }}
+                      />
+                    </div>
                   ) : s ? (
                     <div className="space-y-6">
                       <SessionContent
@@ -334,8 +371,6 @@ export function App() {
           busy={w.busy}
           onSaveAvatar={w.store.saveProfile}
           onChangePassword={w.store.changePassword}
-          status={w.status}
-          onRefresh={() => void w.store.refresh()}
         />
       )}
       <ExportDialog data={exported} onClose={() => setExported(null)} />

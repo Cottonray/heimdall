@@ -1,5 +1,11 @@
 import { useId, useRef, useState } from "react";
-import { Check, LockKeyhole, Trash2, Upload } from "lucide-react";
+import { Check, LockKeyhole, Trash2, Camera } from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuItem,
+} from "@/components/ui/dropdown-menu";
 import { UserAvatar } from "./user-avatar";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -29,12 +35,11 @@ export function ProfileEditor({
 }) {
   const id = useId();
   const pending = useRef(false);
-  const [draft, setDraft] = useState<string | undefined>();
+  const fileInput = useRef<HTMLInputElement>(null);
   const [feedback, setFeedback] = useState<Feedback>(null);
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmation, setConfirmation] = useState("");
-  const preview = draft ?? user.avatar;
   const run = async (operation: () => Promise<void>) => {
     if (locked || pending.current) return;
     pending.current = true;
@@ -60,7 +65,6 @@ export function ProfileEditor({
       const result = await onSaveAvatar(avatar);
       if (!result.ok)
         throw new Error(result.error || "이미지를 저장하지 못했어요.");
-      setDraft(undefined);
       setFeedback({
         error: false,
         message: avatar
@@ -70,55 +74,74 @@ export function ProfileEditor({
     });
   return (
     <div className="space-y-6" aria-busy={locked}>
-      <fieldset disabled={locked} className="space-y-4">
-        <legend className="mb-4 text-sm font-semibold">프로필 이미지</legend>
-        <div className="flex items-center gap-4">
-          <UserAvatar user={user} size="profile" image={preview} />
-          <div className="min-w-0 flex-1 space-y-2">
-            <Label htmlFor={id + "-avatar"}>이미지 선택</Label>
-            <Input
-              id={id + "-avatar"}
-              type="file"
-              accept="image/png,image/jpeg,image/webp"
-              disabled={!user.avatarUploadAllowed || locked}
-              aria-describedby={id + "-avatar-help"}
-              onChange={(event) => {
-                const file = event.currentTarget.files?.[0];
-                event.currentTarget.value = "";
-                if (file)
-                  void run(async () => {
-                    setDraft(await prepareAvatar(file));
-                  });
-              }}
-            />
-            <p
-              id={id + "-avatar-help"}
-              className="text-xs text-muted-foreground"
+      <div className="space-y-3">
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button
+              variant="ghost"
+              size="avatar"
+              disabled={locked}
+              aria-label="프로필 이미지 변경"
             >
-              {user.avatarUploadAllowed
-                ? "PNG, JPG, WebP · 최대 5MB"
-                : "이미지 업로드를 사용할 수 없어요."}
-            </p>
-          </div>
+              <UserAvatar user={user} size="profile" />
+              <Camera />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent>
+            <DropdownMenuItem
+              disabled={!user.avatarUploadAllowed || locked}
+              onSelect={() => fileInput.current?.click()}
+            >
+              이미지 변경
+            </DropdownMenuItem>
+            <DropdownMenuItem
+              disabled={!user.avatar || locked}
+              onSelect={() => void saveAvatar(null)}
+            >
+              <Trash2 />
+              이미지 삭제
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+        <Input
+          ref={fileInput}
+          hidden
+          className="hidden"
+          type="file"
+          accept="image/png,image/jpeg,image/webp"
+          aria-label="프로필 이미지 파일"
+          onChange={(event) => {
+            const file = event.currentTarget.files?.[0];
+            event.currentTarget.value = "";
+            if (file)
+              void run(async () => {
+                const avatar = await prepareAvatar(file);
+                const result = await onSaveAvatar(avatar);
+                if (!result.ok)
+                  throw new Error(
+                    result.error || "이미지를 저장하지 못했어요.",
+                  );
+                setFeedback({
+                  error: false,
+                  message: "프로필 이미지를 저장했어요.",
+                });
+              });
+          }}
+        />
+        <p className="text-xs text-muted-foreground">
+          이미지를 눌러 변경하거나 삭제해요.
+        </p>
+      </div>
+      <div className="space-y-4">
+        <div className="space-y-2">
+          <Label htmlFor={id + "-username"}>아이디</Label>
+          <Input id={id + "-username"} value={user.username} disabled />
         </div>
-        <div className="flex flex-wrap gap-2">
-          <Button
-            disabled={!draft || !user.avatarUploadAllowed || locked}
-            onClick={() => draft && void saveAvatar(draft)}
-          >
-            <Upload />
-            이미지 저장
-          </Button>
-          <Button
-            variant="outline"
-            disabled={(!user.avatar && !draft) || locked}
-            onClick={() => void saveAvatar(null)}
-          >
-            <Trash2 />
-            이미지 삭제
-          </Button>
+        <div className="space-y-2">
+          <Label htmlFor={id + "-name"}>이름</Label>
+          <Input id={id + "-name"} value={user.name} disabled />
         </div>
-      </fieldset>
+      </div>
       <Separator />
       {user.passwordChangeAllowed ? (
         <form

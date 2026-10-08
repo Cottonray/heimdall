@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Plus, Pencil, Trash2 } from "lucide-react";
+import { Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -30,6 +30,7 @@ export function Domains({
 }) {
   const [editing, setEditing] = useState<Partial<Domain> | null>(null);
   const [removing, setRemoving] = useState<Domain | null>(null);
+  const [notice, setNotice] = useState("");
   const columns: DataTableColumn<Domain>[] = [
     {
       id: "name",
@@ -47,36 +48,6 @@ export function Domains({
         </span>
       ),
     },
-    ...(admin
-      ? [
-          {
-            id: "actions",
-            header: "관리",
-            cell: (domain: Domain) => (
-              <div className="flex items-center gap-1">
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  disabled={busy}
-                  aria-label={domain.name + " 수정"}
-                  onClick={() => setEditing(domain)}
-                >
-                  <Pencil />
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  disabled={busy}
-                  aria-label={domain.name + " 삭제"}
-                  onClick={() => setRemoving(domain)}
-                >
-                  <Trash2 />
-                </Button>
-              </div>
-            ),
-          },
-        ]
-      : []),
   ];
   return (
     <div className="space-y-6">
@@ -90,6 +61,31 @@ export function Domains({
         )}
       </div>
       <DataTable
+        rowActions={(domain) => [
+          {
+            label: "주소 복사",
+            onSelect: () => {
+              void navigator.clipboard.writeText(domain.url).then(
+                () => setNotice("주소를 복사했어요."),
+                () => setNotice("주소를 복사하지 못했어요."),
+              );
+            },
+          },
+          ...(admin
+            ? [
+                {
+                  label: "수정",
+                  disabled: busy,
+                  onSelect: () => setEditing(domain),
+                },
+                {
+                  label: "삭제",
+                  disabled: busy,
+                  onSelect: () => setRemoving(domain),
+                },
+              ]
+            : []),
+        ]}
         data={domains}
         columns={columns}
         getRowId={(domain) => domain.id}
@@ -99,6 +95,11 @@ export function Domains({
         caption="등록된 테스트 도메인"
         emptyMessage="등록된 도메인이 없어요."
       />
+      {notice && (
+        <p role="status" className="text-sm text-muted-foreground">
+          {notice}
+        </p>
+      )}
       <Dialog
         open={!!editing}
         onOpenChange={(v) => {

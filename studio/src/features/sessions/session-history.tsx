@@ -1,10 +1,7 @@
-import { Item } from "@/components/ui/item";
-import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { ArrowUpRight, Plus } from "lucide-react";
-import { SearchInput } from "@/components/ui/input";
+import { Plus } from "lucide-react";
+import { DataTable } from "@/components/data-table";
 import { StatusBadge } from "@/components/status-badge";
-import { Card, CardContent } from "@/components/ui/card";
 import { engines } from "@/lib/labels";
 import type { Session } from "../../../../contracts/studio";
 export function SessionHistory({
@@ -16,67 +13,61 @@ export function SessionHistory({
   onNew: () => void;
   onSelect: (id: string) => void;
 }) {
-  const [search, setSearch] = useState("");
-  const filtered = sessions.filter((s) =>
-    (s.name + " " + engines[s.engine].label)
-      .toLowerCase()
-      .includes(search.toLowerCase()),
-  );
   return (
     <div className="space-y-6">
-      <div className="flex flex-wrap items-center justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-semibold tracking-tight">테스트 기록</h1>
-          <p className="mt-1 text-sm text-muted-foreground">
-            {filtered.length}개 테스트
-          </p>
-        </div>
-        <div className="flex w-full flex-wrap items-center gap-3 sm:w-auto">
-          <Button onClick={onNew}>
-            <Plus />새 테스트
-          </Button>
-          <div className="w-full sm:w-72">
-            <SearchInput
-              aria-label="테스트 검색"
-              placeholder="이름 또는 유형 검색"
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-            />
-          </div>
-        </div>
+      <div className="flex items-center justify-between gap-4">
+        <h1 className="text-2xl font-semibold tracking-tight">테스트 기록</h1>
+        <Button onClick={onNew}>
+          <Plus />새 테스트
+        </Button>
       </div>
-      <Card>
-        <CardContent>
-          <ul className="divide-y">
-            {filtered.map((s) => (
-              <li key={s.id}>
-                <Item variant="row" size="row" asChild>
-                  <button type="button" onClick={() => onSelect(s.id)}>
-                    <span className="min-w-0">
-                      <span className="block truncate text-sm font-medium">
-                        {s.name}
-                      </span>
-                      <span className="mt-1 block text-xs text-muted-foreground">
-                        {engines[s.engine].label} · {s.steps.length}개 동작 ·{" "}
-                        {new Date(s.updated).toLocaleString("ko-KR")}
-                      </span>
-                    </span>
-                    <span className="flex shrink-0 items-center gap-3">
-                      <StatusBadge state={s.state} />
-                      <ArrowUpRight className="size-4 text-muted-foreground" />
-                    </span>
-                  </button>
-                </Item>
-              </li>
-            ))}
-          </ul>
-          {!filtered.length && (
-            <p className="py-10 text-center text-sm text-muted-foreground">
-              {search ? "검색 결과가 없어요." : "아직 테스트 기록이 없어요."}
-            </p>
-          )}
-        </CardContent>
-      </Card>
+      <DataTable
+        data={sessions}
+        getRowId={(s) => s.id}
+        getRowLabel={(s) => s.name}
+        caption="테스트 기록"
+        searchPlaceholder="이름 또는 유형 검색"
+        searchText={(s) => s.name + " " + engines[s.engine].label}
+        rowActions={(s) => [
+          { label: "기록 열기", onSelect: () => onSelect(s.id) },
+        ]}
+        columns={[
+          {
+            id: "name",
+            header: "테스트 이름",
+            sortValue: (s) => s.name,
+            cell: (s) => (
+              <Button variant="link" onClick={() => onSelect(s.id)}>
+                {s.name}
+              </Button>
+            ),
+          },
+          {
+            id: "engine",
+            header: "유형",
+            sortValue: (s) => engines[s.engine].label,
+            cell: (s) => engines[s.engine].label,
+          },
+          {
+            id: "steps",
+            header: "동작",
+            sortValue: (s) => s.steps.length,
+            cell: (s) => `${s.steps.length}개`,
+          },
+          {
+            id: "state",
+            header: "상태",
+            sortValue: (s) => s.state,
+            cell: (s) => <StatusBadge state={s.state} />,
+          },
+          {
+            id: "updated",
+            header: "최근 실행",
+            sortValue: (s) => s.updated,
+            cell: (s) => new Date(s.updated).toLocaleString("ko-KR"),
+          },
+        ]}
+      />
     </div>
   );
 }

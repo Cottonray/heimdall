@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { ProfileEditor } from "@/features/auth/profile-editor";
 import type { ProfileActionResult } from "@/lib/api";
-import { Download, RefreshCw, UserRound, Plug } from "lucide-react";
+import { Download, UserRound, Plug } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -19,7 +19,7 @@ import {
   DialogDescription,
 } from "@/components/ui/dialog";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import type { StudioStatus, User } from "../../../../contracts/studio";
+import type { User } from "../../../../contracts/studio";
 export function Settings({
   user,
   busy,
@@ -27,8 +27,6 @@ export function Settings({
   onChangePassword,
   open,
   onOpenChange,
-  status,
-  onRefresh,
 }: {
   user: User;
   busy: boolean;
@@ -39,8 +37,6 @@ export function Settings({
   ) => Promise<ProfileActionResult>;
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  status: StudioStatus | null;
-  onRefresh: () => void;
 }) {
   const [pending, setPending] = useState(false);
   return (
@@ -65,13 +61,10 @@ export function Settings({
               MCP 연결
             </TabsTrigger>
           </TabsList>
-          <TabsContent value="account" className="min-w-0 overflow-y-auto">
-            <Card>
+          <TabsContent value="account" variant="settings">
+            <Card variant="plain">
               <CardHeader>
                 <CardTitle>프로필</CardTitle>
-                <CardDescription>
-                  {user.name} · {user.username}
-                </CardDescription>
               </CardHeader>
               <CardContent>
                 <ProfileEditor
@@ -85,10 +78,7 @@ export function Settings({
               </CardContent>
             </Card>
           </TabsContent>
-          <TabsContent
-            value="mcp"
-            variant="settings"
-          >
+          <TabsContent value="mcp" variant="settings">
             <Card>
               <CardHeader>
                 <CardTitle>MCP 연결</CardTitle>
@@ -101,35 +91,6 @@ export function Settings({
                   <Download />
                   연결 설정 다운로드
                 </Button>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardHeader>
-                <CardTitle>실행 환경</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <dl className="space-y-4 text-sm">
-                  <div className="flex justify-between gap-3">
-                    <dt className="text-muted-foreground">브라우저</dt>
-                    <dd>
-                      {status?.browser.ok
-                        ? `${status.browser.active ?? 0} / ${status.browser.capacity ?? 2} 사용 중`
-                        : "연결 확인 필요"}
-                    </dd>
-                  </div>
-                  <div className="flex justify-between gap-3">
-                    <dt className="text-muted-foreground">Android</dt>
-                    <dd>
-                      {status?.android.booted ? "기기 연결됨" : "준비 중"}
-                    </dd>
-                  </div>
-                </dl>
-                <div className="mt-6">
-                  <Button variant="outline" onClick={onRefresh}>
-                    <RefreshCw />
-                    새로고침
-                  </Button>
-                </div>
               </CardContent>
             </Card>
           </TabsContent>

@@ -4,6 +4,8 @@ export const pages = [
   "dashboard",
   "history",
   "board",
+  "test-data",
+  "scenarios",
   "domains",
   "settings",
   "project-settings",

@@ -5,7 +5,14 @@ import {
   ArrowUpDown,
   ChevronLeft,
   ChevronRight,
+  MoreHorizontal,
 } from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuItem,
+} from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { SearchInput } from "@/components/ui/input";
@@ -50,6 +57,9 @@ type DataTableProps<T> = {
   searchPlaceholder?: string;
   caption: string;
   emptyMessage?: string;
+  rowActions?: (
+    row: T,
+  ) => { label: string; onSelect: () => void; disabled?: boolean }[];
 };
 
 export function DataTable<T>({
@@ -60,6 +70,7 @@ export function DataTable<T>({
   searchText,
   searchPlaceholder = "검색",
   caption,
+  rowActions,
   emptyMessage = "등록된 항목이 없어요.",
 }: DataTableProps<T>) {
   const [widths, setWidths] = useState<Record<string, number>>({});
@@ -100,24 +111,30 @@ export function DataTable<T>({
             setPage(0);
           }}
         />
-        <div className="flex items-center gap-3">
-          <span role="status" className="text-sm text-muted-foreground">
-            {selected.size}개 선택
-          </span>
-          <Button
-            type="button"
-            variant="ghost"
-            size="sm"
-            disabled={selected.size === 0}
-            onClick={() => setSelectedIds(new Set())}
-          >
-            선택 해제
-          </Button>
-        </div>
+        {selected.size > 0 && (
+          <div className="flex items-center gap-3">
+            <span role="status" className="text-sm text-muted-foreground">
+              {selected.size}개 선택
+            </span>
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              disabled={selected.size === 0}
+              onClick={() => setSelectedIds(new Set())}
+            >
+              선택 해제
+            </Button>
+          </div>
+        )}
       </div>
       <Table
         variant="bordered"
-        columnWidths={[40, ...columns.map((column) => widths[column.id])]}
+        columnWidths={[
+          40,
+          ...columns.map((column) => widths[column.id]),
+          ...(rowActions ? [48] : []),
+        ]}
       >
         <TableCaption visuallyHidden>{caption}</TableCaption>
         <TableHeader>
@@ -193,6 +210,11 @@ export function DataTable<T>({
                 </TableHead>
               );
             })}
+            {rowActions && (
+              <TableHead scope="col">
+                <span className="sr-only">옵션</span>
+              </TableHead>
+            )}
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -215,12 +237,41 @@ export function DataTable<T>({
                 {columns.map((column) => (
                   <TableCell key={column.id}>{column.cell(row)}</TableCell>
                 ))}
+                {rowActions && (
+                  <TableCell>
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button
+                          variant="ghost"
+                          size="icon-sm"
+                          aria-label={`${getRowLabel(row)} 옵션`}
+                        >
+                          <MoreHorizontal />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        {rowActions(row).map((action) => (
+                          <DropdownMenuItem
+                            key={action.label}
+                            disabled={action.disabled}
+                            onSelect={action.onSelect}
+                          >
+                            {action.label}
+                          </DropdownMenuItem>
+                        ))}
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </TableCell>
+                )}
               </TableRow>
             );
           })}
           {current.rows.length === 0 && (
             <TableRow>
-              <TableCell colSpan={columns.length + 1} variant="empty">
+              <TableCell
+                colSpan={columns.length + 1 + (rowActions ? 1 : 0)}
+                variant="empty"
+              >
                 {query.trim() ? "검색 결과가 없어요." : emptyMessage}
               </TableCell>
             </TableRow>
@@ -229,7 +280,10 @@ export function DataTable<T>({
       </Table>
       <div className="flex flex-wrap items-center justify-between gap-4">
         <p role="status" className="text-sm text-muted-foreground">
-          {current.start}–{current.end} / {current.count}개
+          총 {current.count}개
+          {current.pageCount > 1
+            ? ` · ${current.start}–${current.end}번째`
+            : ""}
         </p>
         <div className="flex flex-wrap items-center gap-4">
           <div className="flex items-center gap-2">

@@ -63,6 +63,7 @@ test("discovery limits socket types, deduplicates and ignores shell metacharacte
 });
 test("CDP connection ignores supplied hosts and rejects non-page/debugger path mismatches", () => {
   assert.equal(parseTarget(socket, page)?.revision, "@" + "a".repeat(40));
+  assert.equal(parseTarget(socket, {...page, devtoolsFrontendUrl: page.devtoolsFrontendUrl.replace("serve_rev", "serve_internal_file")})?.revision, "@" + "a".repeat(40));
   assert.equal(parseTarget(socket, { ...page, type: "browser" }), null);
   assert.equal(
     parseTarget(socket, {
@@ -148,4 +149,15 @@ test("device reservation is exclusive, bound to login and released on close", ()
   assert.equal(deviceUsage(serial), "available");
   const next = reserveDevice(serial, "session-b");
   next.release();
+});
+
+test("same login can reopen a device without releasing its other window", () => {
+ const first = reserveDevice(serial, "same-login");
+ const second = reserveDevice(serial, "same-login");
+ assert.equal(first.viewerId, second.viewerId);
+ first.release(); first.release();
+ assert.equal(ownsDevice(second.viewerId, serial, "same-login"), true);
+ assert.throws(() => reserveDevice(serial, "other-login"), /사용 중/);
+ second.release();
+ assert.equal(deviceUsage(serial), "available");
 });

@@ -34,13 +34,11 @@ export function Profile({
         >
           <UserAvatar user={user} size="sm" />
           <span>{user.name}</span>
-          <Badge variant={user.role === "admin" ? "default" : "secondary"}>
-            {role}
-          </Badge>
+          {user.role === "admin" && <Badge>관리자</Badge>}
           <ChevronDown />
         </Button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="end">
+      <DropdownMenuContent align="end" variant="profile">
         <DropdownMenuItem onSelect={onSettings}>
           <Settings />
           설정

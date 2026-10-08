@@ -22,7 +22,15 @@ function Table({
         1200,
         Math.max(
           160,
-          (container.clientWidth - 40) / Math.max(1, columnWidths.length - 1),
+          (container.clientWidth -
+            columnWidths.reduce<number>(
+              (sum, width) => sum + (width ?? 0),
+              0,
+            )) /
+            Math.max(
+              1,
+              columnWidths.filter((width) => width === undefined).length,
+            ),
         ),
       );
       const widths = columnWidths.map(
@@ -43,7 +51,7 @@ function Table({
       data-slot="table-container"
       className={cn(
         "relative w-full overflow-x-auto",
-        variant === "bordered" && "rounded-md border",
+        variant === "bordered" && "rounded-md border border-input",
       )}
     >
       <table
@@ -52,6 +60,8 @@ function Table({
         className={cn(
           "w-full caption-bottom text-sm",
           columnWidths && "table-fixed",
+          variant === "bordered" &&
+            "[&_th]:border-r [&_td]:border-r [&_th]:border-input [&_td]:border-input [&_tr]:border-input [&_th:last-child]:border-r-0 [&_td:last-child]:border-r-0 [&_thead]:bg-muted/50",
           className,
         )}
         {...props}
@@ -173,7 +183,7 @@ function TableHead({
           aria-valuemax={1200}
           aria-valuenow={width}
           aria-valuetext={`${width}픽셀`}
-          className="absolute inset-y-0 right-0 z-10 w-2 cursor-col-resize touch-none border-r border-transparent hover:border-primary focus-visible:border-primary focus-visible:outline-none"
+          className="absolute inset-y-0 right-0 z-10 w-2 cursor-col-resize touch-none border-r border-input hover:border-primary focus-visible:border-primary focus-visible:outline-none"
           onClick={(event) => {
             event.preventDefault();
             event.stopPropagation();

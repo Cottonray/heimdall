@@ -1,4 +1,10 @@
-import { Globe, PanelsTopLeft, Folder, Smartphone } from "lucide-react";
+import {
+  Database,
+  ListChecks,
+  PanelsTopLeft,
+  Folder,
+  Smartphone,
+} from "lucide-react";
 import { ArrowLeft, LayoutDashboard, History, Settings } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { HeimdallWordmark } from "@/components/heimdall-wordmark";
@@ -102,12 +108,20 @@ export function SessionSidebar({
               워크스페이스
             </Button>
             <Button
-              variant={active === "domains" ? "secondary" : "ghost"}
-              onClick={() => onNavigate("domains")}
+              variant={active === "test-data" ? "secondary" : "ghost"}
+              onClick={() => onNavigate("test-data")}
               className="justify-start"
             >
-              <Globe />
-              도메인
+              <Database />
+              테스트데이터
+            </Button>
+            <Button
+              variant={active === "scenarios" ? "secondary" : "ghost"}
+              onClick={() => onNavigate("scenarios")}
+              className="justify-start"
+            >
+              <ListChecks />
+              시나리오
             </Button>
             <Button
               variant={active === "history" ? "secondary" : "ghost"}

@@ -47,7 +47,7 @@ export function parseTarget(socket: string, value: unknown): Target | null {
   // Only the immutable revision is used. Never fetch a host supplied by a device.
   const revision =
     String(row.devtoolsFrontendUrl || "").match(
-      /\/(?:serve_rev|serve_file)\/(@[a-f0-9]{40})\//,
+      /\/(?:serve_rev|serve_file|serve_internal_file)\/(@[a-f0-9]{40})\//,
     )?.[1] || "";
   return {
     socket,

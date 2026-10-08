@@ -88,9 +88,12 @@ const accepted = render(
     <SelectTrigger variant="ghost" className="w-full" aria-label="화면 테마" />
     <WorkspaceTab value="board" label="워크스페이스" icon={null} active onClose={() => {}} />
     <DialogContent variant="settings"><TabsList variant="settings" /><TabsContent value="device" variant="remote" /><TabsContent value="mcp" variant="settings" /></DialogContent>
+    <Card variant="plain" /><DropdownMenuContent variant="profile" /><Button size="avatar" aria-label="프로필 이미지" />
     <svg><path fill="var(--primary)" /></svg>
   </div>`,
   `import { Button } from "@/components/ui/button";
+   import { Card } from "@/components/ui/card";
+   import { DropdownMenuContent } from "@/components/ui/dropdown-menu";
    import { Item } from "@/components/ui/item";
    import { SearchInput } from "@/components/ui/input";
    import { Switch } from "@/components/ui/switch";

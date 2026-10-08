@@ -36,7 +36,7 @@ const tabsListVariants = cva(
         workspace:
           "h-12 min-w-0 max-w-full flex-1 justify-start gap-0 overflow-x-auto overflow-y-hidden rounded-none bg-transparent p-0 group-data-[orientation=horizontal]/tabs:h-12",
         settings:
-          "w-36 shrink-0 justify-start gap-2 rounded-none border-r bg-transparent p-0 pr-3 group-data-[orientation=vertical]/tabs:h-full [&_[data-slot=tabs-trigger]]:h-10 [&_[data-slot=tabs-trigger]]:flex-none",
+          "w-40 shrink-0 justify-start gap-2 rounded-none border-r bg-transparent p-0 pr-3 group-data-[orientation=vertical]/tabs:h-full [&_[data-slot=tabs-trigger]]:h-10 [&_[data-slot=tabs-trigger]]:flex-none",
       },
     },
     defaultVariants: {
@@ -94,7 +94,8 @@ function TabsContent({
         "flex-1 outline-none",
         variant === "remote" &&
           "flex min-h-0 flex-col gap-3 data-[state=inactive]:hidden",
-        variant === "settings" && "min-w-0 space-y-5 overflow-y-auto",
+        variant === "settings" &&
+          "min-h-0 min-w-0 space-y-5 overflow-y-auto px-3 pb-4",
         className,
       )}
       {...props}

@@ -28,10 +28,7 @@ export function LoginPage({
   return (
     <div className="flex min-h-dvh flex-col bg-background text-foreground">
       <header className="flex items-center justify-between border-b px-6 py-5">
-        <a
-          href={APP_ROOT}
-          className="flex items-center"
-        >
+        <a href={APP_ROOT} className="flex items-center">
           <HeimdallWordmark />
         </a>
         <Button

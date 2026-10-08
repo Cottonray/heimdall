@@ -1,3 +1,8 @@
+import { listTestData, saveTestData } from "../infrastructure/test-data.ts";
+import {
+  notifications,
+  readNotifications,
+} from "../infrastructure/notifications.ts";
 import {
   authenticate,
   login,
@@ -35,7 +40,7 @@ import { dispatch } from "../application/dispatch.ts";
 import { allowed, allowedBrowserOrigin } from "./access.ts";
 import { tools } from "./mcp.ts";
 import { discoverWebViews, openWebView } from "../infrastructure/webviews.ts";
-import { deviceUsage, ownsDevice } from "../infrastructure/device-lease.ts";
+import { deviceUsage, deviceOwned, ownsDevice } from "../infrastructure/device-lease.ts";
 import { DEVTOOLS_PREFIX, serveDevTools } from "./devtools-assets.ts";
 export async function handle(
   req: IncomingMessage,
@@ -78,7 +83,12 @@ export async function handle(
       send(403, { error: "요청 출처를 확인해 주세요" });
       return true;
     }
-    if (route.startsWith("/api/studio/profile") && !auth) {
+    if (
+      (route.startsWith("/api/studio/profile") ||
+        route.startsWith("/api/studio/notifications") ||
+        route === "/api/studio/test-data") &&
+      !auth
+    ) {
       send(401, { error: "로그인이 필요해요" });
       return true;
     }
@@ -97,6 +107,14 @@ export async function handle(
       }
       return true;
     }
+    if (route === "/api/studio/test-data" && req.method === "GET") {
+      send(200, await listTestData(url.searchParams.get("projectId") || ""));
+      return true;
+    }
+    if (route === "/api/studio/notifications" && req.method === "GET") {
+      send(200, await notifications(auth!.user.id));
+      return true;
+    }
     if (route === "/api/studio/devices" && req.method === "GET") {
       try {
         send(
@@ -104,6 +122,7 @@ export async function handle(
           (await listDeviceInventory()).map((item) => ({
             ...item,
             usage: deviceUsage(item.serial),
+            ownedByMe: !!auth && deviceOwned(item.serial, auth.hash),
           })),
         );
       } catch {
@@ -198,6 +217,16 @@ export async function handle(
         throw new Error("요청이 너무 커요");
     }
     const data = JSON.parse(body || "{}");
+    if (route === "/api/studio/test-data") {
+      await saveTestData(data);
+      send(200, { ok: true });
+      return true;
+    }
+    if (route === "/api/studio/notifications/read") {
+      await readNotifications(auth!.user.id, data.ids);
+      send(200, { ok: true });
+      return true;
+    }
     if (route === "/api/studio/auth/test-login") {
       send(200, { user: await testLogin(req, res, data.role) });
       return true;

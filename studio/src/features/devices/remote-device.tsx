@@ -1,3 +1,4 @@
+import { PanelResizeHandle } from "@/components/ui/panel-resize-handle";
 import { useEffect, useRef, useState, type PointerEvent } from "react";
 import {
   ArrowLeft,
@@ -7,6 +8,11 @@ import {
   RefreshCw,
   Send,
   Square,
+  Volume2,
+  Volume1,
+  Power,
+  Camera,
+  Video,
   X,
 } from "lucide-react";
 import { PlatformIcon } from "@/components/platform-icon";
@@ -14,9 +20,10 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { PreviewSurface } from "@/components/ui/preview-surface";
+import { useScreenCapture } from "./use-screen-capture";
 import { useRemoteDevice } from "./use-remote-device";
 import { devicePoint } from "./remote-coordinates";
-import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+
 import { useWebViews, WebViewDebugging } from "./webview-debugging";
 
 export function RemoteDevice({
@@ -32,8 +39,10 @@ export function RemoteDevice({
     remote.connection === "ready",
     onAuthExpired,
   );
+  const [debugging, setDebugging] = useState(false);
   const [text, setText] = useState("");
   const imageRef = useRef<HTMLImageElement>(null);
+  const capture = useScreenCapture(imageRef, remote.connection === "ready");
   const gesture = useRef<{
     pointerId: number;
     x: number;
@@ -92,6 +101,14 @@ export function RemoteDevice({
           </div>
         </div>
         <div className="flex shrink-0 items-center gap-2">
+          <Button
+            variant="outline"
+            aria-expanded={debugging}
+            aria-controls="web-debugging"
+            onClick={() => setDebugging(!debugging)}
+          >
+            웹 디버깅 ({webviews.targets.length})
+          </Button>
           <Badge variant={remote.canControl ? "success" : "outline"}>
             {status}
           </Badge>
@@ -118,20 +135,8 @@ export function RemoteDevice({
           {remote.error}
         </p>
       )}
-      <Tabs defaultValue="device" className="min-h-0 flex-1">
-        <TabsList aria-label="기기 도구">
-          <TabsTrigger value="device">기기 화면</TabsTrigger>
-          <TabsTrigger value="web">
-            웹 디버깅
-            {remote.connection === "ready" && !webviews.error
-              ? ` (${webviews.targets.length})`
-              : ""}
-          </TabsTrigger>
-        </TabsList>
-        <TabsContent
-          value="device"
-          variant="remote"
-        >
+      <div className="flex min-h-0 flex-1 gap-4">
+        <div className="flex min-h-0 min-w-0 flex-1 flex-col gap-4">
           <div className="flex min-h-0 flex-1 items-center justify-center overflow-hidden rounded-lg border bg-muted/40">
             {remote.frame ? (
               <PreviewSurface
@@ -218,7 +223,7 @@ export function RemoteDevice({
             )}
           </div>
           <div className="shrink-0 space-y-3">
-            <div className="flex items-center justify-center gap-3">
+            <div className="flex flex-wrap items-center justify-center gap-3">
               <Button
                 variant="outline"
                 size="icon"
@@ -248,6 +253,25 @@ export function RemoteDevice({
               >
                 <Square />
               </Button>
+              {(
+                [
+                  { key: "volume_up", label: "볼륨 높이기", Icon: Volume2 },
+                  { key: "volume_down", label: "볼륨 낮추기", Icon: Volume1 },
+                  { key: "power", label: "화면 잠금 / 깨우기", Icon: Power },
+                ] as const
+              ).map(({ key, label, Icon }) => (
+                <Button
+                  key={key}
+                  variant="outline"
+                  size="icon"
+                  aria-label={label}
+                  title={label}
+                  disabled={disabled}
+                  onClick={() => void remote.action({ type: "key", key })}
+                >
+                  <Icon />
+                </Button>
+              ))}
               <Button
                 variant="outline"
                 size="icon"
@@ -258,6 +282,34 @@ export function RemoteDevice({
                 <Delete />
               </Button>
             </div>
+            <div className="flex items-center justify-center gap-3">
+              <Button
+                variant="outline"
+                disabled={!remote.frame}
+                onClick={capture.capture}
+              >
+                <Camera />
+                캡처
+              </Button>
+              <Button
+                variant={capture.recording ? "destructive" : "outline"}
+                disabled={!remote.frame && !capture.recording}
+                onClick={capture.recording ? capture.stop : capture.start}
+              >
+                <Video />
+                {capture.recording ? "녹화 종료" : "녹화"}
+              </Button>
+              {capture.recording && (
+                <span role="status" className="text-xs text-muted-foreground">
+                  녹화 중 · 최대 3분 · 소리 제외
+                </span>
+              )}
+            </div>
+            {capture.error && (
+              <p role="alert" className="text-sm text-destructive">
+                {capture.error}
+              </p>
+            )}
             <form
               className="flex items-center gap-2"
               onSubmit={async (event) => {
@@ -291,16 +343,36 @@ export function RemoteDevice({
               </p>
             )}
           </div>
-        </TabsContent>
-        <TabsContent value="web" className="min-h-0">
-          <WebViewDebugging
-            serial={serial}
-            viewerId={remote.viewerId}
-            canControl={remote.canControl}
-            discovery={webviews}
-          />
-        </TabsContent>
-      </Tabs>
+        </div>
+        {debugging && (
+          <>
+            <PanelResizeHandle targetId="web-debugging" />
+            <aside
+              id="web-debugging"
+              aria-label="웹 디버깅"
+              className="flex min-h-0 w-3/5 flex-col gap-3 border-l pl-4"
+            >
+              <div className="flex items-center justify-between">
+                <h2 className="font-semibold">웹 디버깅</h2>
+                <Button
+                  variant="ghost"
+                  size="icon-sm"
+                  aria-label="웹 디버깅 닫기"
+                  onClick={() => setDebugging(false)}
+                >
+                  <X />
+                </Button>
+              </div>
+              <WebViewDebugging
+                serial={serial}
+                viewerId={remote.viewerId}
+                canControl={remote.canControl}
+                discovery={webviews}
+              />
+            </aside>
+          </>
+        )}
+      </div>
     </main>
   );
 }

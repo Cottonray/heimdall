@@ -122,6 +122,7 @@ export interface ToolResults {
 export type ToolName = keyof ToolResults;
 
 export type DeviceInfo = {
+  ownedByMe?: boolean;
   usage?: "available" | "in-use";
   serial: string;
   state: string;
@@ -143,4 +144,13 @@ export type WebViewTarget = {
 export type WebViewDiscovery = {
   targets: WebViewTarget[];
   unavailable: number;
+};
+
+export type StudioNotification = {
+  id: string;
+  sessionId: string;
+  title: string;
+  message: string;
+  at: string;
+  read: boolean;
 };
