@@ -164,9 +164,7 @@ export function DataTable<T>({
               const nextAction =
                 direction === "asc"
                   ? "내림차순 정렬"
-                  : direction === "desc"
-                    ? "정렬 해제"
-                    : "오름차순 정렬";
+                  : "오름차순 정렬";
               return (
                 <TableHead
                   key={column.id}

@@ -12,7 +12,7 @@ const normalize = (value: string) =>
 
 export function nextTableSort(current: TableSort, id: string): TableSort {
   if (current?.id !== id) return { id, direction: "asc" };
-  return current.direction === "asc" ? { id, direction: "desc" } : null;
+  return { id, direction: current.direction === "asc" ? "desc" : "asc" };
 }
 
 export function buildTablePage<T>({
