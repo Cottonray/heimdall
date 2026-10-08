@@ -3,12 +3,10 @@ import { Bell, CheckCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-} from "@/components/ui/dialog";
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 import { API } from "@/lib/api";
 import type { StudioNotification } from "../../../../contracts/studio";
 
@@ -72,26 +70,30 @@ export function NotificationInbox({ userId }: { userId: string }) {
   }
   const unread = items.filter((item) => !item.read);
   return (
-    <>
-      <Button
-        variant="ghost"
-        aria-label={`알림함${unread.length ? ` · 안 읽은 알림 ${unread.length}개` : ""}`}
-        onClick={() => setOpen(true)}
-      >
-        <Bell />
-        {unread.length > 0 && <Badge>{unread.length}</Badge>}
-      </Button>
-      <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>알림함</DialogTitle>
-            <DialogDescription>
-              최근 테스트의 실패와 검증 결과를 확인해요.
-            </DialogDescription>
-          </DialogHeader>
+    <Popover open={open} onOpenChange={setOpen}>
+      <PopoverTrigger asChild>
+        <Button
+          variant="ghost"
+          aria-label={`알림함${unread.length ? ` · 안 읽은 알림 ${unread.length}개` : ""}`}
+        >
+          <Bell />
+          {unread.length > 0 && <Badge>{unread.length}</Badge>}
+        </Button>
+      </PopoverTrigger>
+      <PopoverContent aria-label="알림함">
+        <div className="flex items-center justify-between gap-3 border-b px-4 py-3">
+          <div className="flex items-center gap-2">
+            <h2 className="text-sm font-semibold">알림함</h2>
+            {unread.length > 0 && (
+              <span className="text-xs text-muted-foreground">
+                안 읽음 {unread.length}
+              </span>
+            )}
+          </div>
           {unread.length > 0 && (
             <Button
-              variant="outline"
+              size="sm"
+              variant="ghost"
               disabled={busy}
               onClick={() => void mark(unread.map((item) => item.id))}
             >
@@ -99,47 +101,60 @@ export function NotificationInbox({ userId }: { userId: string }) {
               모두 읽음
             </Button>
           )}
-          {error && (
-            <p role="alert" className="text-sm text-destructive">
-              {error}
-            </p>
+        </div>
+        {error && (
+          <p role="alert" className="px-4 py-3 text-sm text-destructive">
+            {error}
+          </p>
+        )}
+        <div className="max-h-96 overflow-y-auto">
+          {!items.length && !error && (
+            <div className="flex flex-col items-center gap-3 px-4 py-10 text-muted-foreground">
+              <Bell />
+              <p className="text-sm">새로운 알림이 없어요.</p>
+            </div>
           )}
-          <div className="max-h-96 space-y-3 overflow-y-auto">
-            {!items.length && !error && (
-              <p className="py-8 text-center text-sm text-muted-foreground">
-                새로운 알림이 없어요.
-              </p>
-            )}
-            {items.map((item) => (
-              <div key={item.id} className="space-y-2 rounded-lg border p-4">
-                <div className="flex items-start justify-between gap-3">
-                  <p className="text-sm font-medium">{item.title}</p>
-                  {!item.read && <Badge>새 알림</Badge>}
-                </div>
-                <p className="text-sm text-muted-foreground">{item.message}</p>
-                <div className="flex items-center justify-between gap-3">
-                  <time
-                    className="text-xs text-muted-foreground"
-                    dateTime={item.at}
-                  >
-                    {new Date(item.at).toLocaleString("ko-KR")}
-                  </time>
-                  {!item.read && (
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      disabled={busy}
-                      onClick={() => void mark([item.id])}
-                    >
-                      읽음
-                    </Button>
-                  )}
-                </div>
+          {items.map((item) => (
+            <div
+              key={item.id}
+              className="space-y-2 border-b px-4 py-3 last:border-b-0"
+            >
+              <div className="flex items-start justify-between gap-3">
+                <p className="text-sm font-medium">{item.title}</p>
+                {!item.read && (
+                  <span className="text-xs text-primary" aria-label="안 읽음">
+                    ●
+                  </span>
+                )}
               </div>
-            ))}
-          </div>
-        </DialogContent>
-      </Dialog>
-    </>
+              <p className="text-sm text-muted-foreground">{item.message}</p>
+              <div className="flex items-center justify-between gap-3">
+                <time
+                  className="text-xs text-muted-foreground"
+                  dateTime={item.at}
+                >
+                  {new Date(item.at).toLocaleString("ko-KR", {
+                    month: "long",
+                    day: "numeric",
+                    hour: "2-digit",
+                    minute: "2-digit",
+                  })}
+                </time>
+                {!item.read && (
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    disabled={busy}
+                    onClick={() => void mark([item.id])}
+                  >
+                    읽음
+                  </Button>
+                )}
+              </div>
+            </div>
+          ))}
+        </div>
+      </PopoverContent>
+    </Popover>
   );
 }
