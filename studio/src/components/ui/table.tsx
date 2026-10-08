@@ -13,6 +13,7 @@ function Table({
   columnWidths?: (number | undefined)[];
 }) {
   const tableRef = React.useRef<HTMLTableElement>(null);
+  const resolvedWidths = React.useRef<number[]>([]);
   React.useLayoutEffect(() => {
     const table = tableRef.current;
     const container = table?.parentElement;
@@ -33,9 +34,17 @@ function Table({
             ),
         ),
       );
+      // Keep the initial widths of untouched columns instead of redistributing
+      // the space left over whenever one column changes.
+      if (resolvedWidths.current.length !== columnWidths.length)
+        resolvedWidths.current = [];
       const widths = columnWidths.map(
-        (width, index) => width ?? (index === 0 ? 40 : defaultWidth),
+        (width, index) =>
+          width ??
+          resolvedWidths.current[index] ??
+          (index === 0 ? 40 : defaultWidth),
       );
+      resolvedWidths.current = widths;
       table.style.width = `${widths.reduce((sum, width) => sum + width, 0)}px`;
       table.querySelectorAll("col").forEach((col, index) => {
         col.style.width = `${widths[index]}px`;
