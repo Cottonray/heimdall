@@ -12,7 +12,6 @@ import {
   Delete,
   Home,
   Monitor,
-  RefreshCw,
   Send,
   Square,
   Volume2,
@@ -107,12 +106,11 @@ export function RemoteDevice({
         </div>
         <div className="flex shrink-0 items-center gap-2">
           <Button
-            variant="ghost"
-            size="icon-sm"
-            aria-label="다시 연결"
+            variant="outline"
+            size="sm"
             onClick={remote.reconnect}
           >
-            <RefreshCw />
+            재연결
           </Button>
           <Button
             variant="ghost"
