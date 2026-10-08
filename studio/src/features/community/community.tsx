@@ -129,7 +129,12 @@ export function Community({ user }: { user: User; active?: boolean }) {
                 onCellClick: (r) => setReading(r),
                 cellActionLabel: (r) => `${r.title} 상세`,
               },
-              { id: "author", header: "작성자", cell: (r) => r.author },
+              {
+                id: "author",
+                header: "작성자",
+                sortValue: (r) => r.author,
+                cell: (r) => r.author,
+              },
               {
                 id: "created",
                 header: "작성일",
