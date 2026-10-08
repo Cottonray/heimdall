@@ -43,6 +43,7 @@ export function connectRemoteDevice(
   lease?: DeviceLease,
 ) {
   const viewerId = lease?.viewerId || randomUUID();
+  const connectionId = randomUUID();
   const serial = remote.device.serial;
   let size = remote.size;
   let closed = false,
@@ -101,10 +102,10 @@ export function connectRemoteDevice(
       if (closed) return;
       closed = true;
       stop();
-      deps.frames.remove(viewerId);
+      deps.frames.remove(connectionId);
       // An already-started ADB command has a 10s bound. Keep its lock until it exits.
       if (!pending) {
-        deps.control.forget(viewerId);
+        if (!lease) deps.control.forget(viewerId);
         lease?.release();
       }
     },
@@ -179,7 +180,7 @@ export function connectRemoteDevice(
     control: deps.control.snapshot(),
   });
   deps.frames.add({
-    id: viewerId,
+    id: connectionId,
     ws,
     wantsFrames: true,
     serial,
