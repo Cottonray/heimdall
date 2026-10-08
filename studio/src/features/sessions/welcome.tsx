@@ -13,20 +13,10 @@ import { engines } from "@/lib/labels";
 import type { Engine } from "../../../../contracts/studio";
 export function Welcome({ onNew }: { onNew: () => void }) {
   return (
-    <div className="mx-auto max-w-5xl py-12">
-      <p className="text-sm font-medium text-primary">
-        한곳에서 작성하고, 실행하고, 검증해요
-      </p>
-      <h1 className="mt-4 text-4xl font-semibold leading-tight tracking-tight">
-        AI와 함께 완성하는
-        <br />
-        테스트 시나리오
+    <div className="mx-auto max-w-5xl py-4">
+      <h1 className="text-2xl font-semibold tracking-tight">
+        새 테스트
       </h1>
-      <p className="mt-5 max-w-xl text-base leading-7 text-muted-foreground">
-        목표를 알려주고 실행을 지켜보세요. 필요한 순간 직접 조작하면
-        <br className="hidden md:block" /> AI가 그 맥락을 이어받아 하나의
-        시나리오로 완성해요.
-      </p>
       <div className="my-8">
         <Button size="lg" onClick={onNew}>
           <Plus />새 테스트

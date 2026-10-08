@@ -3,6 +3,9 @@
 React + shadcn/ui 기반의 데스크톱 QA 작업 공간. 밝은 중성 배경, 흰 카드, 인디고 주요 액션, 일관된 선과 간격을 사용한다. 왼쪽은 기록 탐색, 중앙은 실제 실행 화면, 오른쪽은 AI 작성, 아래는 타임라인/디버깅/API 검증이다.
 
 - 의미 색상은 `src/styles.css`의 Tailwind v4 토큰으로 정의한다. 상태 성공은 `success`, 오류는 `destructive`다.
+- 전체 화면의 스크롤바는 숨긴다. 본문·사이드바·입력창·대화상자의 휠/터치/키보드 스크롤 동작은 유지한다.
+- 클릭 가능한 버튼·목록·탭은 공통 press 토큰으로 살짝 눌리고 부드럽게 복귀한다. 동작 줄이기 설정에서는 이 효과를 생략하고, 좌표 입력을 받는 실행 화면은 크기를 고정한다.
+- 상단 소개/연결 배지와 브라우저·Android 자원 현황은 표시하지 않는다. MCP 연결과 AI 상태는 사이드바 하단에 모은다.
 - shadcn/ui 공식 registry에서 받은 Button, Badge, Card, Input, Textarea, Label, Tabs, Dialog, Separator, Skeleton을 사용한다. 공통 `cn` 경로와 의미 색상, 성공 Badge variant만 조정했다.
 - 컴포넌트 사용부에서 색/모양/내부 여백을 덮어쓰지 않는다. Button은 variant/size를 고른다. CardContent는 컴포넌트 기본 간격을 유지한다.
 - 아이콘은 Lucide, 주요 입력은 Label, 아이콘 버튼은 접근 가능한 이름을 가진다. Dialog/Tabs의 포커스와 키보드는 Radix가 처리한다.

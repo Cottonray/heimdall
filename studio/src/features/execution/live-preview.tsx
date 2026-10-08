@@ -64,6 +64,7 @@ export function LivePreview({
             <button
               type="button"
               aria-label="테스트 화면 조작"
+              data-press-feedback="off"
               disabled={disabled}
               className="block max-w-full disabled:cursor-default"
               onClick={(e) => {

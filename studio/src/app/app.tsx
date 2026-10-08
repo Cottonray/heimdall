@@ -1,19 +1,13 @@
 import { useState } from "react";
 import {
-  Monitor,
-  Smartphone,
-  Sparkles,
   Download,
   RotateCcw,
   Square,
-  Plug,
-  ChevronRight,
   AlertCircle,
   X,
   Plus,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { StatusBadge } from "@/components/status-badge";
 import { useWorkspace } from "@/features/workspace/use-workspace";
@@ -40,54 +34,11 @@ export function App() {
         selected={w.selectedId}
         onSelect={w.store.select}
         onNew={() => setNewOpen(true)}
+        onMcp={downloadMcp}
+        aiReady={w.status?.llm}
       />
       <div className="min-w-0 flex-1">
-        <header className="flex flex-wrap items-center justify-between gap-3 border-b bg-card px-6 py-4">
-          <div className="flex items-center gap-2 text-sm">
-            <span className="text-muted-foreground">워크스페이스</span>
-            <ChevronRight className="size-3 text-muted-foreground" />
-            <span className="font-medium">
-              {s ? "테스트 스튜디오" : "시작"}
-            </span>
-          </div>
-          <div className="flex items-center gap-3">
-            <Badge variant={w.connected ? "success" : "secondary"}>
-              {w.connected ? "실시간 연결" : "연결 중"}
-            </Badge>
-            <Button variant="ghost" size="sm" onClick={downloadMcp}>
-              <Plug />
-              MCP 연결
-            </Button>
-          </div>
-        </header>
         <main className="mx-auto max-w-screen-2xl space-y-6 p-5 md:p-8">
-          <div className="flex flex-wrap gap-x-6 gap-y-2 text-xs text-muted-foreground">
-            <span className="flex items-center gap-2">
-              <Monitor className="size-4" />
-              브라우저{" "}
-              <strong className="font-medium text-foreground">
-                {w.status?.browser.ok
-                  ? (w.status.browser.active ?? 0) +
-                    " / " +
-                    (w.status.browser.capacity ?? 2)
-                  : "연결 확인 중"}
-              </strong>
-            </span>
-            <span className="flex items-center gap-2">
-              <Smartphone className="size-4" />
-              Android{" "}
-              <strong className="font-medium text-foreground">
-                {w.status?.android.booted ? "1대 연결" : "준비 중"}
-              </strong>
-            </span>
-            <span className="flex items-center gap-2">
-              <Sparkles className="size-4" />
-              AI{" "}
-              <strong className="font-medium text-foreground">
-                {w.status?.llm ? "사용 가능" : "연결 확인 중"}
-              </strong>
-            </span>
-          </div>
           {w.error && (
             <div
               role="alert"

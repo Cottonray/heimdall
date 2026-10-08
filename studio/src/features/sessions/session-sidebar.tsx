@@ -7,7 +7,8 @@ import {
   Smartphone,
   Braces,
   ArrowUpRight,
-  PanelLeft,
+  Sparkles,
+  Plug,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -20,11 +21,15 @@ export function SessionSidebar({
   selected,
   onSelect,
   onNew,
+  onMcp,
+  aiReady,
 }: {
   sessions: Session[];
   selected: string;
   onSelect: (id: string) => void;
   onNew: () => void;
+  onMcp: () => void;
+  aiReady: boolean | undefined;
 }) {
   const [search, setSearch] = useState("");
   return (
@@ -103,14 +108,18 @@ export function SessionSidebar({
             })}
         </nav>
       </div>
-      <div className="hidden space-y-3 border-t p-5 lg:block">
-        <div className="flex items-center gap-2 text-xs text-muted-foreground">
-          <PanelLeft className="size-4" />
-          개인 QA 환경
+      <div className="space-y-3 p-5 lg:border-t">
+        <Button variant="ghost" size="sm" onClick={onMcp}>
+          <Plug />
+          MCP 연결
+        </Button>
+        <div className="hidden items-center gap-2 text-xs text-muted-foreground lg:flex">
+          <Sparkles className="size-4" />
+          AI {aiReady ? "사용 가능" : "연결 확인 중"}
         </div>
         <a
           href="https://qa.example/"
-          className="flex items-center justify-between text-xs text-muted-foreground hover:text-foreground"
+          className="hidden items-center justify-between text-xs text-muted-foreground hover:text-foreground lg:flex"
         >
           AI 쇼룸
           <ArrowUpRight className="size-3" />
