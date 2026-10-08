@@ -46,6 +46,8 @@ export type DataTableColumn<T> = {
   header: string;
   cell: (row: T) => ReactNode;
   sortValue?: (row: T) => string | number;
+  onCellClick?: (row: T) => void;
+  cellActionLabel?: (row: T) => string;
 };
 
 type DataTableProps<T> = {
@@ -236,7 +238,33 @@ export function DataTable<T>({
                   />
                 </TableCell>
                 {columns.map((column) => (
-                  <TableCell key={column.id}>{column.cell(row)}</TableCell>
+                  <TableCell
+                    key={column.id}
+                    className={
+                      column.onCellClick
+                        ? "relative text-primary hover:bg-accent/50"
+                        : undefined
+                    }
+                  >
+                    {column.onCellClick ? (
+                      <>
+                        <span className="pointer-events-none">
+                          {column.cell(row)}
+                        </span>
+                        <button
+                          type="button"
+                          className="absolute inset-0 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring"
+                          aria-label={
+                            column.cellActionLabel?.(row) ??
+                            `${getRowLabel(row)} 상세`
+                          }
+                          onClick={() => column.onCellClick?.(row)}
+                        />
+                      </>
+                    ) : (
+                      column.cell(row)
+                    )}
+                  </TableCell>
                 ))}
                 {rowActions && (
                   <TableCell>

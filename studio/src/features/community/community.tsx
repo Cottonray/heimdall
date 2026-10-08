@@ -136,11 +136,9 @@ export function Community({
                 id: "title",
                 header: "제목",
                 sortValue: (r) => r.title,
-                cell: (r) => (
-                  <Button variant="link" onClick={() => setReading(r)}>
-                    {r.title}
-                  </Button>
-                ),
+                cell: (r) => r.title,
+                onCellClick: (r) => setReading(r),
+                cellActionLabel: (r) => `${r.title} 상세`,
               },
               { id: "author", header: "작성자", cell: (r) => r.author },
               {
