@@ -46,8 +46,8 @@ export function NewSessionDialog({
           }}
           className="space-y-5"
         >
-          <div className="grid grid-cols-2 gap-2">
-            {(Object.keys(engines) as Engine[]).map((key) => {
+          <div className="grid grid-cols-3 gap-2">
+            {(["web", "android", "api"] as Engine[]).map((key) => {
               const Icon =
                 key === "android" || key === "mobile-web"
                   ? Smartphone
@@ -57,9 +57,15 @@ export function NewSessionDialog({
               return (
                 <Button
                   key={key}
-                  variant={engine === key ? "default" : "outline"}
+                  variant={
+                    engine === key || (key === "web" && engine === "mobile-web")
+                      ? "default"
+                      : "outline"
+                  }
                   onClick={() => setEngine(key)}
-                  aria-pressed={engine === key}
+                  aria-pressed={
+                    engine === key || (key === "web" && engine === "mobile-web")
+                  }
                   type="button"
                 >
                   <Icon />
@@ -68,6 +74,29 @@ export function NewSessionDialog({
               );
             })}
           </div>
+          {(engine === "web" || engine === "mobile-web") && (
+            <div className="space-y-2">
+              <Label>웹 화면</Label>
+              <div className="flex gap-2" role="group" aria-label="웹 화면">
+                <Button
+                  type="button"
+                  variant={engine === "web" ? "secondary" : "outline"}
+                  aria-pressed={engine === "web"}
+                  onClick={() => setEngine("web")}
+                >
+                  데스크톱
+                </Button>
+                <Button
+                  type="button"
+                  variant={engine === "mobile-web" ? "secondary" : "outline"}
+                  aria-pressed={engine === "mobile-web"}
+                  onClick={() => setEngine("mobile-web")}
+                >
+                  모바일
+                </Button>
+              </div>
+            </div>
+          )}
           <div className="space-y-2">
             <Label htmlFor="test-name">테스트 이름</Label>
             <Input

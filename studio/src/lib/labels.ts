@@ -4,17 +4,17 @@ export const engines: Record<
   { label: string; tool: string; description: string }
 > = {
   web: {
-    label: "인터넷뱅킹",
+    label: "웹",
     tool: "Playwright",
     description: "브라우저 화면과 업무 흐름",
   },
   "mobile-web": {
-    label: "모바일 웹",
+    label: "웹 · 모바일",
     tool: "Playwright",
     description: "모바일 화면과 터치 흐름",
   },
   android: {
-    label: "스마트뱅킹",
+    label: "앱",
     tool: "Appium · Android",
     description: "연결된 기기의 네이티브 앱",
   },
