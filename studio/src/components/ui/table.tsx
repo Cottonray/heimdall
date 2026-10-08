@@ -16,10 +16,15 @@ function Table({
 }) {
   const tableRef = React.useRef<HTMLTableElement>(null);
   const resolvedWidths = React.useRef<number[]>([]);
+  const previousWidths = React.useRef<(number | undefined)[]>([]);
   React.useLayoutEffect(() => {
     const table = tableRef.current;
     const container = table?.parentElement;
     if (!table || !container || !columnWidths) return;
+    const changedIndex = columnWidths.findIndex(
+      (width, index) => width !== previousWidths.current[index],
+    );
+    previousWidths.current = [...columnWidths];
     const update = () => {
       const defaultWidth = Math.min(
         1200,
@@ -51,6 +56,28 @@ function Table({
       if (fillIndex >= 0 && fillIndex < widths.length) {
         const total = widths.reduce((sum, width) => sum + width, 0);
         widths[fillIndex] += Math.max(0, container.clientWidth - total);
+      }
+      // Reserve fixed selection/action columns and fit data columns inside the viewport.
+      const heads = Array.from(
+        table.querySelectorAll<HTMLTableCellElement>("thead tr:first-child th"),
+      );
+      const flexible = widths
+        .map((_, index) => index)
+        .filter((index) => heads[index]?.querySelector('[role="slider"]'));
+      let overflow =
+        widths.reduce((sum, width) => sum + width, 0) - container.clientWidth;
+      const shrinkOrder = [
+        fillIndex,
+        ...flexible.filter((index) => index !== fillIndex),
+      ].filter((index) => flexible.includes(index));
+      shrinkOrder.sort(
+        (a, b) => Number(a === changedIndex) - Number(b === changedIndex),
+      );
+      for (const index of shrinkOrder) {
+        if (overflow <= 0) break;
+        const shrink = Math.min(overflow, Math.max(0, widths[index] - 120));
+        widths[index] -= shrink;
+        overflow -= shrink;
       }
       table.style.width = `${widths.reduce((sum, width) => sum + width, 0)}px`;
       table.querySelectorAll("col").forEach((col, index) => {
@@ -169,7 +196,28 @@ function TableHead({
     return () => observer.disconnect();
   }, [resizable]);
   const resize = (value: number) => {
-    const next = Math.round(Math.max(120, Math.min(1200, value)));
+    const head = headRef.current;
+    const table = head?.closest("table");
+    const container = table?.parentElement;
+    const others = table
+      ? Array.from(
+          table.querySelectorAll<HTMLTableCellElement>(
+            "thead tr:first-child th",
+          ),
+        ).filter((cell) => cell !== head)
+      : [];
+    const reserved = others.reduce(
+      (sum, cell) =>
+        sum +
+        (cell.querySelector('[role="slider"]')
+          ? 120
+          : cell.getBoundingClientRect().width),
+      0,
+    );
+    const maximum = container
+      ? Math.max(120, Math.min(1200, container.clientWidth - reserved))
+      : 1200;
+    const next = Math.round(Math.max(120, Math.min(maximum, value)));
     setWidth(next);
     onResize?.(next);
   };
