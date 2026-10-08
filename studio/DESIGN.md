@@ -70,3 +70,5 @@ React + shadcn/ui 기반의 QA 워크스페이스. 현재 디자인의 정본은
 `verify-design-lint.ts`는 각 규칙의 독립 위반 사례, 기본 HTML 컨트롤 우회, 공통 UI 예외 범위, 올바른 토큰·variant 사용을 검증한다. `yarn check`와 `../check.ts`는 strict TypeScript, ESLint, hooks·접근성, 디자인 규칙과 검출 검사, 기존 테스트를 통과해야 빌드를 생성한다. `../deploy.sh`도 이 검사를 배포 전에 실행한다.
 
 공식 근거: [shadcn/ui CLI](https://ui.shadcn.com/docs/cli), [shadcn/lint 규칙](https://github.com/shadcn-ui/lint/blob/main/docs/rules.md).
+
+- 팝업 오버레이는 두 테마 모두 `bg-black/50`을 사용한다. `foreground`는 다크 모드에서 밝은 글자색으로 바뀌므로 배경 차광에 사용하지 않는다.
