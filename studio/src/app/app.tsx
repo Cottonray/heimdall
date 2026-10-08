@@ -35,7 +35,6 @@ export function App() {
         onSelect={w.store.select}
         onNew={() => setNewOpen(true)}
         onMcp={downloadMcp}
-        aiReady={w.status?.llm}
       />
       <div className="min-w-0 flex-1">
         <main className="mx-auto max-w-screen-2xl space-y-6 p-5 md:p-8">
@@ -142,10 +141,6 @@ export function App() {
           ) : (
             <Welcome onNew={() => setNewOpen(true)} />
           )}
-          <footer className="flex flex-wrap justify-between gap-2 border-t pt-5 text-xs text-muted-foreground">
-            <span>AI QA Studio · 홈서버</span>
-            <span>샘플 테스트 환경 · 실제 금융 거래 없음</span>
-          </footer>
         </main>
       </div>
       <NewSessionDialog

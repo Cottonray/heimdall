@@ -1,6 +1,6 @@
-# AI QA Studio design
+# HEIMDALL design
 
-React + shadcn/ui 기반의 데스크톱 QA 작업 공간. 밝은 중성 배경, 흰 카드, 인디고 주요 액션, 일관된 선과 간격을 사용한다. 왼쪽은 기록 탐색, 중앙은 실제 실행 화면, 오른쪽은 AI 작성, 아래는 타임라인/디버깅/API 검증이다.
+React + shadcn/ui 기반의 데스크톱 QA 작업 공간. 밝은 중성 배경, 흰 카드, JB 블루 주요 액션, 일관된 선과 간격을 사용한다. 왼쪽은 기록 탐색, 중앙은 실제 실행 화면, 오른쪽은 AI 작성, 아래는 타임라인/디버깅/API 검증이다.
 
 - 의미 색상은 `src/styles.css`의 Tailwind v4 토큰으로 정의한다. 상태 성공은 `success`, 오류는 `destructive`다.
 - 전체 화면의 스크롤바는 숨긴다. 본문·사이드바·입력창·대화상자의 휠/터치/키보드 스크롤 동작은 유지한다.
@@ -13,3 +13,5 @@ React + shadcn/ui 기반의 데스크톱 QA 작업 공간. 밝은 중성 배경,
 - 예외는 검색 Input의 `pl-9`(검색 아이콘 공간)와 Skeleton 크기다. 나머지 feature 영역은 layout만 지정한다.
 
 공식 근거: [shadcn/ui CLI](https://ui.shadcn.com/docs/cli), [shadcn/lint 규칙](https://github.com/shadcn-ui/lint/blob/main/docs/rules.md).
+
+브랜드: HEIMDALL. ImageGen으로 제작한 H·관문 심벌은 `src/assets/heimdall.png`에 보관한다. 기존 JB 공식 CI를 복제한 로고가 아니라 동일 블루 계열의 전용 심벌이다.

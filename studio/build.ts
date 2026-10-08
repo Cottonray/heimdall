@@ -10,6 +10,7 @@ await mkdir(out + "/assets", { recursive: true });
 await build({
   entryPoints: [root + "/src/main.tsx"],
   bundle: true,
+  loader: { ".png": "dataurl" },
   minify: true,
   format: "esm",
   target: "es2022",

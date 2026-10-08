@@ -35,15 +35,15 @@
   --container-screen-2xl: 100rem;
 }
 :root {
-  --background: #f8f9fc;
+  --background: #ffffff;
   --foreground: #232936;
   --card: #ffffff;
-  --primary: #505bcf;
+  --primary: #0061af;
   --primary-foreground: #ffffff;
-  --secondary: #eef0fa;
+  --secondary: #e7f1fa;
   --muted: #f2f4f8;
   --muted-foreground: #6b7283;
-  --accent: #e9ecf6;
+  --accent: #edf4fa;
   --destructive: #bb3b4c;
   --success: #278461;
   --border: #e3e7ef;
@@ -55,7 +55,9 @@
 
 /* Shared press feedback. Remote preview coordinates must stay fixed. */
 @media (prefers-reduced-motion: no-preference) {
-  :where(button, a[href], [role="button"], [role="tab"]):not(:disabled):not([aria-disabled="true"]):not([data-press-feedback="off"]) {
+  :where(button, a[href], [role="button"], [role="tab"]):not(:disabled):not(
+      [aria-disabled="true"]
+    ):not([data-press-feedback="off"]) {
     transition:
       scale var(--press-duration) var(--press-ease),
       background-color 150ms ease,
@@ -64,7 +66,9 @@
       box-shadow 150ms ease,
       opacity 150ms ease;
   }
-  :where(button, a[href], [role="button"], [role="tab"]):not(:disabled):not([aria-disabled="true"]):not([data-press-feedback="off"]):active {
+  :where(button, a[href], [role="button"], [role="tab"]):not(:disabled):not(
+      [aria-disabled="true"]
+    ):not([data-press-feedback="off"]):active {
     scale: var(--press-scale);
     transition-duration: 80ms;
     transition-timing-function: ease-out;
