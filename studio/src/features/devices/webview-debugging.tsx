@@ -159,14 +159,23 @@ export function WebViewDebugging({
             onValueChange={setSelected}
             disabled={!discovery.targets.length}
           >
-            <SelectTrigger aria-label="디버깅할 웹페이지">
-              <SelectValue placeholder="감지된 웹뷰 없음" />
+            <SelectTrigger
+              aria-label="디버깅할 웹페이지"
+              title={target?.url}
+              className="w-full min-w-0"
+            >
+              <SelectValue
+                className="min-w-0 flex-1"
+                placeholder="감지된 웹뷰 없음"
+              />
             </SelectTrigger>
             <SelectContent>
               {discovery.targets.map((item) => (
                 <SelectItem key={key(item)} value={key(item)}>
-                  {item.kind === "webview" ? "웹뷰" : "브라우저"} ·{" "}
-                  {item.title || item.url || "제목 없음"}
+                  <span className="truncate" title={item.url}>
+                    {item.kind === "webview" ? "웹뷰" : "브라우저"} ·{" "}
+                    {item.title || "제목 없음"} · {item.url}
+                  </span>
                 </SelectItem>
               ))}
             </SelectContent>
@@ -199,15 +208,6 @@ export function WebViewDebugging({
           </Button>
         )}
       </div>
-      {target && (
-        <p
-          data-selectable
-          className="shrink-0 truncate text-xs text-muted-foreground"
-          title={target.url}
-        >
-          {target.url}
-        </p>
-      )}
       {(error || discovery.error) && (
         <p role="alert" className="text-sm text-destructive">
           {error || discovery.error}

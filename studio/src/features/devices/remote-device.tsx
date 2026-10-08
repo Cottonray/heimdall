@@ -39,7 +39,6 @@ export function RemoteDevice({
     remote.connection === "ready",
     onAuthExpired,
   );
-  const [debugging, setDebugging] = useState(false);
   const [text, setText] = useState("");
   const imageRef = useRef<HTMLImageElement>(null);
   const capture = useScreenCapture(imageRef, remote.connection === "ready");
@@ -87,7 +86,7 @@ export function RemoteDevice({
             : "보기 전용";
   return (
     <main className="flex h-dvh flex-col gap-4 overflow-hidden bg-background p-4 text-foreground">
-      <div className="flex shrink-0 items-center justify-between gap-3">
+      <div className="-mx-4 flex shrink-0 items-center justify-between gap-3 border-b px-4 pb-4">
         <div className="flex min-w-0 items-center gap-3">
           <PlatformIcon platform={remote.device?.platform || "android"} />
           <div className="min-w-0">
@@ -101,14 +100,6 @@ export function RemoteDevice({
           </div>
         </div>
         <div className="flex shrink-0 items-center gap-2">
-          <Button
-            variant="outline"
-            aria-expanded={debugging}
-            aria-controls="web-debugging"
-            onClick={() => setDebugging(!debugging)}
-          >
-            웹 디버깅 ({webviews.targets.length})
-          </Button>
           <Badge variant={remote.canControl ? "success" : "outline"}>
             {status}
           </Badge>
@@ -344,34 +335,20 @@ export function RemoteDevice({
             )}
           </div>
         </div>
-        {debugging && (
-          <>
-            <PanelResizeHandle targetId="web-debugging" />
-            <aside
-              id="web-debugging"
-              aria-label="웹 디버깅"
-              className="flex min-h-0 w-3/5 flex-col gap-3 border-l pl-4"
-            >
-              <div className="flex items-center justify-between">
-                <h2 className="font-semibold">웹 디버깅</h2>
-                <Button
-                  variant="ghost"
-                  size="icon-sm"
-                  aria-label="웹 디버깅 닫기"
-                  onClick={() => setDebugging(false)}
-                >
-                  <X />
-                </Button>
-              </div>
-              <WebViewDebugging
-                serial={serial}
-                viewerId={remote.viewerId}
-                canControl={remote.canControl}
-                discovery={webviews}
-              />
-            </aside>
-          </>
-        )}
+        <PanelResizeHandle targetId="web-debugging" />
+        <aside
+          id="web-debugging"
+          aria-label="웹 디버깅"
+          className="flex min-h-0 w-3/5 flex-col gap-3 border-l pl-4"
+        >
+          <h2 className="font-semibold">웹 디버깅</h2>
+          <WebViewDebugging
+            serial={serial}
+            viewerId={remote.viewerId}
+            canControl={remote.canControl}
+            discovery={webviews}
+          />
+        </aside>
       </div>
     </main>
   );
