@@ -1,9 +1,9 @@
 import { useState } from "react";
-import { Globe, Plus, Pencil, Trash2 } from "lucide-react";
+import { Plus, Pencil, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Card, CardContent } from "@/components/ui/card";
+import { DataTable, type DataTableColumn } from "@/components/data-table";
 import {
   Dialog,
   DialogContent,
@@ -30,6 +30,54 @@ export function Domains({
 }) {
   const [editing, setEditing] = useState<Partial<Domain> | null>(null);
   const [removing, setRemoving] = useState<Domain | null>(null);
+  const columns: DataTableColumn<Domain>[] = [
+    {
+      id: "name",
+      header: "도메인 이름",
+      sortValue: (domain) => domain.name,
+      cell: (domain) => <span className="font-medium">{domain.name}</span>,
+    },
+    {
+      id: "url",
+      header: "주소",
+      sortValue: (domain) => domain.url,
+      cell: (domain) => (
+        <span data-selectable className="break-all text-muted-foreground">
+          {domain.url}
+        </span>
+      ),
+    },
+    ...(admin
+      ? [
+          {
+            id: "actions",
+            header: "관리",
+            cell: (domain: Domain) => (
+              <div className="flex items-center gap-1">
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  disabled={busy}
+                  aria-label={domain.name + " 수정"}
+                  onClick={() => setEditing(domain)}
+                >
+                  <Pencil />
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  disabled={busy}
+                  aria-label={domain.name + " 삭제"}
+                  onClick={() => setRemoving(domain)}
+                >
+                  <Trash2 />
+                </Button>
+              </div>
+            ),
+          },
+        ]
+      : []),
+  ];
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between gap-4">
@@ -41,51 +89,16 @@ export function Domains({
           </Button>
         )}
       </div>
-      <Card>
-        <CardContent>
-          <ul className="divide-y">
-            {domains.map((domain) => (
-              <li
-                key={domain.id}
-                className="flex flex-wrap items-center gap-4 py-4"
-              >
-                <Globe className="size-5 shrink-0 text-primary" />
-                <div className="min-w-0 flex-1">
-                  <p className="font-medium">{domain.name}</p>
-                  <p className="mt-1 break-all text-sm text-muted-foreground">
-                    {domain.url}
-                  </p>
-                </div>
-                {admin && (
-                  <div className="flex gap-2">
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      aria-label={domain.name + " 수정"}
-                      onClick={() => setEditing(domain)}
-                    >
-                      <Pencil />
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      aria-label={domain.name + " 삭제"}
-                      onClick={() => setRemoving(domain)}
-                    >
-                      <Trash2 />
-                    </Button>
-                  </div>
-                )}
-              </li>
-            ))}
-          </ul>
-          {!domains.length && (
-            <p className="py-8 text-center text-sm text-muted-foreground">
-              등록된 도메인이 없어요.
-            </p>
-          )}
-        </CardContent>
-      </Card>
+      <DataTable
+        data={domains}
+        columns={columns}
+        getRowId={(domain) => domain.id}
+        getRowLabel={(domain) => domain.name}
+        searchText={(domain) => domain.name + " " + domain.url}
+        searchPlaceholder="도메인 이름 또는 주소 검색"
+        caption="등록된 테스트 도메인"
+        emptyMessage="등록된 도메인이 없어요."
+      />
       <Dialog
         open={!!editing}
         onOpenChange={(v) => {

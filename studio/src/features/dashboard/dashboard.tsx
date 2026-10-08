@@ -92,9 +92,6 @@ export function Dashboard({
               테스트 현황
             </h1>
           )}
-          <p className="mt-1 text-sm text-muted-foreground">
-            {overview && "전체 프로젝트 · "}최근 {metrics.total}개 테스트 기준
-          </p>
         </div>
         {onNew && (
           <Button onClick={onNew}>
@@ -123,7 +120,6 @@ export function Dashboard({
         <Card>
           <CardHeader>
             <CardTitle>테스트 유형 커버리지</CardTitle>
-            <CardDescription>결과 검증을 실행한 유형의 비율</CardDescription>
           </CardHeader>
           <CardContent>
             <div className="grid items-center gap-6 sm:grid-cols-2">

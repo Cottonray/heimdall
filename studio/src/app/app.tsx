@@ -109,54 +109,56 @@ export function App() {
         onValueChange={onTab}
         className="min-h-0 min-w-0 flex-1"
       >
-        {workspaceVisible && (
+        {w.user && (
           <header className="flex shrink-0 flex-wrap items-center justify-between gap-2 border-b bg-sidebar">
-            <TabsList variant="workspace" aria-label="열린 작업">
-              {(w.user ? visibleTabs : ["projects"]).map((id) => {
-                const label =
-                  id === "board"
-                    ? "워크스페이스"
-                    : id === "domains"
-                      ? "도메인"
-                      : id === "projects"
-                        ? "프로젝트"
-                        : id === "dashboard"
-                          ? "대시보드"
-                          : id === "history"
-                            ? "테스트 기록"
-                            : id === "settings" || id === "project-settings"
-                              ? id === "settings"
-                                ? "설정"
-                                : "프로젝트 설정"
-                              : w.sessions.find((s) => s.id === id)?.name ||
-                                "테스트";
-                const Icon =
-                  id === "projects"
-                    ? Folder
-                    : id === "dashboard"
-                      ? LayoutDashboard
-                      : id === "history"
-                        ? History
-                        : id === "settings" || id === "project-settings"
-                          ? SettingsIcon
-                          : Monitor;
-                return (
-                  <WorkspaceTab
-                    key={id}
-                    value={id}
-                    label={label}
-                    icon={<Icon />}
-                    active={w.activeTab === id}
-                    onClose={
-                      id !== "projects" && id !== "dashboard"
-                        ? () => w.store.closeTab(id)
-                        : undefined
-                    }
-                  />
-                );
-              })}
-            </TabsList>
-            <div className="px-3 py-2">
+            {workspaceVisible && (
+              <TabsList variant="workspace" aria-label="열린 작업">
+                {(w.user ? visibleTabs : ["projects"]).map((id) => {
+                  const label =
+                    id === "board"
+                      ? "워크스페이스"
+                      : id === "domains"
+                        ? "도메인"
+                        : id === "projects"
+                          ? "프로젝트"
+                          : id === "dashboard"
+                            ? "대시보드"
+                            : id === "history"
+                              ? "테스트 기록"
+                              : id === "settings" || id === "project-settings"
+                                ? id === "settings"
+                                  ? "설정"
+                                  : "프로젝트 설정"
+                                : w.sessions.find((s) => s.id === id)?.name ||
+                                  "테스트";
+                  const Icon =
+                    id === "projects"
+                      ? Folder
+                      : id === "dashboard"
+                        ? LayoutDashboard
+                        : id === "history"
+                          ? History
+                          : id === "settings" || id === "project-settings"
+                            ? SettingsIcon
+                            : Monitor;
+                  return (
+                    <WorkspaceTab
+                      key={id}
+                      value={id}
+                      label={label}
+                      icon={<Icon />}
+                      active={w.activeTab === id}
+                      onClose={
+                        id !== "projects" && id !== "dashboard"
+                          ? () => w.store.closeTab(id)
+                          : undefined
+                      }
+                    />
+                  );
+                })}
+              </TabsList>
+            )}
+            <div className="ml-auto px-3 py-2">
               <Profile
                 user={w.user}
                 busy={w.busy}
@@ -171,19 +173,6 @@ export function App() {
           ref={mainRef}
           className="min-h-0 flex-1 overflow-y-auto p-4 md:p-6"
         >
-          {!workspaceVisible &&
-            !["projects", "devices"].includes(w.activeTab) &&
-            w.user && (
-              <div className="mb-6 flex justify-end">
-                <Profile
-                  user={w.user}
-                  busy={w.busy}
-                  onLogout={w.store.logout}
-                  onSaveAvatar={w.store.saveProfile}
-                  onChangePassword={w.store.changePassword}
-                />
-              </div>
-            )}
           {w.error && (
             <div
               role="alert"
@@ -229,12 +218,8 @@ export function App() {
                     <ProjectHome
                       status={w.status}
                       sessions={w.status?.sessions || []}
-                      user={w.user}
                       busy={w.busy}
                       loading={w.loading}
-                      onLogout={w.store.logout}
-                      onSaveAvatar={w.store.saveProfile}
-                      onChangePassword={w.store.changePassword}
                       onEnter={w.store.enterProject}
                       onCreate={async (name) => {
                         await w.store.createProject(name);
@@ -242,18 +227,7 @@ export function App() {
                       }}
                     />
                   ) : id === "devices" ? (
-                    <DeviceFarm
-                      active={w.activeTab === "devices"}
-                      actions={
-                        <Profile
-                          user={w.user}
-                          busy={w.busy}
-                          onLogout={w.store.logout}
-                          onSaveAvatar={w.store.saveProfile}
-                          onChangePassword={w.store.changePassword}
-                        />
-                      }
-                    />
+                    <DeviceFarm active={w.activeTab === "devices"} />
                   ) : id === "dashboard" ? (
                     <Dashboard
                       sessions={w.status?.sessions || []}

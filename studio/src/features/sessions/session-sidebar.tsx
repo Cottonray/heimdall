@@ -33,17 +33,6 @@ export function SessionSidebar({
         >
           <HeimdallWordmark />
         </Button>
-        {signedIn && projectName && (
-          <Button
-            variant="outline"
-            onClick={() => onNavigate("project-settings")}
-            aria-label={projectName + " 프로젝트 설정"}
-            className="min-w-0 justify-between md:w-full"
-          >
-            <span className="truncate">{projectName}</span>
-            <Settings />
-          </Button>
-        )}
       </div>
       {signedIn && !projectName && (
         <nav
@@ -72,7 +61,7 @@ export function SessionSidebar({
       )}
       {signedIn && projectName && (
         <>
-          <div className="px-3 pb-3">
+          <div className="space-y-2 px-3 pb-3">
             <Button
               variant="ghost"
               onClick={() => onNavigate("projects")}
@@ -80,6 +69,15 @@ export function SessionSidebar({
             >
               <ArrowLeft />
               프로젝트 목록
+            </Button>
+            <Button
+              variant="outline"
+              onClick={() => onNavigate("project-settings")}
+              aria-label={projectName + " 프로젝트 설정"}
+              className="w-full min-w-0 justify-between"
+            >
+              <span className="truncate">{projectName}</span>
+              <Settings />
             </Button>
           </div>
           <nav

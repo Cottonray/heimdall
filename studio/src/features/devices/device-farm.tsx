@@ -1,4 +1,4 @@
-import { useEffect, useState, type ReactNode } from "react";
+import { useEffect, useState } from "react";
 import { RefreshCw } from "lucide-react";
 import { PageHeader } from "@/components/page-header";
 import { PlatformIcon } from "@/components/platform-icon";
@@ -19,13 +19,7 @@ function deviceStatus(device: DeviceInfo, lookupFailed: boolean) {
   return device.kind === "emulator" ? "실행 중" : "사용 가능";
 }
 
-export function DeviceFarm({
-  active,
-  actions,
-}: {
-  active: boolean;
-  actions?: ReactNode;
-}) {
+export function DeviceFarm({ active }: { active: boolean }) {
   const [devices, setDevices] = useState<DeviceInfo[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -80,7 +74,6 @@ export function DeviceFarm({
         }
         actions={
           <>
-            {actions}
             <Button
               variant="outline"
               disabled={loading}
@@ -98,7 +91,29 @@ export function DeviceFarm({
         </p>
       )}
       {loading && !devices.length ? (
-        <Skeleton className="h-48 w-full" />
+        <div role="status" className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+          <span className="sr-only">디바이스를 불러오는 중</span>
+          {[0, 1, 2, 3].map((index) => (
+            <Card key={index} aria-hidden="true">
+              <CardHeader>
+                <div className="flex items-center justify-between gap-2">
+                  <Skeleton className="size-6" />
+                  <Skeleton className="h-5 w-16" />
+                </div>
+                <Skeleton className="h-4 w-40" />
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-3">
+                  <div className="flex items-center gap-2">
+                    <Skeleton className="h-5 w-16" />
+                    <Skeleton className="h-4 w-20" />
+                  </div>
+                  <Skeleton className="h-3 w-32" />
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
       ) : (
         <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
           {devices.map((device) => {
