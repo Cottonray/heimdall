@@ -1,3 +1,5 @@
+import logo from "@/assets/heimdall.png";
+import { Sun, Moon } from "lucide-react";
 import { useState, useId } from "react";
 import { PanelLeftClose, PanelLeftOpen } from "lucide-react";
 import { Brain, MessageSquare } from "lucide-react";
@@ -43,15 +45,26 @@ export function SessionSidebar({
   return (
     <aside
       className={
-        "flex shrink-0 flex-col border-b bg-sidebar text-sidebar-foreground md:border-b-0 md:border-r " +
-        (collapsed ? "md:w-12" : "md:w-56")
+        "flex shrink-0 flex-col border-b bg-sidebar text-sidebar-foreground md:border-b-0 md:border-r overflow-hidden transition-[width] duration-200 ease-in-out motion-reduce:transition-none " +
+        (collapsed ? "md:w-16" : "md:w-56")
       }
     >
       <div
         className={
-          "flex items-center justify-end gap-2 " + (collapsed ? "p-2" : "p-3")
+          "flex items-center justify-end gap-2 " +
+          (collapsed ? "flex-col p-2" : "p-3")
         }
       >
+        {collapsed && (
+          <Button
+            variant="ghost"
+            size="icon"
+            aria-label="heimdall 기본 페이지"
+            onClick={() => onNavigate("projects")}
+          >
+            <img src={logo} alt="" className="size-8 object-contain" />
+          </Button>
+        )}
         {!collapsed && (
           <Button
             variant="ghost"
@@ -67,7 +80,7 @@ export function SessionSidebar({
         <Button
           variant="ghost"
           size="icon"
-          className="ml-auto size-8 shrink-0"
+          className={collapsed ? "size-8 shrink-0" : "ml-auto size-8 shrink-0"}
           aria-label={collapsed ? "사이드바 펼치기" : "사이드바 접기"}
           title={collapsed ? "사이드바 펼치기" : "사이드바 접기"}
           aria-expanded={!collapsed}
@@ -83,6 +96,66 @@ export function SessionSidebar({
           {collapsed ? <PanelLeftOpen /> : <PanelLeftClose />}
         </Button>
       </div>
+      {collapsed && (
+        <nav
+          aria-label="간략 메뉴"
+          className="flex flex-1 flex-col items-center gap-1 px-2 pb-3"
+        >
+          {(projectName
+            ? [
+                { page: "projects", label: "프로젝트 목록", icon: ArrowLeft },
+                {
+                  page: "project-settings",
+                  label: projectName + " 프로젝트 설정",
+                  icon: Settings,
+                },
+                { page: "dashboard", label: "대시보드", icon: LayoutDashboard },
+                { page: "test-data", label: "테스트데이터", icon: Database },
+                { page: "scenarios", label: "시나리오", icon: ListChecks },
+                { page: "history", label: "테스트 기록", icon: History },
+              ]
+            : [
+                { page: "projects", label: "프로젝트", icon: Folder },
+                { page: "devices", label: "디바이스팜", icon: Smartphone },
+                { page: "community", label: "커뮤니티", icon: MessageSquare },
+                ...(admin
+                  ? [
+                      { page: "ai-models", label: "AI 모델 관리", icon: Brain },
+                      { page: "app-admin", label: "앱 관리", icon: Folder },
+                      {
+                        page: "device-admin",
+                        label: "기기관리",
+                        icon: Settings2,
+                      },
+                      { page: "user-admin", label: "사용자 관리", icon: Users },
+                    ]
+                  : []),
+              ]
+          ).map(({ page, label, icon: Icon }) => (
+            <Button
+              key={page}
+              size="icon"
+              variant={active === page ? "secondary" : "ghost"}
+              aria-label={label}
+              title={label}
+              aria-current={active === page ? "page" : undefined}
+              onClick={() => onNavigate(page as Page)}
+            >
+              <Icon />
+            </Button>
+          ))}
+          <Button
+            className="mt-auto"
+            size="icon"
+            variant="ghost"
+            aria-label="화면 테마 전환"
+            title="화면 테마 전환"
+            onClick={() => onTheme(theme === "dark" ? "light" : "dark")}
+          >
+            {theme === "dark" ? <Moon /> : <Sun />}
+          </Button>
+        </nav>
+      )}
       <div
         id={contentId}
         hidden={collapsed}
