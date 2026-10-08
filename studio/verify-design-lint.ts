@@ -86,7 +86,7 @@ const accepted = render(
     <StatusDot state="ready" label="조작 가능" />
     <Switch aria-label="다크 모드" size="sm" checked={false} />
     <Label variant="subtle">시스템 설정 따르기</Label>
-    <SelectTrigger variant="ghost" className="w-full" aria-label="화면 테마" />
+    <SelectTrigger direction="up" variant="ghost" className="w-full" aria-label="화면 테마" />
     <WorkspaceTab value="board" label="워크스페이스" icon={null} active onClose={() => {}} />
     <DialogContent variant="settings"><TabsList variant="settings" /><TabsContent value="device" variant="remote" /><TabsContent value="mcp" variant="settings" /></DialogContent>
     <Card variant="plain" /><DropdownMenuContent variant="profile" /><Button size="avatar" aria-label="프로필 이미지" />

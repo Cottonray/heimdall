@@ -24,11 +24,13 @@ function SelectValue({
 function SelectTrigger({
   className,
   size = "default",
+  direction = "down",
   variant = "default",
   children,
   ...props
 }: React.ComponentProps<typeof SelectPrimitive.Trigger> & {
   size?: "sm" | "default";
+  direction?: "up" | "down";
   variant?: "default" | "ghost";
 }) {
   return (
@@ -46,7 +48,11 @@ function SelectTrigger({
     >
       {children}
       <SelectPrimitive.Icon asChild>
-        <ChevronDownIcon className="size-4 opacity-50" />
+        {direction === "up" ? (
+          <ChevronUpIcon className="size-4 opacity-50" />
+        ) : (
+          <ChevronDownIcon className="size-4 opacity-50" />
+        )}
       </SelectPrimitive.Icon>
     </SelectPrimitive.Trigger>
   );

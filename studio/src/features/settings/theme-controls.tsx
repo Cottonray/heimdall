@@ -24,10 +24,15 @@ export function ThemeControls({
         }
       }}
     >
-      <SelectTrigger variant="ghost" aria-label="화면 테마" className="w-full">
+      <SelectTrigger
+        direction="up"
+        variant="ghost"
+        aria-label="화면 테마"
+        className="w-full"
+      >
         <SelectValue />
       </SelectTrigger>
-      <SelectContent position="popper" align="start">
+      <SelectContent side="top" position="popper" align="start">
         <SelectItem value="light">
           <Sun />
           라이트 모드
