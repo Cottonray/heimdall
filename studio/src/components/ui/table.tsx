@@ -310,12 +310,33 @@ function TableHead({
 
 function TableCell({
   className,
+  onClick,
   variant = "default",
   ...props
 }: React.ComponentProps<"td"> & { variant?: "default" | "empty" }) {
   return (
     <td
       data-slot="table-cell"
+      onClick={(event) => {
+        onClick?.(event);
+        if (event.defaultPrevented) return;
+        const target = event.target as HTMLElement;
+        // Preserve native control behavior and avoid recursively forwarding clicks.
+        const controls =
+          'button, a[href], input, select, textarea, [role="button"], [role="checkbox"], [contenteditable="true"]';
+        if (target.closest(controls)) return;
+        const actions =
+          event.currentTarget.querySelectorAll<HTMLElement>(controls);
+        if (actions.length !== 1) return;
+        const action = actions[0];
+        if (
+          action.matches(
+            ':disabled, [aria-disabled="true"], input, select, textarea, [role="checkbox"], [contenteditable="true"], [aria-haspopup]',
+          )
+        )
+          return;
+        action.click();
+      }}
       className={cn(
         "overflow-hidden text-ellipsis p-2 align-middle whitespace-nowrap [&:has([role=checkbox])]:pr-0 [&>[role=checkbox]]:translate-y-[2px]",
         variant === "empty" && "h-24 text-center text-muted-foreground",
