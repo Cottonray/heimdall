@@ -165,11 +165,7 @@ export function DeviceFarm({
                   </DialogHeader>
                   <div className="min-w-0 space-y-4">
                     <div className="flex flex-wrap gap-2">
-                      <Button
-                        asChild
-                        variant="outline"
-                        size="download"
-                      >
+                      <Button asChild variant="outline" size="download">
                         <a href={API + "/admin/agent-download?platform=macos"}>
                           macOS 다운로드 (Apple Silicon · Intel)
                         </a>
@@ -198,12 +194,14 @@ export function DeviceFarm({
               </Dialog>
             )}
 
-            <RefreshControl
-              storageKey={management ? "device-admin" : "devices"}
-              busy={loading}
-              active={active}
-              onRefresh={() => setRevision((value) => value + 1)}
-            />
+            {!management && (
+              <RefreshControl
+                storageKey="devices"
+                busy={loading}
+                active={active}
+                onRefresh={() => setRevision((value) => value + 1)}
+              />
+            )}
           </>
         }
       />
