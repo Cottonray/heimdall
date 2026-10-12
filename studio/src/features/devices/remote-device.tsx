@@ -1,6 +1,5 @@
 import { PhoneSettings } from "./phone-settings";
 import { CameraSettings } from "./camera-settings";
-import { AppLibrary } from "@/features/apps/app-library";
 import { ErrorToast } from "@/components/error-toast";
 import { Tabs, PanelTabsList, TabsContent } from "@/components/ui/tabs";
 import { PanelResizeHandle } from "@/components/ui/panel-resize-handle";
@@ -412,7 +411,6 @@ export function RemoteDevice({
                 { value: "web", label: "웹 디버깅", icon: <Monitor /> },
                 ...(!serial.startsWith("ios:")
                   ? [
-                      { value: "apps", label: "앱 설치", icon: <Monitor /> },
                       {
                         value: "phone",
                         label: "휴대폰 설정",
@@ -439,19 +437,6 @@ export function RemoteDevice({
                 discovery={webviews}
               />
             </TabsContent>
-            {!serial.startsWith("ios:") && (
-              <TabsContent
-                forceMount
-                value="apps"
-                className="min-h-0 flex-1 overflow-auto data-[state=inactive]:hidden"
-              >
-                <AppLibrary
-                  serial={serial}
-                  viewerId={remote.viewerId || ""}
-                  canControl={remote.canControl}
-                />
-              </TabsContent>
-            )}
             {!serial.startsWith("ios:") && (
               <TabsContent
                 forceMount
