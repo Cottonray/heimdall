@@ -1,5 +1,6 @@
 import { type ReactNode, useId, useState } from "react";
 import { Braces, Code, Sparkles } from "lucide-react";
+import { CodeBlock } from "@/components/ui/code-block";
 import { Card } from "@/components/ui/card";
 import { Tabs, PanelTabsList, TabsContent } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
@@ -48,13 +49,7 @@ export function DebugPanel({
         <div className="p-3">
           {agent && <TabsContent value="agent">{agent}</TabsContent>}
           <TabsContent value="code">
-            <pre
-              data-selectable
-              className="overflow-auto rounded-lg bg-muted p-4 text-xs leading-6"
-              aria-label="테스트 코드"
-            >
-              {script(session)}
-            </pre>
+            <CodeBlock code={script(session)} />
           </TabsContent>
           <TabsContent value="api">
             <form
