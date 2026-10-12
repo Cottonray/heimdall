@@ -47,3 +47,5 @@ Playwright/Appium TypeScript는 동일한 생성기를 화면·내보내기·시
 Codex의 model_catalog_json에 AI 설정 모델 한 개와 텍스트 게이트웨이 기능을 등록한다. 32,000 토큰은 제공자 최대 성능을 뜻하지 않는 게이트웨이 문맥 한도다. 다른 모델 요청은 서버에서 거부하며 실제 추론은 계속 AI 설정의 모델을 사용한다. 타입·린트·테스트는 사용자 지시대로 생략하고 화면 배포 빌드만 수행한다.
 
 Codex HOME은 전용 컨테이너의 /home/codex tmpfs에 생성한다. /tmp 아래 helper binary 생성 거부 경고를 피하며 연결 종료 시 제거한다.
+
+배포: 2026-10-13 `946e01b9`와 화면 `fe536d042635`를 홈서버에 설치했다. 기존 파일은 `release-backups/before-terminal-946e01b9.tgz`에 보관했다. /home/codex tmpfs를 추가한 aiqa-terminal 컨테이너 생성과 aiqa 재시작 명령이 완료됐다. 타입·린트·테스트 및 브라우저 동작 검증은 실행하지 않았다. 기존 화면은 한 번 새로고침해야 새 코드가 적용된다.
