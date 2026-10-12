@@ -308,7 +308,7 @@ export function App() {
                     )
                   ) : id === "user-admin" ? (
                     w.user?.role === "admin" ? (
-                      <UserAdmin active={w.activeTab === id} />
+                      <UserAdmin />
                     ) : (
                       <p>관리자만 이용할 수 있어요.</p>
                     )

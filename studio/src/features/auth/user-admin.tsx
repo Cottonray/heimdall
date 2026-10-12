@@ -1,4 +1,4 @@
-import { RefreshControl } from "@/components/refresh-control";
+import { RefreshCw } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -22,7 +22,7 @@ import { Button } from "@/components/ui/button";
 import { PageHeader } from "@/components/page-header";
 import { API } from "@/lib/api";
 import type { User } from "../../../../contracts/studio";
-export function UserAdmin({ active = true }: { active?: boolean }) {
+export function UserAdmin() {
   const [editing, setEditing] = useState<User | null>(null);
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState("");
@@ -82,12 +82,14 @@ export function UserAdmin({ active = true }: { active?: boolean }) {
       <PageHeader
         title="사용자 관리"
         actions={
-          <RefreshControl
-            storageKey="users"
-            busy={loading}
-            active={active}
-            onRefresh={() => setRevision((value) => value + 1)}
-          />
+          <Button
+            variant="outline"
+            disabled={loading}
+            onClick={() => setRevision((value) => value + 1)}
+          >
+            <RefreshCw />
+            새로고침
+          </Button>
         }
       />
       {error && (
