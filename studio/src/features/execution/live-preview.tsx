@@ -2,6 +2,7 @@ import { PreviewSurface } from "@/components/ui/preview-surface";
 import { useState } from "react";
 import {
   ArrowLeft,
+  ArrowRight,
   ArrowDown,
   RefreshCw,
   Send,
@@ -33,6 +34,13 @@ export function LivePreview({
   onRefresh: () => Promise<unknown>;
 }) {
   const [value, setValue] = useState("");
+  const currentUrl = session.observation?.url || session.url;
+  const [address, setAddress] = useState<{
+    source: string;
+    value: string;
+  } | null>(null);
+  const addressValue =
+    address?.source === currentUrl ? address.value : currentUrl;
   const disabled =
     busy ||
     session.working ||
@@ -51,11 +59,44 @@ export function LivePreview({
           </CardTitle>
           {session.state !== "closed" && <Badge variant="outline">LIVE</Badge>}
         </div>
-        <p className="truncate text-xs text-muted-foreground">
-          {session.engine === "android"
-            ? "Android · 연결된 테스트 기기"
-            : session.observation?.url || session.url}
-        </p>
+        {session.engine === "android" ? (
+          <p className="text-xs text-muted-foreground">
+            Android · 연결된 테스트 기기
+          </p>
+        ) : (
+          <form
+            className="flex min-w-0 gap-2"
+            onSubmit={(event) => {
+              event.preventDefault();
+              if (!disabled && addressValue.trim()) {
+                void onAction({ type: "goto", url: addressValue.trim() }).then(
+                  () => setAddress(null),
+                );
+              }
+            }}
+          >
+            <Input
+              aria-label="테스트 페이지 주소"
+              type="url"
+              required
+              value={addressValue}
+              readOnly={disabled}
+              onChange={(event) =>
+                setAddress({ source: currentUrl, value: event.target.value })
+              }
+              onFocus={(event) => event.currentTarget.select()}
+            />
+            <Button
+              type="submit"
+              variant="outline"
+              size="icon"
+              aria-label="주소로 이동"
+              disabled={disabled || !addressValue.trim()}
+            >
+              <ArrowRight />
+            </Button>
+          </form>
+        )}
       </CardHeader>
       <CardContent variant="compact" className="min-h-0 flex-1">
         <div className="flex h-full min-h-48 items-center justify-center overflow-hidden rounded-lg border bg-muted/40">
