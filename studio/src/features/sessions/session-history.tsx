@@ -1,3 +1,4 @@
+import { PageHeader } from "@/components/page-header";
 import { Button } from "@/components/ui/button";
 import { DataTable } from "@/components/data-table";
 import { Badge } from "@/components/ui/badge";
@@ -22,9 +23,7 @@ export function SessionHistory({
 }) {
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between gap-4">
-        <h1 className="text-2xl font-semibold tracking-tight">테스트 기록</h1>
-      </div>
+      <PageHeader title="테스트 기록" />
       <DataTable
         onDeleteRows={onDelete}
         data={sessions}

@@ -1,3 +1,4 @@
+import { PageHeader } from "@/components/page-header";
 import { useEffect, useState } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
@@ -148,24 +149,17 @@ export function Dashboard({
     );
   return (
     <div className="space-y-6">
-      <div className="flex flex-wrap items-center justify-between gap-4">
-        <div>
-          {overview ? (
-            <h2 className="text-2xl font-semibold tracking-tight">
-              테스트 현황
-            </h2>
-          ) : (
-            <h1 className="text-2xl font-semibold tracking-tight">
-              테스트 현황
-            </h1>
-          )}
-        </div>
-        {onNew && (
-          <Button onClick={onNew}>
-            <Plus />새 테스트
-          </Button>
-        )}
-      </div>
+      <PageHeader
+        title="테스트 현황"
+        headingLevel={overview ? "h2" : "h1"}
+        actions={
+          onNew && (
+            <Button onClick={onNew}>
+              <Plus />새 테스트
+            </Button>
+          )
+        }
+      />
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         {stats.map((stat) => (
           <Card key={stat.label}>

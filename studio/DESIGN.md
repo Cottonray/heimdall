@@ -18,7 +18,7 @@ React + shadcn/ui 기반의 QA 워크스페이스. 현재 디자인의 정본은
 
 | 요소 | 정본 | 사용 규격 |
 | --- | --- | --- |
-| 페이지 제목 | `PageHeader` | 프로젝트·디바이스팜의 제목·설명·액션을 같은 행과 여백으로 정렬 |
+| 페이지 제목 | `PageHeader` | 메뉴 화면의 제목·설명·액션을 공통으로 사용. 제목은 text-2xl, 액션은 제목 행 상단에 고정하여 설명 유무에 따라 높이가 움직이지 않음 |
 | 플랫폼 로고 | `PlatformIcon` | 실제 기기의 Android 또는 iOS만 표시; [출처·라이선스](THIRD_PARTY_NOTICES.md) |
 | 액션·메뉴·아이콘 | `Button` | `variant`와 `size`; 로고 홈 버튼은 `brand` 크기 |
 | 프로젝트 카드 | `Item` | `variant="project" size="project" asChild` |

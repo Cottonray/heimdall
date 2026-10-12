@@ -1,3 +1,4 @@
+import { PageHeader } from "@/components/page-header";
 import {
   Select,
   SelectTrigger,
@@ -65,15 +66,17 @@ export function Domains({
   ];
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between gap-4">
-        <h1 className="text-2xl font-semibold tracking-tight">도메인</h1>
-        {admin && (
-          <Button onClick={() => setEditing({ name: "", url: "" })}>
-            <Plus />
-            도메인 추가
-          </Button>
-        )}
-      </div>
+      <PageHeader
+        title="도메인"
+        actions={
+          admin && (
+            <Button onClick={() => setEditing({ name: "", url: "" })}>
+              <Plus />
+              도메인 추가
+            </Button>
+          )
+        }
+      />
       <DataTable
         onDeleteRows={
           admin

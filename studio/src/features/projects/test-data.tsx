@@ -1,3 +1,4 @@
+import { PageHeader } from "@/components/page-header";
 import { useEffect, useState } from "react";
 import { DataTable } from "@/components/data-table";
 import { Badge } from "@/components/ui/badge";
@@ -78,21 +79,23 @@ export function ProjectTestData({ projectId }: { projectId: string }) {
   }
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between gap-4">
-        <h1 className="text-2xl font-semibold">테스트데이터</h1>
-        <Button
-          onClick={() =>
-            setEditing({
-              name: "",
-              customerNumber: "",
-              tags: "",
-              content: "{}",
-            })
-          }
-        >
-          데이터 추가
-        </Button>
-      </div>
+      <PageHeader
+        title="테스트데이터"
+        actions={
+          <Button
+            onClick={() =>
+              setEditing({
+                name: "",
+                customerNumber: "",
+                tags: "",
+                content: "{}",
+              })
+            }
+          >
+            데이터 추가
+          </Button>
+        }
+      />
       {error && (
         <p role="alert" className="text-sm text-destructive">
           {error}

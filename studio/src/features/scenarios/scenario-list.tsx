@@ -1,3 +1,4 @@
+import { PageHeader } from "@/components/page-header";
 import { useState } from "react";
 import {
   Dialog,
@@ -45,57 +46,55 @@ export function ScenarioList({
   const [error, setError] = useState("");
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-semibold">시나리오</h1>
-          <p className="mt-2 text-sm text-muted-foreground">
-            저장된 테스트의 동작을 열어 확인하고 재실행해요.
-          </p>
-        </div>
-        <Dialog
-          open={open}
-          onOpenChange={(value) => {
-            if (!busy) {
-              setOpen(value);
-              setError("");
-            }
-          }}
-        >
-          <DialogTrigger asChild>
-            <Button>
-              <Plus />새 시나리오
-            </Button>
-          </DialogTrigger>
-          <DialogContent variant="form" showCloseButton={!busy}>
-            <DialogHeader>
-              <DialogTitle>새 시나리오</DialogTitle>
-              <DialogDescription>
-                실행환경과 이름을 정하고 시나리오 작성을 시작해요.
-              </DialogDescription>
-            </DialogHeader>
-            <TestExecution
-              embedded
-              domains={domains}
-              busy={busy}
-              onCreate={async (value) => {
+      <PageHeader
+        title="시나리오"
+        description="저장된 테스트의 동작을 열어 확인하고 재실행해요."
+        actions={
+          <Dialog
+            open={open}
+            onOpenChange={(value) => {
+              if (!busy) {
+                setOpen(value);
                 setError("");
-                const result = await onCreate(value);
-                if (result) setOpen(false);
-                else
-                  setError(
-                    "시나리오를 시작하지 못했어요. 연결 상태와 입력을 확인해 주세요.",
-                  );
-                return result;
-              }}
-            />
-            {error && (
-              <p role="alert" className="text-sm text-destructive">
-                {error}
-              </p>
-            )}
-          </DialogContent>
-        </Dialog>
-      </div>
+              }
+            }}
+          >
+            <DialogTrigger asChild>
+              <Button>
+                <Plus />새 시나리오
+              </Button>
+            </DialogTrigger>
+            <DialogContent variant="form" showCloseButton={!busy}>
+              <DialogHeader>
+                <DialogTitle>새 시나리오</DialogTitle>
+                <DialogDescription>
+                  실행환경과 이름을 정하고 시나리오 작성을 시작해요.
+                </DialogDescription>
+              </DialogHeader>
+              <TestExecution
+                embedded
+                domains={domains}
+                busy={busy}
+                onCreate={async (value) => {
+                  setError("");
+                  const result = await onCreate(value);
+                  if (result) setOpen(false);
+                  else
+                    setError(
+                      "시나리오를 시작하지 못했어요. 연결 상태와 입력을 확인해 주세요.",
+                    );
+                  return result;
+                }}
+              />
+              {error && (
+                <p role="alert" className="text-sm text-destructive">
+                  {error}
+                </p>
+              )}
+            </DialogContent>
+          </Dialog>
+        }
+      />
       <DataTable
         onDeleteRows={onDelete}
         data={sessions.filter((s) => s.steps.length > 0)}

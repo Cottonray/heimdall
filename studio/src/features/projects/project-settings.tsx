@@ -1,3 +1,4 @@
+import { PageHeader } from "@/components/page-header";
 import { useId, useState } from "react";
 import { Save } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -112,7 +113,7 @@ function ProjectSettingsForm({
 export function ProjectSettings({ project, ...props }: ProjectSettingsProps) {
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-semibold tracking-tight">프로젝트 설정</h1>
+      <PageHeader title="프로젝트 설정" />
       {project ? (
         <ProjectSettingsForm key={project.id} project={project} {...props} />
       ) : (

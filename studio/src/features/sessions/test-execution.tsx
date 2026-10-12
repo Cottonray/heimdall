@@ -1,3 +1,4 @@
+import { PageHeader } from "@/components/page-header";
 import {
   Select,
   SelectContent,
@@ -32,12 +33,10 @@ export function TestExecution({
   return (
     <div className="max-w-2xl space-y-6">
       {!embedded && (
-        <div className="space-y-2">
-          <h1 className="text-2xl font-semibold">테스트 실행</h1>
-          <p className="text-sm text-muted-foreground">
-            실행환경을 고르고 테스트를 시작해요.
-          </p>
-        </div>
+        <PageHeader
+          title="테스트 실행"
+          description="실행환경을 고르고 테스트를 시작해요."
+        />
       )}
       <form
         onSubmit={(e) => {
@@ -64,10 +63,7 @@ export function TestExecution({
               onValueChange={setDomainId}
               disabled={busy || domains.length === 0}
             >
-              <SelectTrigger
-                id={fieldId + "-domain"}
-                variant="multiline"
-              >
+              <SelectTrigger id={fieldId + "-domain"} variant="multiline">
                 <SelectValue placeholder="등록된 도메인이 없어요" />
               </SelectTrigger>
               <SelectContent
