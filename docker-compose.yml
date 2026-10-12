@@ -6,6 +6,26 @@ name: aiqa
 # 주소:  https://qa.example/aiqa/  (edge nginx 가 넘긴다)
 
 services:
+  aiqa-terminal:
+    image: node:24-bookworm
+    container_name: aiqa-terminal
+    user: "1001:1001"
+    init: true
+    read_only: true
+    cap_drop: [ALL]
+    security_opt: ["no-new-privileges:true"]
+    pids_limit: 128
+    mem_limit: 512m
+    restart: unless-stopped
+    entrypoint: ["node", "/opt/aiqa/server/src/terminal/bridge.ts"]
+    tmpfs: ["/tmp:uid=1001,gid=1001,mode=1777"]
+    volumes:
+      - ./server/src/terminal:/opt/aiqa/server/src/terminal:ro
+      - ./server/src/ws.ts:/opt/aiqa/server/src/ws.ts:ro
+      - ./server/codex/bin/codex:/opt/aiqa/server/codex/bin/codex:ro
+      - ./terminal-runtime/node_modules:/opt/aiqa/node_modules:ro
+      - ./runs/.terminal-key:/run/terminal-key:ro
+    networks: [terminal]
   aiqa-browser:
     build:
       context: .
@@ -133,6 +153,7 @@ services:
       # 증적(xlsx·스크린샷·녹화 mp4). 배포로 컨테이너가 새로 떠도 남는다
       - aiqa-runs:/opt/aiqa/runs
     networks:
+      - terminal
       # edge nginx 가 http://aiqa:8080 으로 붙는다
       - edge
       - internal
@@ -151,6 +172,8 @@ volumes:
   aiqa-db-data:
 
 networks:
+  terminal:
+    internal: true
   internal:
   edge:
     external: true

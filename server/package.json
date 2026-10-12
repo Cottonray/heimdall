@@ -23,6 +23,7 @@
   ],
   "dependencies": {
     "exceljs": "4.4.0",
+    "node-pty": "^1.1.0",
     "postgres": "3.4.7"
   }
 }

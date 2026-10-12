@@ -11,6 +11,9 @@ import { aiConnection } from "./ai-model.ts";
 // validates and executes the resulting Action in the already selected session.
 export async function createScenarioCodex(
   override?: Awaited<ReturnType<typeof aiConnection>>,
+  terminalReply?: (
+    messages: { role: string; content: string }[],
+  ) => Promise<string>,
 ) {
   const connection = override || (await aiConnection());
   const home = await mkdtemp(path.join(tmpdir(), "heimdall-codex-"));
@@ -58,34 +61,42 @@ export async function createScenarioCodex(
             content,
           });
       }
-      const upstream = await fetch(`${connection.baseUrl}/chat/completions`, {
-        method: "POST",
-        redirect: "error",
-        signal: AbortSignal.timeout(60000),
-        headers: {
-          "content-type": "application/json",
-          ...(connection.apiKey
-            ? { authorization: `Bearer ${connection.apiKey}` }
-            : {}),
-        },
-        body: JSON.stringify({
-          model: connection.model,
-          ...(connection.provider === "openrouter"
-            ? { reasoning: { enabled: false } }
-            : {}),
-          messages,
-          stream: false,
-          max_tokens: 1600,
-          temperature: 0.1,
-        }),
-      });
-      if (!upstream.ok) throw new Error(`AI provider HTTP ${upstream.status}`);
-      const result = (await upstream.json()) as {
-        choices?: { message?: { content?: string; tool_calls?: unknown[] } }[];
-      };
-      const message = result.choices?.[0]?.message;
-      if (!message?.content || message.tool_calls?.length)
-        throw new Error("Only text responses are permitted");
+      let message: { content?: string; tool_calls?: unknown[] } | undefined;
+      if (terminalReply) message = { content: await terminalReply(messages) };
+      else {
+        const upstream = await fetch(`${connection.baseUrl}/chat/completions`, {
+          method: "POST",
+          redirect: "error",
+          signal: AbortSignal.timeout(60000),
+          headers: {
+            "content-type": "application/json",
+            ...(connection.apiKey
+              ? { authorization: `Bearer ${connection.apiKey}` }
+              : {}),
+          },
+          body: JSON.stringify({
+            model: connection.model,
+            ...(connection.provider === "openrouter"
+              ? { reasoning: { enabled: false } }
+              : {}),
+            messages,
+            stream: false,
+            max_tokens: 1600,
+            temperature: 0.1,
+          }),
+        });
+        if (!upstream.ok)
+          throw new Error(`AI provider HTTP ${upstream.status}`);
+        const result = (await upstream.json()) as {
+          choices?: {
+            message?: { content?: string; tool_calls?: unknown[] };
+          }[];
+        };
+        message = result.choices?.[0]?.message;
+        if (!message?.content || message.tool_calls?.length)
+          throw new Error("Only text responses are permitted");
+      }
+      if (!message?.content) throw new Error("Empty response");
       const id = `resp_${randomUUID()}`,
         itemId = `msg_${randomUUID()}`;
       const item = {
@@ -162,12 +173,30 @@ export async function createScenarioCodex(
   });
   await new Promise<void>((resolve, reject) => {
     gateway.once("error", reject);
-    gateway.listen(0, "127.0.0.1", resolve);
+    gateway.listen(0, terminalReply ? "0.0.0.0" : "127.0.0.1", resolve);
   });
   const address = gateway.address();
   if (!address || typeof address === "string")
     throw new Error("Codex gateway unavailable");
   return {
+    terminalToken: token,
+    terminalConfig: `model = ${JSON.stringify(connection.model)}
+model_provider = "heimdall"
+web_search = "disabled"
+check_for_update_on_startup = false
+[features]
+shell_tool = false
+multi_agent = false
+apps = false
+hooks = false
+memories = false
+[model_providers.heimdall]
+name = "Heimdall"
+base_url = "http://aiqa:${address.port}"
+env_key = "HEIMDALL_GATEWAY_TOKEN"
+wire_api = "responses"
+requires_openai_auth = false
+`,
     async complete(system: string, content: string) {
       const args = [
         "exec",

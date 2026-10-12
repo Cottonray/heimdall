@@ -1,3 +1,4 @@
+import { connectCodexTerminal } from './studio/transport/codex-terminal.ts'
 import { connectAgent } from "./studio/infrastructure/agent-registry.ts"
 import { authenticate, authEvents, localRequest } from "./studio/infrastructure/auth.ts"
 // QA Studio 서버. 구형 모바일 QA 화면·API·WebSocket은 2026-10-08 폐기했다.
@@ -91,23 +92,26 @@ server.on('upgrade', async (req, socket) => {
         return
     }
     try {
+        const terminalId = url.searchParams.get('terminal')
         const remoteRequested = url.searchParams.has('device')
         const auth = await authenticate(req)
-        if (!auth && (remoteRequested || inspectorRequested || !localRequest(req))) {
+        if (!auth && (terminalId || remoteRequested || inspectorRequested || !localRequest(req))) {
             socket.write('HTTP/1.1 401 Unauthorized\r\nConnection: close\r\n\r\n')
             socket.destroy()
             return
         }
         const ws = accept(req, socket)
         if (ws) {
-            const guard = async () => (!remoteRequested && !inspectorRequested && localRequest(req)) || !!await authenticate(req)
+            const guard = async () => (!terminalId && !remoteRequested && !inspectorRequested && localRequest(req)) || !!await authenticate(req)
             if (auth) {
                 const revoke = (hash: string) => { if (hash === auth.hash) ws.close(4401) }
                 authEvents.on('revoke', revoke)
                 const expiry = setInterval(() => { if (auth.expires <= Date.now()) ws.close(4401) }, 30000)
                 socket.on('close', () => { authEvents.off('revoke', revoke); clearInterval(expiry) })
             }
-            if (inspectorRequested) {
+            if (terminalId) {
+                await connectCodexTerminal(ws, terminalId, guard)
+            } else if (inspectorRequested) {
                 const serial = url.searchParams.get('serial') || ''
                 const viewer = url.searchParams.get('viewer') || ''
                 const authorized = async () => ownsDevice(viewer, serial, auth!.hash) && await guard()

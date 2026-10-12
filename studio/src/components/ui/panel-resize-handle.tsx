@@ -4,11 +4,13 @@ export function PanelResizeHandle({
   label = "웹 디버깅 패널 너비",
   initialWidth = 60,
   storageKey,
+  orientation = "horizontal",
 }: {
   targetId: string;
   label?: string;
   initialWidth?: number;
   storageKey?: string;
+  orientation?: "horizontal" | "vertical";
 }) {
   const pointer = useRef<number | null>(null);
   const [width, setWidth] = useState(() => {
@@ -25,12 +27,15 @@ export function PanelResizeHandle({
   });
   useLayoutEffect(() => {
     const panel = document.getElementById(targetId);
-    if (panel) panel.style.width = `${width}%`;
-  }, [targetId, width]);
+    if (panel)
+      panel.style[orientation === "vertical" ? "height" : "width"] =
+        `${width}%`;
+  }, [targetId, width, orientation]);
   const resize = (value: number) => {
     const next = Math.max(25, Math.min(75, value));
     const panel = document.getElementById(targetId);
-    if (panel) panel.style.width = `${next}%`;
+    if (panel)
+      panel.style[orientation === "vertical" ? "height" : "width"] = `${next}%`;
     setWidth(next);
     if (storageKey) {
       try {
@@ -44,12 +49,16 @@ export function PanelResizeHandle({
     <div
       role="slider"
       aria-label={label}
-      aria-orientation="horizontal"
+      aria-orientation={orientation}
       aria-valuemin={25}
       aria-valuemax={75}
       aria-valuenow={width}
       tabIndex={0}
-      className="relative z-10 w-px shrink-0 cursor-col-resize touch-none bg-border before:absolute before:inset-y-0 before:-inset-x-1 before:content-[''] hover:bg-primary focus-visible:bg-primary focus-visible:outline-none"
+      className={
+        orientation === "vertical"
+          ? "relative z-10 h-px shrink-0 cursor-row-resize touch-none bg-border before:absolute before:inset-x-0 before:-inset-y-1 before:content-[''] hover:bg-primary focus-visible:bg-primary focus-visible:outline-none"
+          : "relative z-10 w-px shrink-0 cursor-col-resize touch-none bg-border before:absolute before:inset-y-0 before:-inset-x-1 before:content-[''] hover:bg-primary focus-visible:bg-primary focus-visible:outline-none"
+      }
       onPointerDown={(event) => {
         if (event.button !== 0) return;
         pointer.current = event.pointerId;
@@ -58,7 +67,11 @@ export function PanelResizeHandle({
       onPointerMove={(event) => {
         if (pointer.current !== event.pointerId) return;
         const rect = event.currentTarget.parentElement!.getBoundingClientRect();
-        resize(((rect.right - event.clientX) / rect.width) * 100);
+        resize(
+          orientation === "vertical"
+            ? ((rect.bottom - event.clientY) / rect.height) * 100
+            : ((rect.right - event.clientX) / rect.width) * 100,
+        );
       }}
       onPointerUp={(event) => {
         pointer.current = null;
@@ -72,9 +85,12 @@ export function PanelResizeHandle({
         pointer.current = null;
       }}
       onKeyDown={(event) => {
-        if (event.key === "ArrowLeft" || event.key === "ArrowRight") {
+        const increase = orientation === "vertical" ? "ArrowUp" : "ArrowLeft";
+        const decrease =
+          orientation === "vertical" ? "ArrowDown" : "ArrowRight";
+        if (event.key === increase || event.key === decrease) {
           event.preventDefault();
-          resize(width + (event.key === "ArrowLeft" ? 5 : -5));
+          resize(width + (event.key === increase ? 5 : -5));
         }
       }}
     />
