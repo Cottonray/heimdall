@@ -1,4 +1,7 @@
-import { normalizeSource, type SourceSettings } from "./project-source.ts";
+import {
+  normalizeProjectSources,
+  type SourceSettings,
+} from "./project-source.ts";
 import { mkdir, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { DIR } from "./config.ts";
@@ -113,13 +116,13 @@ export async function createProject(name: unknown): Promise<Project> {
 export async function renameProject(
   id: unknown,
   name: unknown,
-  source?: SourceSettings,
+  source?: SourceSettings & { repositories?: SourceSettings[] },
 ): Promise<Project> {
   if (typeof id !== "string" || !id || id.length > 100)
     throw new Error("프로젝트를 선택해 주세요");
   const normalized = normalizeProjectName(name);
   await ensureDb();
-  const normalizedSource = source ? normalizeSource(source) : null;
+  const normalizedSource = source ? normalizeProjectSources(source) : null;
   const rows =
     await db!`update aiqa_projects set name=${normalized}, source=coalesce(${normalizedSource ? db!.json(normalizedSource) : null}::jsonb, source) where id=${id} returning id`;
   if (!rows.length) throw new Error("프로젝트를 찾지 못했어요");

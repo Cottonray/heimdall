@@ -259,7 +259,11 @@ export class WorkspaceStore {
   renameProject = (
     name: string,
     source?: {
-      sourceType?: "git" | "svn";
+      repositories?: {
+        sourceType: "git" | "svn";
+        sourceUrl: string;
+        description: string;
+      }[];
       sourceUrl?: string;
       description?: string;
     },

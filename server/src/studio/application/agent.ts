@@ -1,7 +1,7 @@
 import type { Session } from "../domain/types.ts";
 import { publicSession } from "../domain/session.ts";
 import { observe } from "../engines/observe.ts";
-import { readProjectSource } from "../infrastructure/project-source.ts";
+import { readProjectSources } from "../infrastructure/project-source.ts";
 import { listProjects } from "../infrastructure/repository.ts";
 import { persist } from "../infrastructure/repository.ts";
 import { complete } from "../infrastructure/llm.ts";
@@ -53,7 +53,7 @@ export async function agent(s: Session, goal: string, ports?: AgentPorts) {
             (p) => p.id === (s.projectId || "default"),
           );
       const sourceReference = project
-        ? await readProjectSource(project)
+        ? await readProjectSources(project)
         : undefined;
       if (s.epoch !== epoch) return;
       for (let i = 0; i < 12 && s.epoch === epoch; i++) {

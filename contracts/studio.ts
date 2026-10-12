@@ -70,7 +70,13 @@ export type Step = {
   evidence?: string;
   observation?: unknown;
 };
+export type ProjectRepository = {
+  sourceType: "git" | "svn";
+  sourceUrl: string;
+  description: string;
+};
 export type Project = {
+  repositories?: ProjectRepository[];
   sourceType?: "git" | "svn";
   sourceUrl?: string;
   description?: string;

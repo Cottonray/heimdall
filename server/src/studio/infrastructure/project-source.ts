@@ -161,3 +161,36 @@ export async function readProjectSource(settings: SourceSettings) {
     await rm(folder, { recursive: true, force: true });
   }
 }
+
+export function normalizeProjectSources(
+  data: SourceSettings & { repositories?: SourceSettings[] },
+) {
+  if (
+    data.repositories !== undefined &&
+    (!Array.isArray(data.repositories) || data.repositories.length > 5)
+  )
+    throw new Error("저장소는 최대 5개까지 등록할 수 있어요.");
+  const entries = data.repositories ?? (data.sourceUrl ? [data] : []);
+  const repositories = entries.map((entry) => {
+    const normalized = normalizeSource(entry);
+    if (!normalized.sourceUrl) throw new Error("저장소 주소를 입력해 주세요.");
+    return normalized;
+  });
+  if (
+    new Set(repositories.map((r) => r.sourceUrl)).size !== repositories.length
+  )
+    throw new Error("같은 저장소 주소를 중복 등록할 수 없어요.");
+  return {
+    description: normalizeSource({ description: data.description }).description,
+    repositories,
+  };
+}
+export async function readProjectSources(
+  data: SourceSettings & { repositories?: SourceSettings[] },
+) {
+  const settings = normalizeProjectSources(data);
+  const repositories = [];
+  for (const repository of settings.repositories)
+    repositories.push(await readProjectSource(repository));
+  return { description: settings.description, repositories };
+}
