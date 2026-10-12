@@ -505,49 +505,51 @@ function SessionContent({
           </Button>
         </div>
       </div>
-      <div className="flex h-session-panels min-h-120 overflow-hidden border rounded-lg">
-        <div className="min-w-0 flex-1 overflow-auto">
-          <LivePreview
-            session={s}
-            frame={active ? w.frame : ""}
-            busy={w.busy}
-            onAction={w.store.action}
-            onRefresh={() => w.store.command("qa_observe")}
-          />
-        </div>
-        <PanelResizeHandle
-          targetId={"session-tools-" + s.id}
-          label="스튜디오 작업 패널 너비"
-          initialWidth={70}
-          storageKey={
-            "heimdall-session-panel-width:" + (s.projectId || "default")
-          }
-        />
-        <aside
-          id={"session-tools-" + s.id}
-          className="flex w-7/10 min-w-0 shrink-0 flex-col"
-        >
-          <div className="min-h-0 flex-1 overflow-auto">
-            <DebugPanel
-              key={"debug-" + s.id}
+      <div className="flex h-session-panels min-h-120 flex-col overflow-hidden border rounded-lg">
+        <div className="flex min-h-0 flex-1">
+          <div className="min-w-0 flex-1 overflow-auto">
+            <LivePreview
               session={s}
+              frame={active ? w.frame : ""}
               busy={w.busy}
               onAction={w.store.action}
+              onRefresh={() => w.store.command("qa_observe")}
             />
           </div>
-          <section
-            aria-label="AI 시나리오"
-            className="h-1/2 min-h-0 shrink-0 overflow-auto border-t p-3"
+          <PanelResizeHandle
+            targetId={"session-tools-" + s.id}
+            label="스튜디오 작업 패널 너비"
+            initialWidth={70}
+            storageKey={
+              "heimdall-session-panel-width:" + (s.projectId || "default")
+            }
+          />
+          <aside
+            id={"session-tools-" + s.id}
+            className="flex w-7/10 min-w-0 shrink-0 flex-col"
           >
-            <AgentPanel
-              key={s.id}
-              session={s}
-              busy={w.busy}
-              onCommand={w.store.command}
-              onAction={w.store.action}
-            />
-          </section>
-        </aside>
+            <div className="min-h-0 flex-1 overflow-auto">
+              <DebugPanel
+                key={"debug-" + s.id}
+                session={s}
+                busy={w.busy}
+                onAction={w.store.action}
+              />
+            </div>
+          </aside>
+        </div>
+        <section
+          aria-label="AI 시나리오"
+          className="h-1/2 min-h-0 shrink-0 overflow-auto border-t p-3"
+        >
+          <AgentPanel
+            key={s.id}
+            session={s}
+            busy={w.busy}
+            onCommand={w.store.command}
+            onAction={w.store.action}
+          />
+        </section>
       </div>
     </>
   );
