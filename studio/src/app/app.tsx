@@ -525,23 +525,28 @@ function SessionContent({
         />
         <aside
           id={"session-tools-" + s.id}
-          className="w-7/10 min-w-0 shrink-0 overflow-auto"
+          className="flex w-7/10 min-w-0 shrink-0 flex-col"
         >
-          <DebugPanel
-            key={"debug-" + s.id}
-            session={s}
-            busy={w.busy}
-            onAction={w.store.action}
-            agent={
-              <AgentPanel
-                key={s.id}
-                session={s}
-                busy={w.busy}
-                onCommand={w.store.command}
-                onAction={w.store.action}
-              />
-            }
-          />
+          <div className="min-h-0 flex-1 overflow-auto">
+            <DebugPanel
+              key={"debug-" + s.id}
+              session={s}
+              busy={w.busy}
+              onAction={w.store.action}
+            />
+          </div>
+          <section
+            aria-label="AI 시나리오"
+            className="h-1/2 min-h-0 shrink-0 overflow-auto border-t p-3"
+          >
+            <AgentPanel
+              key={s.id}
+              session={s}
+              busy={w.busy}
+              onCommand={w.store.command}
+              onAction={w.store.action}
+            />
+          </section>
         </aside>
       </div>
     </>

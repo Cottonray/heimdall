@@ -1,5 +1,5 @@
-import { type ReactNode, useId, useState } from "react";
-import { Braces, Code, Sparkles } from "lucide-react";
+import { useId, useState } from "react";
+import { Braces, Code } from "lucide-react";
 import { CodeBlock } from "@/components/ui/code-block";
 import { Card } from "@/components/ui/card";
 import { Tabs, PanelTabsList, TabsContent } from "@/components/ui/tabs";
@@ -13,15 +13,13 @@ export function DebugPanel({
   session,
   busy,
   onAction,
-  agent,
 }: {
-  agent?: ReactNode;
   session: Session;
   busy: boolean;
   onAction: (a: Action) => Promise<unknown>;
 }) {
   const formId = useId();
-  const [tab, setTab] = useState(agent ? "agent" : "code");
+  const [tab, setTab] = useState("code");
   const [url, setUrl] = useState("http://127.0.0.1:8081/demo/api/accounts");
   const [contains, setContains] = useState("QA 테스트 계좌");
   const [status, setStatus] = useState("200");
@@ -32,9 +30,6 @@ export function DebugPanel({
           value={tab}
           label="스튜디오 도구"
           items={[
-            ...(agent
-              ? [{ value: "agent", label: "AI 시나리오", icon: <Sparkles /> }]
-              : []),
             {
               value: "code",
               label:
@@ -47,7 +42,6 @@ export function DebugPanel({
           ]}
         />
         <div className="p-3">
-          {agent && <TabsContent value="agent">{agent}</TabsContent>}
           <TabsContent value="code">
             <CodeBlock code={script(session)} />
           </TabsContent>
