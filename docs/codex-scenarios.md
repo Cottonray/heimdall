@@ -49,3 +49,5 @@ Codex의 model_catalog_json에 AI 설정 모델 한 개와 텍스트 게이트�
 Codex HOME은 전용 컨테이너의 /home/codex tmpfs에 생성한다. /tmp 아래 helper binary 생성 거부 경고를 피하며 연결 종료 시 제거한다.
 
 배포: 2026-10-13 `946e01b9`와 화면 `fe536d042635`를 홈서버에 설치했다. 기존 파일은 `release-backups/before-terminal-946e01b9.tgz`에 보관했다. /home/codex tmpfs를 추가한 aiqa-terminal 컨테이너 생성과 aiqa 재시작 명령이 완료됐다. 타입·린트·테스트 및 브라우저 동작 검증은 실행하지 않았다. 기존 화면은 한 번 새로고침해야 새 코드가 적용된다.
+
+2026-10-13 후속 수정: 운영 Codex가 필수로 요구하는 supports_parallel_tool_calls를 카탈로그에 false로 명시한다. 게이트웨이는 동작을 순서대로 실행하며 AI 설정 모델은 변경하지 않는다.

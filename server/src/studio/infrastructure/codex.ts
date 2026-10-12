@@ -199,7 +199,7 @@ export async function createScenarioCodex(
       context_window: 32000, effective_context_window_percent: 90,
       input_modalities: ["text"], experimental_supported_tools: [],
       supports_image_detail_original: false, supports_search_tool: false,
-      supports_reasoning_effort_updates: false, use_responses_lite: false
+      supports_reasoning_effort_updates: false, supports_parallel_tool_calls: false, use_responses_lite: false
     }] },
     terminalConfig: `model = ${JSON.stringify(connection.model)}
 model_provider = "heimdall"
