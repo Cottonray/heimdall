@@ -205,6 +205,8 @@ export async function createScenarioCodex(
 model_provider = "heimdall"
 web_search = "disabled"
 check_for_update_on_startup = false
+[tui]
+show_tooltips = false
 [features]
 shell_tool = false
 multi_agent = false
