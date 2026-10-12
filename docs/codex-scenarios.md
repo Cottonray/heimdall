@@ -18,3 +18,10 @@ Playwright/Appium TypeScript는 동일한 생성기를 화면·내보내기·시
 실행 파일 기본 경로는 `/opt/aiqa/server/codex/bin/codex`이며 `AIQA_CODEX_BIN`으로 지정할 수 있다. npm 공식 `@openai/codex@0.146.0-linux-x64` 배포물의 SHA-512 integrity 검증 후 vendor 디렉터리를 server/codex에 설치한다. 바이너리는 Git에 커밋하지 않는다. 서버 소스 배포 후 서비스 재시작이 필요하다.
 
 검증: 실제 로컬 Codex CLI와 mock 제공자로 thread resume 2회, 제공자 인증 헤더 전달, upstream 도구 정의 미전달을 확인했다. 전체 검사와 Appium 코드/문자열 이스케이프·API 내보내기 회귀 검사를 수행한다.
+
+### 2026-10-12 운영 반영
+
+- 소스 `944d87bd`, 화면 자산 `a3a4dfc8207a`를 Jenkins `deploy-heimdall-codex #1`로 설치하고 aiqa를 재시작했다. 이 잡의 최초 헬스체크는 8081 포트를 잘못 사용해 실패 표시가 났고, 정본 포트 8080의 `/healthz`로 수정했다. 배포 전 백업은 공개 웹 밖 `release-backups/before-codex-944d87bd.tgz`에 보관한다.
+- 운영 컨테이너의 Codex 0.146.0을 실제 실행하고 AI 설정 DB의 연결로 `{ ok: true }` 응답을 확인했다. 키 값은 출력하지 않았다.
+- 공개 페이지에서 Playwright 코드 탭의 실제 코드와 실행 기록·디버깅 탭 제거를 확인했다. 종료된 세션은 기존과 같이 재실행 후 Codex를 사용할 수 있다.
+- 전체 `node check.ts` 통과. Appium 출력은 생성·이스케이프 검증까지이며 이번 변경으로 생성한 코드를 실제 Android에서 재생하는 검증은 수행하지 않았다.
