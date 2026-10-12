@@ -3,7 +3,6 @@
 @import "tw-animate-css";
 @custom-variant dark (&:where(.dark, .dark *));
 @theme inline {
-  --spacing-session-panels: calc(100dvh - 12rem);
   --font-sans:
     "Pretendard", -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo",
     "Segoe UI", sans-serif;
