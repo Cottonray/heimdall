@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { phoneSettingsInput } from "./phone-settings.ts";
+import { phoneSettingsInput, readPhoneSettings } from "./phone-settings.ts";
 test("Android reported phone numbers round trip into emulator digit-only format", () => {
   for (const phone of ["+01012345678", "01012345678"]) {
     assert.equal(phoneSettingsInput({ phone }).phone, "01012345678");
@@ -12,4 +12,18 @@ test("Android reported phone numbers round trip into emulator digit-only format"
   assert.equal(phoneSettingsInput({ phone: "" }).phone, "");
   for (const phone of ["++01012345678", "+", "12", "010-1234-5678"])
     assert.throws(() => phoneSettingsInput({ phone }));
+});
+
+test("rejects shell input and invalid states", () => {
+  for (const data of [
+    { phone: "1;id" },
+    { carrier: "SKT;id" },
+    { voice: "unknown" },
+    { network: "$(id)" },
+  ])
+    assert.throws(() => phoneSettingsInput(data));
+});
+test("iOS and physical devices are not advertised as writable SIMs", async () => {
+  assert.equal((await readPhoneSettings("ios:simulator")).supported, false);
+  assert.equal((await readPhoneSettings("physical-device")).supported, false);
 });
