@@ -1,20 +1,44 @@
-import { useRef, useState } from "react";
+import { useLayoutEffect, useRef, useState } from "react";
 export function PanelResizeHandle({
   targetId,
   label = "웹 디버깅 패널 너비",
   initialWidth = 60,
+  storageKey,
 }: {
   targetId: string;
   label?: string;
   initialWidth?: number;
+  storageKey?: string;
 }) {
   const pointer = useRef<number | null>(null);
-  const [width, setWidth] = useState(initialWidth);
+  const [width, setWidth] = useState(() => {
+    if (storageKey) {
+      try {
+        const saved = localStorage.getItem(storageKey);
+        const value = saved === null ? NaN : Number(saved);
+        if (Number.isFinite(value) && value >= 25 && value <= 75) return value;
+      } catch {
+        /* Storage may be unavailable. */
+      }
+    }
+    return initialWidth;
+  });
+  useLayoutEffect(() => {
+    const panel = document.getElementById(targetId);
+    if (panel) panel.style.width = `${width}%`;
+  }, [targetId, width]);
   const resize = (value: number) => {
     const next = Math.max(25, Math.min(75, value));
     const panel = document.getElementById(targetId);
     if (panel) panel.style.width = `${next}%`;
-    setWidth(Math.round(next));
+    setWidth(next);
+    if (storageKey) {
+      try {
+        localStorage.setItem(storageKey, String(next));
+      } catch {
+        /* Keep resizing without storage. */
+      }
+    }
   };
   return (
     <div

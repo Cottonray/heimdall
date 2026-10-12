@@ -533,6 +533,9 @@ function SessionContent({
           targetId={"session-tools-" + s.id}
           label="스튜디오 작업 패널 너비"
           initialWidth={70}
+          storageKey={
+            "heimdall-session-panel-width:" + (s.projectId || "default")
+          }
         />
         <aside
           id={"session-tools-" + s.id}
