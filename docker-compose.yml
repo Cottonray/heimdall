@@ -18,8 +18,9 @@ services:
     mem_limit: 512m
     restart: unless-stopped
     entrypoint: ["node", "/opt/aiqa/server/src/terminal/bridge.ts"]
-    tmpfs: ["/tmp:uid=1001,gid=1001,mode=1777", "/home/codex:uid=1001,gid=1001,mode=0700"]
+    tmpfs: ["/tmp:uid=1001,gid=1001,mode=1777"]
     volumes:
+      - aiqa-codex:/home/codex
       - ./server/src/terminal:/opt/aiqa/server/src/terminal:ro
       - ./server/src/ws.ts:/opt/aiqa/server/src/ws.ts:ro
       - ./server/codex/bin/codex:/opt/aiqa/server/codex/bin/codex:ro
@@ -167,6 +168,7 @@ services:
       start_period: 180s
 
 volumes:
+  aiqa-codex:
   aiqa-avd:
   aiqa-runs:
   aiqa-db-data:

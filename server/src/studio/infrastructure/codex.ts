@@ -188,7 +188,7 @@ export async function createScenarioCodex(
     // Gateway capabilities, not an assertion about the provider's maximum context.
     terminalCatalog: { models: [{
       slug: connection.model, display_name: connection.model,
-      description: "기본모델.",
+      description: "기본모델",
       default_reasoning_level: "none", supported_reasoning_levels: [],
       shell_type: "shell_command", visibility: "list", supported_in_api: true,
       priority: 0, upgrade: null, base_instructions: "Help write and run this HEIMDALL test only. Respond in Korean.",

@@ -83,6 +83,15 @@ export async function connectCodexTerminal(
   try {
     if (!(await authorized())) throw new Error("인증이 만료됐어요.");
     const session = await saved(id);
+    let root = session;
+    const visited = new Set<string>();
+    while (root.parent && !visited.has(root.id)) {
+      visited.add(root.id);
+      const parent = await saved(root.parent).catch(() => null);
+      if (!parent || parent.projectId !== session.projectId) break;
+      root = parent;
+    }
+    const sessionKey = root.id;
     const project = (await listProjects()).find(
       (p) => p.id === (session.projectId || "default"),
     );
@@ -233,6 +242,7 @@ export async function connectCodexTerminal(
       upstream!.send(
         JSON.stringify({
           type: "start",
+          sessionKey,
           config: codex!.terminalConfig,
           token: codex!.terminalToken,
           catalog: codex!.terminalCatalog,

@@ -1,6 +1,6 @@
 // Isolated terminal container entrypoint. Never run this in the master container.
 import { createServer } from "node:http";
-import { readFile, mkdtemp, rm, writeFile } from "node:fs/promises";
+import { readFile, mkdir, readdir, writeFile } from "node:fs/promises";
 import { timingSafeEqual } from "node:crypto";
 import * as pty from "node-pty";
 import { accept } from "../ws.ts";
@@ -13,6 +13,7 @@ const secret = (
 if (secret.length < 32) throw new Error("Terminal key missing");
 const server = createServer((_req, res) => res.writeHead(404).end());
 let active = 0;
+const owners = new Map<string, Promise<void>>();
 server.on("upgrade", (req, socket) => {
   const url = new URL(req.url || "/", "http://localhost");
   const supplied = Buffer.from(url.searchParams.get("token") || "");
@@ -31,6 +32,7 @@ server.on("upgrade", (req, socket) => {
   active++;
   let terminal: pty.IPty | undefined;
   let folder = "";
+  let release: (() => void) | undefined;
   let closed = false;
   let started = false;
   let size = { cols: 100, rows: 24 };
@@ -41,7 +43,7 @@ server.on("upgrade", (req, socket) => {
     clearTimeout(timeout);
     clearInterval(heartbeat);
     terminal?.kill();
-    if (folder) void rm(folder, { recursive: true, force: true });
+    if (!terminal) release?.();
   };
   const timeout = setTimeout(() => ws.close(1000), 30 * 60 * 1000);
   const heartbeat = setInterval(() => {
@@ -58,21 +60,34 @@ server.on("upgrade", (req, socket) => {
           if (
             typeof message.config !== "string" ||
             message.config.length > 100000 ||
-            typeof message.token !== "string"
+            typeof message.token !== "string" ||
+            typeof message.sessionKey !== "string" ||
+            !/^[a-f0-9-]{36}$/.test(message.sessionKey)
           )
             throw new Error("Invalid setup");
-          folder = await mkdtemp("/home/codex/session-");
+          folder = "/home/codex/" + message.sessionKey;
+          const previous = owners.get(folder);
+          let unlock!: () => void;
+          const owned = new Promise<void>(resolve => { unlock = resolve; });
+          owners.set(folder, owned);
+          release = () => { unlock(); if (owners.get(folder) === owned) owners.delete(folder); };
+          if (previous) await previous;
+          if (closed) { release(); return; }
+          await mkdir(folder, {recursive:true,mode:0o700});
+          const files = await readdir(folder + "/sessions", {recursive:true}).catch(() => []);
+          const resume = files.some(file => file.endsWith(".jsonl"));
           await writeFile(folder + "/models.json", JSON.stringify(message.catalog), {mode:0o600});
           await writeFile(folder + "/config.toml", 'model_catalog_json = ' + JSON.stringify(folder + '/models.json') + '\n' + message.config + `\n[projects.${JSON.stringify(folder)}]\ntrust_level = "trusted"\n`, {
             mode: 0o600,
           });
           if (closed) {
-            await rm(folder, { recursive: true, force: true });
+            release();
             return;
           }
           terminal = pty.spawn(
             "/opt/aiqa/server/codex/bin/codex",
             [
+              ...(resume ? ["resume", "--last"] : []),
               "--dangerously-bypass-approvals-and-sandbox",
               "--no-alt-screen",
               "-C",
@@ -97,7 +112,7 @@ server.on("upgrade", (req, socket) => {
             if (ws.socket.writableLength > 1024 * 1024) ws.close(1009);
             else ws.send(JSON.stringify({ type: "output", data }));
           });
-          terminal.onExit(() => ws.close(1000));
+          terminal.onExit(() => { release?.(); ws.close(1000); });
           ws.send(JSON.stringify({type:"ready"}));
         } else if (
           message.type === "input" &&
