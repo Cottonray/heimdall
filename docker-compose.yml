@@ -18,7 +18,7 @@ services:
     mem_limit: 512m
     restart: unless-stopped
     entrypoint: ["node", "/opt/aiqa/server/src/terminal/bridge.ts"]
-    tmpfs: ["/tmp:uid=1001,gid=1001,mode=1777"]
+    tmpfs: ["/tmp:uid=1001,gid=1001,mode=1777", "/home/codex:uid=1001,gid=1001,mode=0700"]
     volumes:
       - ./server/src/terminal:/opt/aiqa/server/src/terminal:ro
       - ./server/src/ws.ts:/opt/aiqa/server/src/ws.ts:ro

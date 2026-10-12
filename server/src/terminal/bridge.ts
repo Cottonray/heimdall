@@ -61,8 +61,9 @@ server.on("upgrade", (req, socket) => {
             typeof message.token !== "string"
           )
             throw new Error("Invalid setup");
-          folder = await mkdtemp("/tmp/codex-terminal-");
-          await writeFile(folder + "/config.toml", message.config + `\n[projects.${JSON.stringify(folder)}]\ntrust_level = "trusted"\n`, {
+          folder = await mkdtemp("/home/codex/session-");
+          await writeFile(folder + "/models.json", JSON.stringify(message.catalog), {mode:0o600});
+          await writeFile(folder + "/config.toml", 'model_catalog_json = ' + JSON.stringify(folder + '/models.json') + '\n' + message.config + `\n[projects.${JSON.stringify(folder)}]\ntrust_level = "trusted"\n`, {
             mode: 0o600,
           });
           if (closed) {

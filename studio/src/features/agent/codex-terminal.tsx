@@ -11,6 +11,12 @@ export function CodexTerminal({
   sessionId: string;
   active: boolean;
 }) {
+  const socket = useRef<WebSocket | null>(null);
+  const target = useRef(sessionId);
+  target.current = sessionId;
+  useEffect(() => {
+    if (socket.current?.readyState === WebSocket.OPEN) socket.current.send(JSON.stringify({type:"target",id:sessionId}));
+  }, [sessionId]);
   const element = useRef<HTMLDivElement>(null);
   const [generation, setGeneration] = useState(0);
   const [status, setStatus] = useState("연결 중");
@@ -28,6 +34,7 @@ export function CodexTerminal({
     const ws = new WebSocket(
       `${location.protocol === "https:" ? "wss:" : "ws:"}//${location.host}${STUDIO_BASE}/ws?terminal=${encodeURIComponent(sessionId)}`,
     );
+    socket.current = ws;
     const resize = () => {
       if (!element.current?.clientHeight || !element.current.clientWidth)
         return;
@@ -51,7 +58,7 @@ export function CodexTerminal({
     ws.onmessage = (event) => {
       try {
         const message = JSON.parse(event.data);
-        if (message.type === "ready") { setStatus("YOLO · 테스트 전용"); resize(); }
+        if (message.type === "ready") { ws.send(JSON.stringify({type:"target",id:target.current})); setStatus("YOLO · 테스트 전용"); resize(); }
         if (message.type === "output") terminal.write(message.data);
         if (message.type === "error") {
           setStatus(message.error);
@@ -70,10 +77,11 @@ export function CodexTerminal({
     return () => {
       observer.disconnect();
       input.dispose();
+      socket.current = null;
       ws.close();
       terminal.dispose();
     };
-  }, [sessionId, generation, active]);
+  }, [generation, active]);
   return (
     <div className="flex h-full min-h-0 flex-col">
       <div className="flex items-center justify-between gap-2 px-3 py-1">

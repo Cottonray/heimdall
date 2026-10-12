@@ -36,6 +36,7 @@ export async function createScenarioCodex(
         if (raw.length > 1_000_000) throw new Error("Input too large");
       }
       const body = JSON.parse(raw) as {
+        model?: string;
         instructions?: string;
         input?: {
           type?: string;
@@ -43,6 +44,10 @@ export async function createScenarioCodex(
           content?: { type: string; text?: string }[] | string;
         }[];
       };
+      if (body.model && body.model !== connection.model) {
+        res.writeHead(400, {"content-type":"application/json"}).end(JSON.stringify({error:{message:"모델은 AI 설정에서 선택한 모델로 고정돼요."}}));
+        return;
+      }
       const messages = [
         {
           role: "system",
@@ -180,6 +185,22 @@ export async function createScenarioCodex(
     throw new Error("Codex gateway unavailable");
   return {
     terminalToken: token,
+    // Gateway capabilities, not an assertion about the provider's maximum context.
+    terminalCatalog: { models: [{
+      slug: connection.model, display_name: connection.model,
+      description: "AI 설정에 고정된 테스트 모델",
+      default_reasoning_level: "none", supported_reasoning_levels: [],
+      shell_type: "shell_command", visibility: "list", supported_in_api: true,
+      priority: 0, upgrade: null, base_instructions: "Help write and run this HEIMDALL test only. Respond in Korean.",
+      model_messages: {instructions_template: "Help write and run this HEIMDALL test only. Respond in Korean.", instructions_variables: {personality_default:"",personality_friendly:"",personality_pragmatic:""}, approvals:null},
+      supports_reasoning_summary_parameter: false, supports_reasoning_summaries: false, support_verbosity: false,
+      default_reasoning_summary: "none", default_verbosity: null,
+      apply_patch_tool_type: null, truncation_policy: {mode:"tokens",limit:10000},
+      context_window: 32000, effective_context_window_percent: 90,
+      input_modalities: ["text"], experimental_supported_tools: [],
+      supports_image_detail_original: false, supports_search_tool: false,
+      supports_reasoning_effort_updates: false, use_responses_lite: false
+    }] },
     terminalConfig: `model = ${JSON.stringify(connection.model)}
 model_provider = "heimdall"
 web_search = "disabled"

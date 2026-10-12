@@ -278,7 +278,7 @@ export function App() {
               const s = w.sessions.find((session) => session.id === id);
               return (
                 <TabsContent
-                  key={id}
+                  key={w.store.terminalKeys.get(id) || id}
                   value={id}
                   forceMount
                   hidden={w.activeTab !== id}

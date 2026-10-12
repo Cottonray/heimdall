@@ -67,6 +67,7 @@ export class WorkspaceStore {
     error: "",
     frame: "",
   };
+  readonly terminalKeys = new Map<string, string>();
   private listeners = new Set<() => void>();
   private ws: WebSocket | null = null;
   private retry: ReturnType<typeof setTimeout> | undefined;
@@ -445,9 +446,17 @@ export class WorkspaceStore {
     goal?: string,
   ) =>
     this.run(async () => {
-      const s = await api.call(tool, { id: this.value.selectedId, goal });
+      const previousId = this.value.selectedId;
+      const s = await api.call(tool, { id: previousId, goal });
       this.update(s);
-      if (tool === "qa_replay") this.select(s.id);
+      if (tool === "qa_replay") {
+        this.terminalKeys.set(s.id, this.terminalKeys.get(previousId) || previousId);
+        this.releaseFrame();
+        this.patch({tabs: this.value.tabs.map(id => id === previousId ? s.id : id), selectedId: s.id, activeTab: s.id, frame: ""});
+        this.updateRoute();
+        if (this.ws?.readyState === WebSocket.OPEN) this.ws.send(JSON.stringify({type:"watch",id:s.id}));
+        void this.loadFrame(s.id);
+      }
       if (tool === "qa_observe") await this.loadFrame(s.id);
       if (tool === "qa_close" || tool === "qa_replay") await this.refresh();
     });

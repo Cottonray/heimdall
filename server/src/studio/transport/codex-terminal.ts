@@ -53,12 +53,23 @@ export async function connectCodexTerminal(
     onMessage: (raw) => {
       if (closed || raw.length > 12000) return;
       void authorized()
-        .then((ok) => {
+        .then(async (ok) => {
           if (!ok) {
             ws.close(4401);
             return;
           }
           const message = JSON.parse(raw);
+          if (message.type === "target" && typeof message.id === "string" && message.id !== id) {
+            const next = await saved(message.id);
+            const previous = await saved(id);
+            if (message.id === id) return;
+            if (next.parent !== id || next.projectId !== previous.projectId || running.has(next.id)) throw new Error("Invalid replay target");
+            if (closed) return;
+            running.delete(id);
+            id = next.id;
+            running.add(id);
+            return;
+          }
           if (message.type === "resize") pendingSize = message;
           if (
             upstream?.readyState === WebSocket.OPEN &&
@@ -79,6 +90,8 @@ export async function connectCodexTerminal(
     const connection = await aiConnection();
     codex = await createScenarioCodex(connection, async (messages) => {
       if (closed || !(await authorized())) throw new Error("Session closed");
+      const requestTarget = id;
+      const session = await saved(requestTarget);
       const conversation: unknown[] = [
         {
           role: "system",
@@ -175,7 +188,8 @@ export async function connectCodexTerminal(
             throw new Error("Session closed");
           let result: unknown;
           try {
-            const current = get(id);
+            if (id !== requestTarget) throw new Error("재실행으로 대상이 바뀌었어요. 새 화면을 다시 관찰해 주세요.");
+            const current = get(requestTarget);
             if (current.ai || current.working)
               throw new Error("다른 동작이 진행 중이에요.");
             if (call.function.name === "qa_observe")
@@ -221,6 +235,7 @@ export async function connectCodexTerminal(
           type: "start",
           config: codex!.terminalConfig,
           token: codex!.terminalToken,
+          catalog: codex!.terminalCatalog,
         }),
       );
       upstream!.send(JSON.stringify(pendingSize));
