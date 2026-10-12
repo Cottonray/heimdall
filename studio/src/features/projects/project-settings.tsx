@@ -169,6 +169,7 @@ function ProjectSettingsForm({
                           }
                         >
                           <SelectTrigger
+                            className="w-full"
                             aria-label={`저장소 ${index + 1} 종류`}
                           >
                             <SelectValue />
