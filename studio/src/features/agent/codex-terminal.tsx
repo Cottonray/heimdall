@@ -61,7 +61,7 @@ export function CodexTerminal({
     ws.onmessage = (event) => {
       try {
         const message = JSON.parse(event.data);
-        if (message.type === "ready") { ws.send(JSON.stringify({type:"target",id:target.current})); setStatus("YOLO · 테스트 전용"); resize(); }
+        if (message.type === "ready") { ws.send(JSON.stringify({type:"target",id:target.current})); setStatus(""); resize(); }
         if (message.type === "output") terminal.write(message.data);
         if (message.type === "error") {
           setStatus(message.error);
@@ -88,7 +88,7 @@ export function CodexTerminal({
   return (
     <BottomPanel id={"session-ai-" + sessionId} storageKey={"heimdall-ai-panel:" + projectId} toolbar={
       <div className="flex min-w-0 flex-1 items-center justify-end gap-2">
-        <span role="status" className="truncate text-xs text-muted-foreground">{status}</span>
+        {status && <span role="status" className="truncate text-xs text-muted-foreground">{status}</span>}
         <Button size="sm" variant="ghost" onClick={() => {setStatus("연결 중");setGeneration(value => value + 1);}}>재연결</Button>
       </div>
     }>

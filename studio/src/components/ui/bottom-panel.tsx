@@ -42,7 +42,7 @@ export function BottomPanel({
         }
       >
         <div className="flex shrink-0 items-center justify-between gap-2 px-3 py-1">
-          <span className="text-sm font-medium">Codex 터미널</span>
+          <span className="text-sm font-medium">터미널</span>
           {toolbar}
           <Button
             variant="ghost"
