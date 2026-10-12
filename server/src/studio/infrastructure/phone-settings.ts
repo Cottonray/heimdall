@@ -89,7 +89,7 @@ export async function updatePhoneSettings(
           "기기의 SIM이 준비되지 않아 전화번호를 적용할 수 없어요. 기기 재연결 후 다시 시도해 주세요.",
         );
       commands.push(["emu", "phonenumber", values.phone]);
-      commands.push(["shell", "su", "0", "cmd", "phone", "restart-modem"]);
+      commands.push(["shell", "su", "0", "killall", "com.android.phone"]);
     }
     if (values.carrier) {
       for (const key of ["gsm.sim.operator.alpha", "gsm.operator.alpha"])
