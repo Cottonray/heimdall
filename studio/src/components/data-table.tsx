@@ -97,7 +97,7 @@ export function DataTable<T>({
   const [query, setQuery] = useState("");
   const [sort, setSort] = useState<TableSort>(null);
   const [page, setPage] = useState(0);
-  const [pageSize, setPageSize] = useState(10);
+  const [pageSize, setPageSize] = useState(30);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(() => new Set());
   const availableIds = new Set(data.map(getRowId));
   const selected = availableSelection(selectedIds, availableIds);
@@ -426,7 +426,7 @@ export function DataTable<T>({
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                {[10, 20, 50].map((size) => (
+                {[30, 50, 100].map((size) => (
                   <SelectItem key={size} value={String(size)}>
                     {size}개
                   </SelectItem>
