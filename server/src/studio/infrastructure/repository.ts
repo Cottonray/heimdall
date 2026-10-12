@@ -1,3 +1,7 @@
+import { mkdir, writeFile } from "node:fs/promises";
+import path from "node:path";
+import { DIR } from "./config.ts";
+import { script } from "../domain/export.ts";
 import { randomUUID } from "node:crypto";
 import type { Project } from "../../../../contracts/studio.ts";
 import postgres from "postgres";
@@ -25,6 +29,17 @@ export async function persist(s: Session) {
   s.updated = Date.now();
   await ensureDb();
   await db!`insert into aiqa_studio (id, body, updated) values (${s.id}, ${db!.json(JSON.parse(JSON.stringify(publicSession(s))) as postgres.JSONValue)}, ${s.updated}) on conflict (id) do update set body=excluded.body, updated=excluded.updated`;
+  if (!/^[a-f0-9-]{36}$/.test(s.id)) throw new Error("잘못된 세션이에요");
+  const folder = path.join(DIR, s.id);
+  await mkdir(folder, { recursive: true });
+  await writeFile(
+    path.join(
+      folder,
+      s.engine === "android" ? "scenario.appium.ts" : "scenario.spec.ts",
+    ),
+    script(s),
+    { mode: 0o600 },
+  );
   publish(compact(publicSession(s)));
 }
 export async function saved(id: string): Promise<PublicSession> {

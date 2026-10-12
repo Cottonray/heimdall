@@ -63,3 +63,14 @@ test('AI verification retry is cleared after a real successful assertion', async
     assert.ok(prompts[1].includes('Your last done response'))
     assert.ok(!prompts[2].includes('Your last done response'))
 })
+
+test('Android exports Appium TypeScript and keeps input as escaped data', () => {
+  const code = script({engine:'android',name:'test',url:'',steps:[{action:{type:'fill',selector:'input',value:'"; process.exit(); //'}},{action:{type:'assert',text:'done'}}]});
+  assert.match(code, /from "webdriverio"/);
+  assert.match(code, /deleteSession/);
+  assert.ok(code.includes(JSON.stringify('"; process.exit(); //')));
+  assert.match(code, /isExisting/);
+});
+test('API code does not navigate a browser', () => {
+  assert.doesNotMatch(script({engine:'api',name:'API',url:'https://example.com',steps:[]}), /page.goto/);
+});

@@ -28,7 +28,7 @@ export function ExportDialog({
           <DialogTitle>시나리오 내보내기</DialogTitle>
           <DialogDescription>
             {data?.session.engine === "android"
-              ? "Appium 동작 JSON과 실행 기록을 저장해요."
+              ? "Appium 테스트 코드과 실행 기록을 저장해요."
               : "Playwright 테스트 코드와 실행 기록을 저장해요."}
           </DialogDescription>
         </DialogHeader>
@@ -42,7 +42,7 @@ export function ExportDialog({
               download(
                 data.code,
                 data.session.engine === "android"
-                  ? "appium-actions.json"
+                  ? "scenario.appium.ts"
                   : "scenario.spec.ts",
               )
             }

@@ -29,11 +29,11 @@ export function AgentPanel({
         <CardTitle>
           <span className="flex items-center gap-2">
             <Sparkles className="size-4 text-primary" />
-            AI 시나리오
+            Codex 시나리오
           </span>
         </CardTitle>
         <p className="text-xs text-muted-foreground">
-          사람의 조작을 이해하고 다음 단계를 이어가요.
+          이 시나리오의 테스트만 작성하고 실행해요.
         </p>
       </CardHeader>
       <CardContent>
@@ -56,7 +56,7 @@ export function AgentPanel({
               onClick={() => void onCommand("qa_agent", goal)}
             >
               <Play />
-              {session.steps.length ? "AI 이어서" : "AI 실행"}
+              {session.steps.length ? "Codex 이어서" : "Codex 실행"}
             </Button>
             <Button
               variant="outline"
