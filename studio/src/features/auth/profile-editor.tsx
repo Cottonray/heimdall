@@ -128,9 +128,6 @@ export function ProfileEditor({
               });
           }}
         />
-        <p className="text-xs text-muted-foreground">
-          이미지를 눌러 변경하거나 삭제해요.
-        </p>
       </div>
       <div className="space-y-4">
         <div className="space-y-2">
