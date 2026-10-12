@@ -1,5 +1,6 @@
 import { execFile } from "node:child_process";
 import { promisify } from "node:util";
+import { setTimeout as delay } from "node:timers/promises";
 const exec = promisify(execFile);
 const states = ["home", "roaming", "unregistered", "searching", "denied"];
 export function phoneSettingsInput(data: Record<string, unknown>) {
@@ -45,8 +46,25 @@ export async function readPhoneSettings(serial: string) {
     "getprop",
     "gsm.sim.operator.alpha",
   ]);
+  const simState = (
+    await adb(serial, ["shell", "getprop", "gsm.sim.state"])
+  ).trim();
+  const subscription = await adb(serial, [
+    "shell",
+    "su",
+    "0",
+    "content",
+    "query",
+    "--uri",
+    "content://telephony/siminfo",
+    "--projection",
+    "_id:number",
+  ]);
+  const phone = subscription.match(/number=([+0-9]+)/)?.[1] || "";
   return {
     supported: true,
+    phone,
+    simState,
     carrier: carrier.trim(),
     voice: status.match(/voice state:\s*(\w+)/)?.[1] || "",
     network: status.match(/data state:\s*(\w+)/)?.[1] || "",
@@ -64,7 +82,15 @@ export async function updatePhoneSettings(
   active.add(serial);
   try {
     const commands: string[][] = [];
-    if (values.phone) commands.push(["emu", "phonenumber", values.phone]);
+    if (values.phone) {
+      const current = await readPhoneSettings(serial);
+      if (!current.simState || !/READY|LOADED/.test(current.simState))
+        throw new Error(
+          "기기의 SIM이 준비되지 않아 전화번호를 적용할 수 없어요. 기기 재연결 후 다시 시도해 주세요.",
+        );
+      commands.push(["emu", "phonenumber", values.phone]);
+      commands.push(["shell", "su", "0", "cmd", "phone", "restart-modem"]);
+    }
     if (values.carrier) {
       for (const key of ["gsm.sim.operator.alpha", "gsm.operator.alpha"])
         commands.push(["shell", "su", "0", "setprop", key, values.carrier]);
@@ -75,7 +101,26 @@ export async function updatePhoneSettings(
       if (!authorized()) throw new Error("기기를 점유한 창에서 적용해 주세요.");
       await adb(serial, command);
     }
-    return { ok: true, ...(await readPhoneSettings(serial)) };
+    let result = await readPhoneSettings(serial);
+    for (
+      let attempt = 0;
+      values.phone &&
+      result.phone?.replace(/^\+/, "") !== values.phone.replace(/^\+/, "") &&
+      attempt < 20;
+      attempt++
+    ) {
+      if (!authorized()) throw new Error("기기를 점유한 창에서 적용해 주세요.");
+      await delay(500);
+      result = await readPhoneSettings(serial);
+    }
+    if (
+      values.phone &&
+      result.phone?.replace(/^\+/, "") !== values.phone.replace(/^\+/, "")
+    )
+      throw new Error(
+        "Android에서 변경한 전화번호가 확인되지 않았어요. 적용 완료되지 않았어요.",
+      );
+    return { ok: true, ...result };
   } finally {
     active.delete(serial);
   }

@@ -44,6 +44,7 @@ export function PhoneSettings({
           throw new Error(data.error || "설정을 불러오지 못했어요.");
         setSupported(data.supported);
         setMessage(data.reason || "");
+        setPhone(data.phone || "");
         setCarrier(data.carrier || "");
         setVoice(data.voice || "");
         setNetwork(data.network || "");
@@ -68,9 +69,8 @@ export function PhoneSettings({
           data.error ||
             "일부 설정을 적용하지 못했어요. 기기 상태를 확인해 주세요.",
         );
-      setMessage(
-        "설정을 적용했어요. 앱이 이전 값을 보관하고 있다면 다시 열어 주세요.",
-      );
+      setPhone(data.phone || "");
+      setMessage("기기에서 설정 적용을 확인했어요.");
     } catch (error) {
       setMessage((error as Error).message);
     } finally {

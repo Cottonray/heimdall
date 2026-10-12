@@ -51,6 +51,9 @@ services:
   aiqa:
     image: aiqa:${IMAGE_TAG:-latest}
     container_name: aiqa
+    # Force modem simulator loopback onto IPv4 inside this container.
+    sysctls:
+      net.ipv6.conf.lo.disable_ipv6: 1
     init: true
     restart: unless-stopped
     # **에뮬레이터 한 대가 이 상자 안에 있다.** 안드로이드에 2GB, 나머지가 Maestro 의
