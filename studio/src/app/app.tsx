@@ -402,20 +402,6 @@ export function App() {
                           return !w.store.getSnapshot().error;
                         }}
                       />
-                      <Domains
-                        domains={w.status?.domains || []}
-                        admin={w.user?.role === "admin"}
-                        busy={w.busy}
-                        error={w.error}
-                        onSave={async (domain) => {
-                          await w.store.saveDomain(domain);
-                          return !w.store.getSnapshot().error;
-                        }}
-                        onRemove={async (domainId) => {
-                          await w.store.removeDomain(domainId);
-                          return !w.store.getSnapshot().error;
-                        }}
-                      />
                     </div>
                   ) : s ? (
                     <div className="space-y-6">
