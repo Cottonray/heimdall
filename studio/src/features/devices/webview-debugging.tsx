@@ -29,7 +29,8 @@ export function useWebViews(
   const [loading, setLoading] = useState(false);
   const [loadedSerial, setLoadedSerial] = useState("");
   const [revision, setRevision] = useState(0);
-  const refreshInterval = serial.startsWith("ios:") ? 0 : 3000;
+  // The iOS WebKit bridge refreshes independently of native input and video.
+  const refreshInterval = 3000;
   useEffect(() => {
     if (!connected) return;
     const controller = new AbortController();
