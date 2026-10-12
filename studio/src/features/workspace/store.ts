@@ -256,11 +256,18 @@ export class WorkspaceStore {
       await this.refresh();
       this.enterProject(project.id);
     });
-  renameProject = (name: string) =>
+  renameProject = (
+    name: string,
+    source?: {
+      sourceType?: "git" | "svn";
+      sourceUrl?: string;
+      description?: string;
+    },
+  ) =>
     this.run(async () => {
       const id = this.value.projectId;
       if (!id) throw new Error("프로젝트를 선택해 주세요.");
-      await api.renameProject(id, name);
+      await api.renameProject(id, name, source);
       await this.refresh();
     });
   moveSession = (id: string, projectId: string) =>

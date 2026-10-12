@@ -633,7 +633,7 @@ export async function handle(
     }
     if (route === "/api/studio/projects") {
       if (data.id === undefined) send(201, await createProject(data.name));
-      else send(200, await renameProject(data.id, data.name));
+      else send(200, await renameProject(data.id, data.name, data.source));
       return true;
     }
     if (route === "/api/studio/project-assignment") {

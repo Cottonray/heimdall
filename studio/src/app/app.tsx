@@ -397,8 +397,8 @@ export function App() {
                           ) || null
                         }
                         busy={w.busy}
-                        onSave={async (name) => {
-                          await w.store.renameProject(name);
+                        onSave={async (name, source) => {
+                          await w.store.renameProject(name, source);
                           return !w.store.getSnapshot().error;
                         }}
                       />

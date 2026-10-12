@@ -71,6 +71,9 @@ export type Step = {
   observation?: unknown;
 };
 export type Project = {
+  sourceType?: "git" | "svn";
+  sourceUrl?: string;
+  description?: string;
   id: string;
   name: string;
   created: string;

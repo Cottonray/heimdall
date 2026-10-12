@@ -1,3 +1,4 @@
+import { normalizeSource, type SourceSettings } from "./project-source.ts";
 import { mkdir, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { DIR } from "./config.ts";
@@ -18,6 +19,7 @@ export async function ensureDb() {
   schema ??= (async () => {
     await db`create table if not exists aiqa_studio (id text primary key, body jsonb not null, updated bigint not null)`;
     await db`create table if not exists aiqa_projects (id text primary key, name text not null, created timestamptz not null default now())`;
+    await db`alter table aiqa_projects add column if not exists source jsonb not null default '{}'::jsonb`;
     await db`insert into aiqa_projects (id, name) values ('default', '기본 프로젝트') on conflict (id) do nothing`;
   })().catch((e) => {
     schema = undefined;
@@ -75,8 +77,9 @@ export async function listSessions(
 export async function listProjects(): Promise<Project[]> {
   await ensureDb();
   const rows =
-    await db!`select p.id, p.name, p.created, count(s.id)::int as tests from aiqa_projects p left join aiqa_studio s on coalesce((case when jsonb_typeof(s.body)='string' then (s.body #>> '{}')::jsonb else s.body end)->>'projectId', 'default')=p.id group by p.id order by p.created`;
+    await db!`select p.id, p.name, p.created, p.source, count(s.id)::int as tests from aiqa_projects p left join aiqa_studio s on coalesce((case when jsonb_typeof(s.body)='string' then (s.body #>> '{}')::jsonb else s.body end)->>'projectId', 'default')=p.id group by p.id order by p.created`;
   return rows.map((p) => ({
+    ...p.source,
     id: String(p.id),
     name: String(p.name),
     created: new Date(p.created).toISOString(),
@@ -110,13 +113,15 @@ export async function createProject(name: unknown): Promise<Project> {
 export async function renameProject(
   id: unknown,
   name: unknown,
+  source?: SourceSettings,
 ): Promise<Project> {
   if (typeof id !== "string" || !id || id.length > 100)
     throw new Error("프로젝트를 선택해 주세요");
   const normalized = normalizeProjectName(name);
   await ensureDb();
+  const normalizedSource = source ? normalizeSource(source) : null;
   const rows =
-    await db!`update aiqa_projects set name=${normalized} where id=${id} returning id`;
+    await db!`update aiqa_projects set name=${normalized}, source=coalesce(${normalizedSource ? db!.json(normalizedSource) : null}::jsonb, source) where id=${id} returning id`;
   if (!rows.length) throw new Error("프로젝트를 찾지 못했어요");
   const project = (await listProjects()).find((item) => item.id === id);
   if (!project) throw new Error("프로젝트를 찾지 못했어요");

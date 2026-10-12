@@ -64,8 +64,11 @@ export const api = {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ name }),
     }).then(json<Project>),
-  renameProject: (id: string, name: string) =>
-    post<Project>("/projects", { id, name }),
+  renameProject: (
+    id: string,
+    name: string,
+    source?: Pick<Project, "sourceType" | "sourceUrl" | "description">,
+  ) => post<Project>("/projects", { id, name, source }),
   moveSession: (id: string, projectId: string) =>
     fetch(API + "/project-assignment", {
       method: "POST",

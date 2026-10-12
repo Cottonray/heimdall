@@ -76,7 +76,7 @@ FROM sdk AS runtime
 RUN set -eux; \
     apt-get update; \
     apt-get install -y --no-install-recommends \
-        ffmpeg socat procps \
+        ffmpeg socat procps git subversion \
         libpulse0 libnss3 libxcursor1 libxdamage1 libxrandr2 libxi6 libxtst6 \
         libgl1 libglu1-mesa libx11-6 libxcomposite1 libxext6 libxfixes3 libasound2; \
     rm -rf /var/lib/apt/lists/*
