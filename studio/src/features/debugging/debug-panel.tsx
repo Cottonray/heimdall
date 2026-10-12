@@ -44,13 +44,6 @@ export function DebugPanel({
             },
             { value: "api", label: "API", icon: <Braces /> },
           ]}
-          trailing={
-            <>
-              {session.steps.length}단계 ·{" "}
-              {session.steps.filter((s) => s.actor === "Human").length}개 직접
-              조작
-            </>
-          }
         />
         <div className="p-3">
           {agent && <TabsContent value="agent">{agent}</TabsContent>}

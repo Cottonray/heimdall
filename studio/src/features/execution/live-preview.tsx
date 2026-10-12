@@ -49,9 +49,7 @@ export function LivePreview({
               실행 화면
             </span>
           </CardTitle>
-          <Badge variant={session.state === "closed" ? "secondary" : "outline"}>
-            {session.state === "closed" ? "마지막 증적" : "LIVE"}
-          </Badge>
+          {session.state !== "closed" && <Badge variant="outline">LIVE</Badge>}
         </div>
         <p className="truncate text-xs text-muted-foreground">
           {session.engine === "android"
@@ -110,78 +108,79 @@ export function LivePreview({
           )}
         </div>
       </CardContent>
-      <CardFooter variant="compact">
-        <div className="w-full space-y-3">
-          <div className="flex flex-wrap items-center gap-2">
-            <Button
-              variant="outline"
-              size="icon"
-              aria-label="뒤로"
-              disabled={disabled}
-              onClick={() =>
-                void onAction({
-                  type: "key",
-                  key: session.engine === "android" ? "Back" : "Alt+ArrowLeft",
-                })
-              }
-            >
-              <ArrowLeft />
-            </Button>
-            <Button
-              variant="outline"
-              size="icon"
-              aria-label="아래로 스크롤"
-              disabled={disabled}
-              onClick={() =>
-                void onAction({ type: "scroll", direction: "down" })
-              }
-            >
-              <ArrowDown />
-            </Button>
-            <Button
-              variant="outline"
-              size="icon"
-              aria-label="화면 새로고침"
-              disabled={busy || session.state === "closed"}
-              onClick={() => void onRefresh()}
-            >
-              <RefreshCw />
-            </Button>
-            <form
-              className="flex min-w-0 flex-1 gap-2"
-              onSubmit={(e) => {
-                e.preventDefault();
-                if (value) void onAction({ type: "type", value });
-              }}
-            >
-              <Input
-                aria-label="선택한 입력칸에 넣을 내용"
-                placeholder="선택한 입력칸에 입력"
-                value={value}
-                onChange={(e) => setValue(e.target.value)}
-                disabled={disabled}
-              />
+      {session.state !== "closed" && (
+        <CardFooter variant="compact">
+          <div className="w-full space-y-3">
+            <div className="flex flex-wrap items-center gap-2">
               <Button
-                variant="secondary"
+                variant="outline"
                 size="icon"
-                aria-label="입력"
-                type="submit"
-                disabled={disabled || !value}
+                aria-label="뒤로"
+                disabled={disabled}
+                onClick={() =>
+                  void onAction({
+                    type: "key",
+                    key:
+                      session.engine === "android" ? "Back" : "Alt+ArrowLeft",
+                  })
+                }
               >
-                <Send />
+                <ArrowLeft />
               </Button>
-            </form>
-          </div>
-          <p className="flex items-center gap-2 text-xs text-muted-foreground">
-            <MousePointer2 className="size-3" />
-            {session.state === "closed"
-              ? "저장된 마지막 화면이에요. 재실행으로 다시 시작할 수 있어요."
-              : session.ai
+              <Button
+                variant="outline"
+                size="icon"
+                aria-label="아래로 스크롤"
+                disabled={disabled}
+                onClick={() =>
+                  void onAction({ type: "scroll", direction: "down" })
+                }
+              >
+                <ArrowDown />
+              </Button>
+              <Button
+                variant="outline"
+                size="icon"
+                aria-label="화면 새로고침"
+                disabled={busy}
+                onClick={() => void onRefresh()}
+              >
+                <RefreshCw />
+              </Button>
+              <form
+                className="flex min-w-0 flex-1 gap-2"
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  if (value) void onAction({ type: "type", value });
+                }}
+              >
+                <Input
+                  aria-label="선택한 입력칸에 넣을 내용"
+                  placeholder="선택한 입력칸에 입력"
+                  value={value}
+                  onChange={(e) => setValue(e.target.value)}
+                  disabled={disabled}
+                />
+                <Button
+                  variant="secondary"
+                  size="icon"
+                  aria-label="입력"
+                  type="submit"
+                  disabled={disabled || !value}
+                >
+                  <Send />
+                </Button>
+              </form>
+            </div>
+            <p className="flex items-center gap-2 text-xs text-muted-foreground">
+              <MousePointer2 className="size-3" />
+              {session.ai
                 ? "사람 개입을 누르면 직접 조작할 수 있어요."
                 : "화면을 누르면 수행한 단계가 자동으로 기록돼요."}
-          </p>
-        </div>
-      </CardFooter>
+            </p>
+          </div>
+        </CardFooter>
+      )}
     </Card>
   );
 }
