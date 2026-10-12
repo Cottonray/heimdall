@@ -2,14 +2,17 @@ import { useEffect, useRef, useState } from "react";
 import { Terminal } from "@xterm/xterm";
 import { FitAddon } from "@xterm/addon-fit";
 import { Button } from "@/components/ui/button";
+import { BottomPanel } from "@/components/ui/bottom-panel";
 const STUDIO_BASE = "/aiqa/studio";
 
 export function CodexTerminal({
   sessionId,
   active,
+  projectId,
 }: {
   sessionId: string;
   active: boolean;
+  projectId: string;
 }) {
   const socket = useRef<WebSocket | null>(null);
   const target = useRef(sessionId);
@@ -83,27 +86,17 @@ export function CodexTerminal({
     };
   }, [generation, active]);
   return (
-    <div className="flex h-full min-h-0 flex-col">
-      <div className="flex items-center justify-between gap-2 px-3 py-1">
-        <span role="status" className="text-xs text-muted-foreground">
-          {status}
-        </span>
-        <Button
-          size="sm"
-          variant="ghost"
-          onClick={() => {
-            setStatus("연결 중");
-            setGeneration((value) => value + 1);
-          }}
-        >
-          재연결
-        </Button>
+    <BottomPanel id={"session-ai-" + sessionId} storageKey={"heimdall-ai-panel:" + projectId} toolbar={
+      <div className="flex min-w-0 flex-1 items-center justify-end gap-2">
+        <span role="status" className="truncate text-xs text-muted-foreground">{status}</span>
+        <Button size="sm" variant="ghost" onClick={() => {setStatus("연결 중");setGeneration(value => value + 1);}}>재연결</Button>
       </div>
+    }>
       <div
         ref={element}
-        className="min-h-0 flex-1 overflow-hidden"
+        className="h-full min-h-0 overflow-hidden"
         aria-label="Codex 대화형 터미널"
       />
-    </div>
+    </BottomPanel>
   );
 }

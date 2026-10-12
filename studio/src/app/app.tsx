@@ -43,7 +43,6 @@ import { Settings } from "@/features/settings/settings";
 import { useTheme } from "@/features/settings/use-theme";
 import { LivePreview } from "@/features/execution/live-preview";
 import { CodexTerminal } from "@/features/agent/codex-terminal";
-import { BottomPanel } from "@/components/ui/bottom-panel";
 import { DebugPanel } from "@/features/debugging/debug-panel";
 import { ExportDialog } from "@/features/scenarios/export-dialog";
 import { api } from "@/lib/api";
@@ -543,12 +542,7 @@ function SessionContent({
             </div>
           </aside>
         </div>
-        <BottomPanel
-          id={"session-ai-" + s.id}
-          storageKey={"heimdall-ai-panel:" + (s.projectId || "default")}
-        >
-          <CodexTerminal sessionId={s.id} active={active} />
-        </BottomPanel>
+        <CodexTerminal sessionId={s.id} active={active} projectId={s.projectId || "default"} />
       </div>
     </>
   );

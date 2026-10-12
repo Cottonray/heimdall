@@ -7,10 +7,12 @@ export function BottomPanel({
   id,
   storageKey,
   children,
+  toolbar,
 }: {
   id: string;
   storageKey: string;
   children: ReactNode;
+  toolbar?: ReactNode;
 }) {
   const [collapsed, setCollapsed] = useState(() => {
     try {
@@ -41,6 +43,7 @@ export function BottomPanel({
       >
         <div className="flex shrink-0 items-center justify-between gap-2 px-3 py-1">
           <span className="text-sm font-medium">Codex 터미널</span>
+          {toolbar}
           <Button
             variant="ghost"
             size="sm"
