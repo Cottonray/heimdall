@@ -7,3 +7,5 @@
 운영 검증: IPv4 loopback 적용 후 SIM이 LOADED로 복구되고 기본 번호가 조회됐다. `emu phonenumber`의 OK만으로 subscription 번호가 갱신되지 않았으며, 전화 서비스 `com.android.phone`을 재시작해 SIM 레코드 캐시를 다시 읽은 뒤 번호가 일치했다. `restart-modem`만으로는 반복 변경 때 캐시가 남아 충분하지 않았다. 따라서 적용 과정에 해당 전화 서비스만 재시작하고 조회 재시도를 포함한다. 검증용 번호는 기본 번호로 복원했다. 실제 유심 가입번호 변경이나 앱 수정은 수행하지 않는다.
 
 최종 운영 함수 검증은 테스트 번호 적용 → 기본 번호 복원 순서로 두 번 실행했고, 두 번 모두 `ok: true`, `numberMatches: true`를 확인했다. 전체 `node check.ts` 통과 후 운영 서버를 재시작했다.
+
+2026-10-12: Android siminfo가 반환한 `+` 접두 번호를 그대로 emu phonenumber에 보내면 `KO: Failed to set phone number`가 발생했다. 입력 검증 후 선행 `+`를 제거해 숫자만 전송한다. 국내 번호와 국제 번호 모두 숫자는 보존하며 읽기/쓰기 왕복 회귀 검사를 추가했다.

@@ -19,7 +19,8 @@ export function phoneSettingsInput(data: Record<string, unknown>) {
     (network && !states.includes(network))
   )
     throw new Error("연결 상태를 확인해 주세요.");
-  return { phone, carrier, voice, network };
+  // Android reports a leading +, but the emulator console accepts digits only.
+  return { phone: phone.replace(/^\+/, ""), carrier, voice, network };
 }
 async function adb(serial: string, args: string[]) {
   if (serial !== "emulator-5554")
