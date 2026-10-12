@@ -1,6 +1,5 @@
-import { useEffect, useState } from "react";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import { useEffect, useRef, useState } from "react";
+import { ImageUpload } from "@/components/ui/image-upload";
 import { Button } from "@/components/ui/button";
 import { API } from "@/lib/api";
 export function CameraSettings({
@@ -12,6 +11,7 @@ export function CameraSettings({
   viewer: string;
   canControl: boolean;
 }) {
+  const fileInput = useRef<HTMLInputElement>(null);
   const [supported, setSupported] = useState(false);
   const [reason, setReason] = useState("");
   const [image, setImage] = useState("");
@@ -67,17 +67,15 @@ export function CameraSettings({
         <p role="status">{reason || "카메라 설정을 확인하고 있어요."}</p>
       ) : (
         <>
-          <Label htmlFor="camera-image">카메라 이미지</Label>
-          <Input
-            id="camera-image"
-            type="file"
-            accept="image/png,image/jpeg"
+          <ImageUpload
+            inputRef={fileInput}
+            image={image}
             disabled={busy}
-            onChange={async (event) => {
+            onChange={(event) => {
               const file = event.target.files?.[0];
-              setImage("");
-              setMessage("");
+              event.target.value = "";
               if (!file) return;
+              setMessage("");
               if (
                 file.size > 512 * 1024 ||
                 !["image/png", "image/jpeg"].includes(file.type)
@@ -93,13 +91,6 @@ export function CameraSettings({
               reader.readAsDataURL(file);
             }}
           />
-          {image && (
-            <img
-              src={image}
-              alt="적용할 카메라 이미지"
-              className="max-h-80 max-w-full rounded-md border object-contain"
-            />
-          )}
           <Button
             disabled={!image || busy || !canControl}
             onClick={() => void upload()}
