@@ -116,7 +116,17 @@ export type Execution = {
   started: number;
   finished?: number;
 };
+export type ScenarioPlan = {
+  status: "draft";
+  appPackage: string;
+  summary: string;
+  prerequisites: string[];
+  data: { name: string; description: string }[];
+  steps: { title: string; action: string; expected: string; source: string }[];
+  branches: { title: string; expected: string; source: string }[];
+};
 export type Session = {
+  plan?: ScenarioPlan;
   execution?: Execution;
   projectId?: string;
   id: string;

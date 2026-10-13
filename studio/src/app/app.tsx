@@ -1,3 +1,4 @@
+import { ScenarioPlanView } from "@/features/scenarios/scenario-plan";
 import { AppLibrary } from "@/features/apps/app-library";
 import { PanelResizeHandle } from "@/components/ui/panel-resize-handle";
 import { AiModelAdmin } from "@/features/auth/ai-model-admin";
@@ -447,8 +448,9 @@ function SessionContent({
   onExport: (data: SessionExport) => void;
 }) {
   useEffect(() => {
-    if (active) void w.store.connectTest(s.id);
-  }, [active, s.id, w.store]);
+    if (active && !s.plan) void w.store.connectTest(s.id);
+  }, [active, s.id, s.plan, w.store]);
+  if (s.plan) return <ScenarioPlanView session={s} />;
   return (
     <>
       <div className="flex shrink-0 flex-wrap items-center justify-between gap-4 px-3 py-2">

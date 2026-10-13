@@ -30,6 +30,7 @@ export const engines: Record<
   },
 };
 export function runStatus(s: Session) {
+  if (s.plan) return "초안 · 미실행";
   const execution = s.execution;
   if (!execution)
     return s.steps.some((step) => !step.ok || step.error)

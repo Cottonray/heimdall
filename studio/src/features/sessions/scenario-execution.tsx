@@ -55,7 +55,7 @@ export function ScenarioExecution({
   const [runId, setRunId] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const scenarios = sessions.filter(
-    (s) => s.steps.length > 0 && (s.projectId || "default") === projectId,
+    (s) => (s.steps.length > 0 || !!s.plan) && (s.projectId || "default") === projectId,
   );
   const source = scenarios.find((s) => s.id === scenarioId);
   const entry = entries.find((item) => item.id === dataId);
@@ -107,7 +107,7 @@ export function ScenarioExecution({
         onSubmit={async (event) => {
           event.preventDefault();
           if (
-            !source ||
+            !source || !!source.plan ||
             disabled ||
             (dataId !== "original" && (!entry || !bindings.length || dataError))
           )
@@ -156,7 +156,7 @@ export function ScenarioExecution({
               <SelectContent>
                 {scenarios.map((s) => (
                   <SelectItem key={s.id} value={s.id}>
-                    {s.name} · {engines[s.engine].label} · {s.steps.length}단계
+                    {s.name} · {engines[s.engine].label} · {s.plan?.steps.length ?? s.steps.length}단계{s.plan ? " · 초안" : ""}
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -169,6 +169,7 @@ export function ScenarioExecution({
                 </Button>
               </p>
             )}
+            {source?.plan && <p className="text-sm text-muted-foreground">앱 연결과 화면 요소 확인이 필요한 초안이에요. <Button type="button" variant="link" onClick={() => onSelect(source.id)}>시나리오</Button></p>}
             {source && (
               <p className="break-all text-sm text-muted-foreground">
                 {engines[source.engine].label} ·{" "}
@@ -303,7 +304,7 @@ export function ScenarioExecution({
             disabled={
               disabled ||
               loading ||
-              !source ||
+              !source || !!source.plan ||
               !dataId ||
               (dataId !== "original" &&
                 (!entry || !bindings.length || !!dataError))

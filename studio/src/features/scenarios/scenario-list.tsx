@@ -86,7 +86,7 @@ export function ScenarioList({
       />
       <DataTable
         onDeleteRows={onDelete}
-        data={sessions.filter((s) => s.steps.length > 0)}
+        data={sessions.filter((s) => s.steps.length > 0 || !!s.plan)}
         caption="저장된 시나리오"
         getRowId={(s) => s.id}
         getRowLabel={(s) => s.name}
@@ -112,8 +112,8 @@ export function ScenarioList({
           {
             id: "steps",
             header: "동작 수",
-            sortValue: (s) => s.steps.length,
-            cell: (s) => `${s.steps.length}개`,
+            sortValue: (s) => s.plan?.steps.length ?? s.steps.length,
+            cell: (s) => s.plan ? `${s.plan.steps.length}단계 · 초안` : `${s.steps.length}개`,
           },
         ]}
         rowActions={(s) => [

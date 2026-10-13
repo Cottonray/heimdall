@@ -9,6 +9,7 @@ import { normalizeDomain } from "../infrastructure/domains.ts";
 import { open } from "./sessions.ts";
 import { action } from "./actions.ts";
 export async function replay(source: PublicSession, options: RunOptions = {}) {
+  if (source.plan) throw new Error("앱 연결과 화면 요소 확인이 필요한 시나리오 초안이에요.");
   if (!source.steps.length || source.steps.length > 80)
     throw new Error("실행할 동작이 1~80개인 시나리오를 선택해 주세요.");
   if (

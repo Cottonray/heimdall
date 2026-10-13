@@ -1,5 +1,6 @@
-import type { Action } from "../../../../contracts/studio.ts";
+import type { Action, ScenarioPlan } from "../../../../contracts/studio.ts";
 type ExportSource = {
+  plan?: ScenarioPlan;
   engine: string;
   name: string;
   url: string;
@@ -7,6 +8,7 @@ type ExportSource = {
 };
 export function script(source: ExportSource) {
   const q = JSON.stringify;
+  if (source.plan) return "// 소스 기반 시나리오 초안 · 미실행\nexport const scenarioPlan = " + q(source.plan, null, 2) + ";\n";
   if (source.engine === "android") return appiumScript(source);
   const lines = [
     `import { test, expect } from '@playwright/test';`,

@@ -43,6 +43,7 @@ export async function ensureActive(id: string): Promise<Session> {
   if (current && current.state !== "closed") return current;
   const result = (async () => {
     const source = await saved(id);
+    if (source.plan) throw new Error("앱 연결과 화면 요소 확인이 필요한 시나리오 초안이에요.");
     await open(
       { ...source, url: source.observation?.url || source.url },
       source,
