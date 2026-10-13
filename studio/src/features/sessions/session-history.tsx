@@ -2,16 +2,8 @@ import { PageHeader } from "@/components/page-header";
 import { Button } from "@/components/ui/button";
 import { DataTable } from "@/components/data-table";
 import { Badge } from "@/components/ui/badge";
-import { engines } from "@/lib/labels";
+import { engines, runStatus } from "@/lib/labels";
 import type { Session } from "../../../../contracts/studio";
-function executionStatus(s: Session) {
-  if (
-    s.working ||
-    ["opening", "manual", "ai", "replay", "paused"].includes(s.state)
-  )
-    return "실행중";
-  return s.steps.some((step) => !step.ok || !!step.error) ? "오류" : "정상";
-}
 export function SessionHistory({
   sessions,
   onDelete,
@@ -53,6 +45,12 @@ export function SessionHistory({
             cell: (s) => engines[s.engine].label,
           },
           {
+            id: "data",
+            header: "테스트데이터",
+            sortValue: (s) => s.execution?.testDataName || "",
+            cell: (s) => s.execution?.testDataName || "원본 값",
+          },
+          {
             id: "steps",
             header: "동작",
             sortValue: (s) => s.steps.length,
@@ -61,15 +59,15 @@ export function SessionHistory({
           {
             id: "state",
             header: "상태",
-            sortValue: executionStatus,
+            sortValue: runStatus,
             cell: (s) => {
-              const status = executionStatus(s);
+              const status = runStatus(s);
               return (
                 <Badge
                   variant={
-                    status === "오류"
+                    status === "실패"
                       ? "destructive"
-                      : status === "정상"
+                      : status === "통과"
                         ? "success"
                         : "default"
                   }

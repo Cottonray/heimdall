@@ -6,6 +6,7 @@ import type {
   Project,
   Session,
   User,
+  TestDataEntry,
 } from "../../../contracts/studio";
 export const API = "/aiqa/api/studio";
 export type ProfileActionResult = { ok: boolean; error?: string };
@@ -39,6 +40,10 @@ async function post<T>(path: string, body: unknown): Promise<T> {
   }).then(json<T>);
 }
 export const api = {
+  testData: (projectId: string, signal?: AbortSignal) =>
+    fetch(API + "/test-data?" + new URLSearchParams({ projectId }), {
+      signal,
+    }).then(json<TestDataEntry[]>),
   me: () => fetch(API + "/auth/me").then(json<{ user: User | null }>),
   testLogin: (role: User["role"]) =>
     post<{ user: User }>("/auth/test-login", { role }),

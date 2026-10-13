@@ -429,6 +429,16 @@ export class WorkspaceStore {
       await this.refresh();
       return s;
     });
+  pauseExecution = async (id: string) => this.run(async () => {
+    const session = await api.call("qa_pause", {id});
+    this.update(session);
+  });
+  executeScenario = async (args: Parameters<typeof api.call<"qa_run">>[1]) => this.run(async () => {
+    const session = await api.call("qa_run", {...args, projectId: this.value.projectId});
+    this.update(session);
+    await this.refresh();
+    return session;
+  });
   connectTest = async (id: string) => this.run(async () => {
     const session = await api.call("qa_observe", { id });
     this.update(session);

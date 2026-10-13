@@ -35,7 +35,7 @@ import { useWorkspace } from "@/features/workspace/use-workspace";
 import { isPage } from "@/features/workspace/tabs";
 import { SessionSidebar } from "@/features/sessions/session-sidebar";
 import { SessionHistory } from "@/features/sessions/session-history";
-import { TestExecution } from "@/features/sessions/test-execution";
+import { ScenarioExecution } from "@/features/sessions/scenario-execution";
 import { Dashboard } from "@/features/dashboard/dashboard";
 import { Settings } from "@/features/settings/settings";
 import { useTheme } from "@/features/settings/use-theme";
@@ -333,10 +333,17 @@ export function App() {
                       onSelect={w.store.select}
                     />
                   ) : id === "execution" ? (
-                    <TestExecution
+                    <ScenarioExecution
                       key={w.projectId}
+                      projectId={w.projectId}
+                      sessions={projectSessions}
+                      active={w.activeTab === "execution"}
                       busy={w.busy}
-                      onCreate={w.store.open}
+                      onRun={w.store.executeScenario}
+                      onPause={w.store.pauseExecution}
+                      onSelect={w.store.select}
+                      onData={() => w.store.navigate("test-data")}
+                      onScenarios={() => w.store.navigate("scenarios")}
                     />
                   ) : id === "history" ? (
                     <SessionHistory

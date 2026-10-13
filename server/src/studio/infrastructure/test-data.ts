@@ -1,3 +1,4 @@
+import type { TestDataEntry } from "../../../../contracts/studio.ts";
 import { randomUUID } from "node:crypto";
 import { db, ensureDb, requireProject } from "./repository.ts";
 let schema: Promise<unknown> | undefined;
@@ -63,4 +64,24 @@ export async function saveTestData(data: {
     await db!`update aiqa_test_data set customer_number=${customerNumber.trim()}, tags=${tags.trim()}, name=${data.name.trim()}, content=${data.content}, updated=${Date.now()} where id=${String(data.id)} and project_id=${data.projectId}`;
   else
     await db!`insert into aiqa_test_data (id, project_id, name, content, updated, customer_number, tags) values (${randomUUID()}, ${data.projectId}, ${data.name.trim()}, ${data.content}, ${Date.now()}, ${customerNumber.trim()}, ${tags.trim()})`;
+}
+
+export async function readTestData(
+  projectId: string,
+  id: string,
+): Promise<TestDataEntry> {
+  if (typeof id !== "string" || !/^[a-f0-9-]{36}$/.test(id))
+    throw new Error("테스트데이터를 선택해 주세요.");
+  await ready(projectId);
+  const rows =
+    await db!`select id, name, content, updated, customer_number as "customerNumber", tags from aiqa_test_data where id=${id} and project_id=${projectId}`;
+  if (!rows[0]) throw new Error("이 프로젝트의 테스트데이터를 찾지 못했어요.");
+  return {
+    id: String(rows[0].id),
+    name: String(rows[0].name),
+    content: String(rows[0].content),
+    customerNumber: String(rows[0].customerNumber),
+    tags: String(rows[0].tags),
+    updated: Number(rows[0].updated),
+  };
 }

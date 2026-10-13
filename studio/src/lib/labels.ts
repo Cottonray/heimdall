@@ -1,4 +1,9 @@
-import type { Action, Engine, SessionState } from "../../../contracts/studio";
+import type {
+  Action,
+  Engine,
+  SessionState,
+  Session,
+} from "../../../contracts/studio";
 export const engines: Record<
   Engine,
   { label: string; tool: string; description: string }
@@ -24,6 +29,23 @@ export const engines: Record<
     description: "응답 코드와 데이터 검증",
   },
 };
+export function runStatus(s: Session) {
+  const execution = s.execution;
+  if (!execution)
+    return s.steps.some((step) => !step.ok || step.error)
+      ? "실패"
+      : s.state === "closed"
+        ? "종료"
+        : "작성 중";
+  if (execution.status === "running" && s.state === "closed") return "중단";
+  return {
+    running: "실행 중",
+    passed: "통과",
+    completed: "완료 · 검증 없음",
+    failed: "실패",
+    interrupted: "중단",
+  }[execution.status];
+}
 export const states: Record<SessionState, string> = {
   opening: "준비 중",
   manual: "직접 조작",

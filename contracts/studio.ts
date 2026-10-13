@@ -85,7 +85,39 @@ export type Project = {
   created: string;
   tests: number;
 };
+export type TestDataEntry = {
+  id: string;
+  name: string;
+  content: string;
+  customerNumber: string;
+  tags: string;
+  updated: number;
+};
+export type DataBinding = {
+  step: number;
+  field: "url" | "value" | "text" | "contains" | "status";
+  path: string;
+};
+export type RunOptions = {
+  testDataId?: string;
+  testDataUpdated?: number;
+  sourceUpdated?: number;
+  bindings?: DataBinding[];
+};
+export type Execution = {
+  sourceId: string;
+  sourceName: string;
+  testDataId?: string;
+  testDataName?: string;
+  testDataUpdated?: number;
+  bindings: DataBinding[];
+  total: number;
+  status: "running" | "passed" | "completed" | "failed" | "interrupted";
+  started: number;
+  finished?: number;
+};
 export type Session = {
+  execution?: Execution;
   projectId?: string;
   id: string;
   name: string;
@@ -118,11 +150,12 @@ export type StudioStatus = {
   llm: boolean;
   sessions: Session[];
 };
-export type ToolArguments = NewSession & {
-  id?: string;
-  goal?: string;
-  action?: Action;
-};
+export type ToolArguments = NewSession &
+  RunOptions & {
+    id?: string;
+    goal?: string;
+    action?: Action;
+  };
 export interface ToolResults {
   qa_list: Session[];
   qa_open: Session;
@@ -131,6 +164,7 @@ export interface ToolResults {
   qa_close: Session;
   qa_agent: Session;
   qa_replay: Session;
+  qa_run: Session;
   qa_action: Step;
   qa_export: SessionExport;
 }

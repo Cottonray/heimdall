@@ -18,6 +18,12 @@ export async function dispatch(name: string, a: ToolArguments) {
       jsonl: s.steps.map((x) => JSON.stringify(x)).join("\n"),
     };
   }
+  if (name === "qa_run") {
+    const source = await saved(a.id || "");
+    if (!a.projectId || (source.projectId || "default") !== a.projectId)
+      throw new Error("현재 프로젝트의 시나리오를 선택해 주세요.");
+    return replay(source, a);
+  }
   if (name === "qa_replay") return replay(await saved(a.id || ""));
   const s = ["qa_observe", "qa_action", "qa_agent"].includes(name)
     ? await ensureActive(a.id || "")
