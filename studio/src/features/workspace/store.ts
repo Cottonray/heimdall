@@ -440,6 +440,7 @@ export class WorkspaceStore {
     return session;
   });
   connectTest = async (id: string) => this.run(async () => {
+    if (this.value.sessions.find((s) => s.id === id)?.plan) return;
     const session = await api.call("qa_observe", { id });
     this.update(session);
     if (this.value.selectedId === id) await this.loadFrame(id);
