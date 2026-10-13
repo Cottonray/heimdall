@@ -306,7 +306,7 @@ export function App() {
                       <p>관리자만 이용할 수 있어요.</p>
                     )
                   ) : id === "devices" ? (
-                    <DeviceFarm active={w.activeTab === "devices"} />
+                    <DeviceFarm active={w.activeTab === "devices"} admin={w.user?.role === "admin"} />
                   ) : id === "dashboard" ? (
                     <Dashboard
                       loading={w.loading}

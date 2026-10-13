@@ -72,6 +72,7 @@ import { allowed, allowedBrowserOrigin } from "./access.ts";
 import { tools } from "./mcp.ts";
 import { discoverWebViews, openWebView } from "../infrastructure/webviews.ts";
 import {
+  releaseDeviceOccupancy,
   reserveDevice,
   deviceUsage,
   deviceOwned,
@@ -267,6 +268,10 @@ export async function handle(
         send(405, {});
         return true;
       }
+    }
+    if (route === "/api/studio/admin/device-release") {
+      if (auth?.user.role !== "admin") { send(403, { error: "관리자만 이용할 수 있어요" }); return true; }
+      if (req.method !== "POST") { send(405, {}); return true; }
     }
     if (route === "/api/studio/admin/ai-model") {
       if (auth?.user.role !== "admin") {
@@ -555,6 +560,12 @@ export async function handle(
       return true;
     }
 
+    if (route === "/api/studio/admin/device-release") {
+      if (typeof data.serial !== "string") { send(400, { error: "기기를 선택해 주세요" }); return true; }
+      await releaseDeviceOccupancy(data.serial);
+      send(200, { ok: true });
+      return true;
+    }
     if (route === "/api/studio/admin/ai-model") {
       await saveAiModel(data);
       send(200, await aiModel());

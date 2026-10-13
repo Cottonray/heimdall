@@ -9,7 +9,8 @@ import {
 import { RefreshControl } from "@/components/refresh-control";
 import { DeviceManagement } from "./device-management";
 import { useEffect, useState } from "react";
-import { ExternalLink, LayoutGrid, List } from "lucide-react";
+import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem } from "@/components/ui/dropdown-menu";
+import { ExternalLink, LayoutGrid, List, MoreHorizontal } from "lucide-react";
 import { PageHeader } from "@/components/page-header";
 import { PlatformIcon } from "@/components/platform-icon";
 import { Button } from "@/components/ui/button";
@@ -37,10 +38,14 @@ import {
 export function DeviceFarm({
   active,
   management = false,
+  admin = false,
 }: {
   active: boolean;
   management?: boolean;
+  admin?: boolean;
 }) {
+  const [releasing, setReleasing] = useState("");
+  const [notice, setNotice] = useState("");
   const [devices, setDevices] = useState<DeviceInfo[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -103,6 +108,16 @@ export function DeviceFarm({
   const visibleDevices = devices.filter((device) =>
     matchesDeviceFilter(device, filter, !!error),
   );
+  const releaseMenu = (device: DeviceInfo) => admin ? (
+    <DropdownMenu><DropdownMenuTrigger asChild><Button variant="ghost" size="icon" aria-label={`${device.model || device.serial} 관리 메뉴`} disabled={!!releasing}><MoreHorizontal /></Button></DropdownMenuTrigger>
+    <DropdownMenuContent align="end"><DropdownMenuItem disabled={device.usage !== "in-use" || !!releasing} onSelect={() => {
+      setReleasing(device.serial); setNotice("");
+      void fetch(API + "/admin/device-release", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ serial: device.serial }) })
+        .then(async (response) => { const result = await response.json(); if (!response.ok) throw new Error(result.error || "점유를 해제하지 못했어요."); setNotice("기기 점유를 해제했어요."); setDevices((items) => items.map((item) => item.serial === device.serial ? { ...item, usage: "available", ownedByMe: false } : item)); setRevision((value) => value + 1); })
+        .catch((error) => setNotice(error instanceof Error ? error.message : "점유를 해제하지 못했어요."))
+        .finally(() => setReleasing(""));
+    }}>점유 해제</DropdownMenuItem></DropdownMenuContent></DropdownMenu>
+  ) : null;
   const remoteUrl = (device: DeviceInfo) =>
     APP_ROOT + "?" + new URLSearchParams({ device: device.serial });
   return (
@@ -205,6 +220,7 @@ export function DeviceFarm({
           </>
         }
       />
+      {notice && <p role="status" className="text-sm">{notice}</p>}
       {error && (
         <p role="alert" className="text-sm text-destructive">
           {error}
@@ -248,6 +264,7 @@ export function DeviceFarm({
           searchPlaceholder="기기 이름 또는 ID 검색"
           emptyMessage="선택한 상태의 기기가 없어요."
           columns={[
+            ...(admin ? [{ id: "manage", header: "관리", cell: (device: DeviceInfo) => releaseMenu(device) }] : []),
             {
               id: "name",
               header: "기기",
@@ -323,10 +340,12 @@ export function DeviceFarm({
             const remoteUrl =
               APP_ROOT + "?" + new URLSearchParams({ device: device.serial });
             return (
+              <div key={device.serial} className="relative">
+              {admin && <div className="absolute right-3 top-3 z-10">{releaseMenu(device)}</div>}
               <Item
-                key={device.serial}
                 variant="project"
                 size="project"
+                className={admin ? "pr-14" : undefined}
                 asChild
               >
                 <a
@@ -386,6 +405,7 @@ export function DeviceFarm({
                   </div>
                 </a>
               </Item>
+              </div>
             );
           })}
         </div>

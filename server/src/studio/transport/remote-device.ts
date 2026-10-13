@@ -250,6 +250,10 @@ export function connectRemoteDevice(
           }
           if (closed || !ws.isOpen || !targetUnchanged()) return;
           deps.control.sweep();
+          if (lease && ((lease.active && !lease.active()) || !deps.control.mayTouch(viewerId))) {
+            fail("관리자가 기기 점유를 해제했거나 점유가 종료됐어요", 4409);
+            return;
+          }
           const claim = deps.control.claim(viewerId);
           if (!claim.ok || !deps.control.mayTouch(viewerId))
             throw new Error(
@@ -320,6 +324,15 @@ export function connectRemoteDevice(
         });
     },
   });
+  lease?.onRevoke?.(async () => {
+    fail("관리자가 기기 점유를 해제했어요", 4409);
+    await queue;
+    await releaseTouch();
+  });
+  if (lease?.active && !lease.active()) {
+    fail("기기 점유가 종료됐어요", 4409);
+    return;
+  }
   if (!targetUnchanged()) return;
   deps.control.sweep();
   deps.control.claim(viewerId);
