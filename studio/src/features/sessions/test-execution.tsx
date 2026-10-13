@@ -11,39 +11,38 @@ import { ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import type { Engine, NewSession, Domain } from "../../../../contracts/studio";
+import type { Engine, NewSession } from "../../../../contracts/studio";
 export function TestExecution({
   onCreate,
   busy,
-  domains,
   embedded = false,
 }: {
   onCreate: (v: NewSession) => Promise<unknown>;
   busy: boolean;
-  domains: Domain[];
   embedded?: boolean;
 }) {
   const fieldId = useId();
-  const [name, setName] = useState("이체 입력 확인");
-  const [domainId, setDomainId] = useState("");
-  const domain = domains.find((d) => d.id === domainId) || domains[0];
-  const environment = domain?.environment || "web";
-  const selectedEngine: Engine =
-    environment === "app" ? "android" : environment === "api" ? "api" : "web";
+  const [name, setName] = useState("");
+  const [engine, setEngine] = useState<Engine>("web");
+  const [url, setUrl] = useState("");
   return (
     <div className="max-w-2xl space-y-6">
       {!embedded && (
         <PageHeader
           title="테스트 실행"
-          description="실행환경을 고르고 테스트를 시작해요."
+          description="테스트 유형과 대상을 정하고 시작해요."
         />
       )}
       <form
+        className="space-y-5"
         onSubmit={(e) => {
           e.preventDefault();
-          void onCreate({ engine: selectedEngine, name, url: domain?.url });
+          void onCreate({
+            engine,
+            name: name.trim(),
+            ...(engine === "android" ? {} : { url: url.trim() }),
+          });
         }}
-        className="space-y-5"
       >
         <div className="space-y-2">
           <Label htmlFor={fieldId + "-name"}>테스트 이름</Label>
@@ -53,52 +52,54 @@ export function TestExecution({
             maxLength={80}
             value={name}
             onChange={(e) => setName(e.target.value)}
+            disabled={busy}
           />
         </div>
-        {
+        <div className="space-y-2">
+          <Label htmlFor={fieldId + "-type"}>테스트 유형</Label>
+          <Select
+            value={engine}
+            onValueChange={(value) => setEngine(value as Engine)}
+            disabled={busy}
+          >
+            <SelectTrigger id={fieldId + "-type"}>
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="android">앱</SelectItem>
+              <SelectItem value="web">웹</SelectItem>
+              <SelectItem value="api">API</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+        {engine !== "android" ? (
           <div className="space-y-2">
-            <Label htmlFor={fieldId + "-domain"}>도메인</Label>
-            <Select
-              value={domain?.id || ""}
-              onValueChange={setDomainId}
-              disabled={busy || domains.length === 0}
-            >
-              <SelectTrigger id={fieldId + "-domain"} variant="multiline">
-                <SelectValue placeholder="등록된 도메인이 없어요" />
-              </SelectTrigger>
-              <SelectContent
-                position="popper"
-                align="start"
-                className="w-(--radix-select-trigger-width)"
-              >
-                {domains.map((d) => (
-                  <SelectItem key={d.id} value={d.id}>
-                    <span className="min-w-0 whitespace-normal">
-                      <span className="block">
-                        {d.name} ·{" "}
-                        {
-                          { web: "웹", app: "앱", api: "API" }[
-                            d.environment || "web"
-                          ]
-                        }
-                      </span>
-                      <span className="block break-all text-xs text-muted-foreground">
-                        {d.url}
-                      </span>
-                    </span>
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            {!domain && (
-              <p className="text-xs text-muted-foreground">
-                관리자가 도메인을 등록해야 테스트를 시작할 수 있어요.
-              </p>
-            )}
+            <Label htmlFor={fieldId + "-url"}>
+              {engine === "api" ? "API 주소" : "웹 주소"}
+            </Label>
+            <Input
+              id={fieldId + "-url"}
+              type="url"
+              required
+              maxLength={2000}
+              placeholder="https://"
+              value={url}
+              onChange={(e) => setUrl(e.target.value)}
+              disabled={busy}
+            />
           </div>
-        }
+        ) : (
+          <p className="text-sm text-muted-foreground">
+            연결된 Android 테스트 기기에서 시작해요.
+          </p>
+        )}
         <div className="flex justify-end">
-          <Button type="submit" disabled={busy || !domain}>
+          <Button
+            type="submit"
+            disabled={
+              busy || !name.trim() || (engine !== "android" && !url.trim())
+            }
+          >
             {busy ? "준비 중" : "시작"}
             <ArrowRight />
           </Button>

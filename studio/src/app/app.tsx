@@ -12,7 +12,6 @@ import { DeviceFarm } from "@/features/devices/device-farm";
 import { RemoteDevice } from "@/features/devices/remote-device";
 import { Board } from "@/features/board/board";
 import { Profile } from "@/features/auth/profile";
-import { Domains } from "@/features/domains/domains";
 import { ProjectHome } from "@/features/projects/project-home";
 import { MoveTestDialog } from "@/features/projects/move-test-dialog";
 import { useEffect, useRef, useState } from "react";
@@ -172,22 +171,20 @@ export function App() {
                                   ? "시나리오"
                                   : id === "board"
                                     ? "워크스페이스"
-                                    : id === "domains"
-                                      ? "도메인"
-                                      : id === "projects"
-                                        ? "프로젝트"
-                                        : id === "dashboard"
-                                          ? "대시보드"
-                                          : id === "history"
-                                            ? "테스트 기록"
-                                            : id === "settings" ||
-                                                id === "project-settings"
-                                              ? id === "settings"
-                                                ? "설정"
-                                                : "프로젝트 설정"
-                                              : w.sessions.find(
-                                                  (s) => s.id === id,
-                                                )?.name || "테스트";
+                                    : id === "projects"
+                                      ? "프로젝트"
+                                      : id === "dashboard"
+                                        ? "대시보드"
+                                        : id === "history"
+                                          ? "테스트 기록"
+                                          : id === "settings" ||
+                                              id === "project-settings"
+                                            ? id === "settings"
+                                              ? "설정"
+                                              : "프로젝트 설정"
+                                            : w.sessions.find(
+                                                (s) => s.id === id,
+                                              )?.name || "테스트";
                   const Icon =
                     id === "projects"
                       ? Folder
@@ -278,7 +275,11 @@ export function App() {
                 <TabsContent
                   key={w.store.terminalKeys.get(id) || id}
                   value={id}
-                  className={s ? "flex min-h-0 flex-1 flex-col data-[state=inactive]:hidden" : undefined}
+                  className={
+                    s
+                      ? "flex min-h-0 flex-1 flex-col data-[state=inactive]:hidden"
+                      : undefined
+                  }
                   forceMount
                   hidden={w.activeTab !== id}
                 >
@@ -335,7 +336,6 @@ export function App() {
                     <TestExecution
                       key={w.projectId}
                       busy={w.busy}
-                      domains={w.status?.domains || []}
                       onCreate={w.store.open}
                     />
                   ) : id === "history" ? (
@@ -356,7 +356,6 @@ export function App() {
                       sessions={projectSessions}
                       onSelect={w.store.select}
                       onCreate={w.store.open}
-                      domains={w.status?.domains || []}
                       busy={w.busy}
                     />
                   ) : id === "board" ? (
@@ -376,21 +375,6 @@ export function App() {
                       sessions={projectSessions}
                       active={w.activeTab === "board"}
                       onSelect={w.store.select}
-                    />
-                  ) : id === "domains" ? (
-                    <Domains
-                      domains={w.status?.domains || []}
-                      admin={w.user?.role === "admin"}
-                      busy={w.busy}
-                      error={w.error}
-                      onSave={async (d) => {
-                        await w.store.saveDomain(d);
-                        return !w.store.getSnapshot().error;
-                      }}
-                      onRemove={async (id) => {
-                        await w.store.removeDomain(id);
-                        return !w.store.getSnapshot().error;
-                      }}
                     />
                   ) : id === "project-settings" ? (
                     <div className="space-y-8">
@@ -525,14 +509,15 @@ function SessionContent({
             className="flex w-7/10 min-w-0 shrink-0 flex-col"
           >
             <div className="min-h-0 flex-1 overflow-auto">
-              <DebugPanel
-                key={"debug-" + s.id}
-                session={s}
-              />
+              <DebugPanel key={"debug-" + s.id} session={s} />
             </div>
           </aside>
         </div>
-        <CodexTerminal sessionId={s.id} active={active} projectId={s.projectId || "default"} />
+        <CodexTerminal
+          sessionId={s.id}
+          active={active}
+          projectId={s.projectId || "default"}
+        />
       </div>
     </>
   );

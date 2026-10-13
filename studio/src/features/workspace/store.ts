@@ -5,7 +5,6 @@ import type {
   StudioStatus,
   Step,
   User,
-  Domain,
 } from "../../../../contracts/studio";
 import {
   api,
@@ -34,7 +33,6 @@ const projectPages = new Set([
   "board",
   "test-data",
   "scenarios",
-  "domains",
   "project-settings",
 ]);
 function readProjectRoute() {
@@ -169,16 +167,6 @@ export class WorkspaceStore {
     this.ws?.close();
     this.releaseFrame();
   }
-  saveDomain = (domain: Partial<Domain>) =>
-    this.run(async () => {
-      await api.saveDomain(domain);
-      await this.refresh();
-    });
-  removeDomain = (id: string) =>
-    this.run(async () => {
-      await api.removeDomain(id);
-      await this.refresh();
-    });
   removeSessions = async (rows: { id: string }[]) => {
     const response = await fetch("/aiqa/api/studio/sessions/delete", {
       method: "POST",

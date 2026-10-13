@@ -3,6 +3,8 @@ import type { Domain } from "../../../../contracts/studio.ts";
 import { db, ensureDb } from "./repository.ts";
 import { worker } from "../engines/browser.ts";
 let schema: Promise<void> | undefined;
+// Explicit test addresses are accepted without a separate registration step.
+const testOrigins = new Set<string>();
 export function normalizeDomain(value: unknown) {
   if (typeof value !== "string" || value.length > 2000)
     throw new Error("올바른 주소를 입력해 주세요");
@@ -43,7 +45,9 @@ export async function listDomains(): Promise<Domain[]> {
 }
 export async function syncDomains() {
   const domains = await listDomains();
-  await worker("/configure", { origins: domains.map((d) => d.origin) });
+  await worker("/configure", {
+    origins: [...new Set([...domains.map((d) => d.origin), ...testOrigins])],
+  });
   return domains;
 }
 export async function saveDomain(data: {
@@ -78,8 +82,8 @@ export async function removeDomain(id: unknown) {
   await syncDomains();
   return listDomains();
 }
-export async function requireDomain(value: string) {
+export async function prepareTestTarget(value: string) {
   const target = normalizeDomain(value);
-  if (!(await syncDomains()).some((d) => d.origin === target.origin))
-    throw new Error("관리자가 등록한 도메인만 사용할 수 있어요");
+  testOrigins.add(target.origin);
+  await syncDomains();
 }

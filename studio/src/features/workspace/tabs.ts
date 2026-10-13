@@ -12,7 +12,6 @@ export const pages = [
   "board",
   "test-data",
   "scenarios",
-  "domains",
   "settings",
   "project-settings",
 ] as const;

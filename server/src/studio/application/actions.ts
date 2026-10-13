@@ -1,3 +1,4 @@
+import { prepareTestTarget } from "../infrastructure/domains.ts";
 import { mkdir, writeFile } from "node:fs/promises";
 import path from "node:path";
 import type { Session, Step, Action } from "../domain/types.ts";
@@ -23,6 +24,8 @@ export async function action(s: Session, input: Action, actor: string) {
         ms: 0,
       };
     try {
+      if (s.engine !== "android" && ["goto", "api"].includes(a.type) && a.url)
+        await prepareTestTarget(a.url);
       if (s.engine === "android") await android(s, a);
       else {
         const result = await worker<{ action: Action }>("/action", {

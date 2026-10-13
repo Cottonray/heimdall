@@ -11,7 +11,7 @@ export function checkUrl(value: string) {
 export function configureOrigins(values: unknown) {
   if (
     !Array.isArray(values) ||
-    values.length > 100 ||
+    values.length > 10000 ||
     !values.every(
       (v) =>
         typeof v === "string" &&

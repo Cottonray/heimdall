@@ -6,7 +6,6 @@ import type {
   Project,
   Session,
   User,
-  Domain,
 } from "../../../contracts/studio";
 export const API = "/aiqa/api/studio";
 export type ProfileActionResult = { ok: boolean; error?: string };
@@ -49,9 +48,6 @@ export const api = {
   saveProfile: (avatar: string | null) => post<User>("/profile", { avatar }),
   changePassword: (currentPassword: string, newPassword: string) =>
     post<{ ok: true }>("/profile/password", { currentPassword, newPassword }),
-  saveDomain: (domain: Partial<Domain>) => post<Domain[]>("/domains", domain),
-  removeDomain: (id: string) =>
-    post<Domain[]>("/domains", { id, remove: true }),
   status: (projectId = "") =>
     fetch(
       API +

@@ -1,5 +1,5 @@
 import { watching } from "./test-presence.ts";
-import { requireDomain } from "../infrastructure/domains.ts";
+import { prepareTestTarget } from "../infrastructure/domains.ts";
 import { randomUUID } from "node:crypto";
 import type {
   Session,
@@ -65,7 +65,7 @@ async function openEnvironment(data: NewSession, restore?: PublicSession) {
     ? data.engine!
     : "web";
   if (engine !== "android")
-    await requireDomain(String(data.url || "http://127.0.0.1:8081/demo/"));
+    await prepareTestTarget(String(data.url || "http://127.0.0.1:8081/demo/"));
   // Reclaim only unattended, idle environments. Running tests and other viewers stay connected.
   for (const old of sessions.values()) {
     const full =
