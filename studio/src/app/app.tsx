@@ -292,7 +292,8 @@ export function App() {
                       key={communityRevision}
                       user={w.user!}
                       active={w.activeTab === id}
-                    />                  ) : id === "ai-models" ? (
+                    />
+                  ) : id === "ai-models" ? (
                     w.user?.role === "admin" ? (
                       <AiModelAdmin />
                     ) : (
@@ -303,7 +304,8 @@ export function App() {
                       <UserAdmin />
                     ) : (
                       <p>관리자만 이용할 수 있어요.</p>
-                    )                  ) : id === "devices" ? (
+                    )
+                  ) : id === "devices" ? (
                     <DeviceFarm active={w.activeTab === "devices"} />
                   ) : id === "dashboard" ? (
                     <Dashboard
