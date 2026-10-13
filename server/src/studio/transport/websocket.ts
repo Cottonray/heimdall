@@ -1,3 +1,5 @@
+import { join, leave, watching } from "../application/test-presence.ts";
+import { close } from "../application/sessions.ts";
 import type { WsConnection } from "../../ws.ts";
 import type { PublicSession } from "../domain/types.ts";
 import { events } from "../infrastructure/events.ts";
@@ -15,6 +17,26 @@ export function connect(
   events.on("session", onSession);
   let watched = "",
     sending = false;
+  const release = (id: string) => {
+    if (!id) return;
+    leave(id);
+    const cleanup = setInterval(() => {
+      if (watching(id)) {
+        clearInterval(cleanup);
+        return;
+      }
+      try {
+        const session = get(id);
+        if (session.ai || session.working || session.state === "opening")
+          return;
+        clearInterval(cleanup);
+        void close(session).catch(() => {});
+      } catch {
+        clearInterval(cleanup);
+      }
+    }, 30000);
+    cleanup.unref();
+  };
   const timer = setInterval(async () => {
     if (!watched || sending || !ws.isOpen || ws.backlog > 128000) return;
     sending = true;
@@ -30,6 +52,7 @@ export function connect(
   timer.unref();
   ws.on({
     onClose: () => {
+      release(watched);
       events.off("session", onSession);
       clearInterval(timer);
     },
@@ -37,7 +60,12 @@ export function connect(
       try {
         const msg = JSON.parse(raw);
         if (msg.type === "watch") {
-          watched = /^[a-f0-9-]{36}$/.test(msg.id) ? msg.id : "";
+          const next = /^[a-f0-9-]{36}$/.test(msg.id) ? msg.id : "";
+          if (next !== watched) {
+            release(watched);
+            watched = next;
+            join(watched);
+          }
           return;
         }
         if (msg.type === "action")

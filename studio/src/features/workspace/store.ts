@@ -441,6 +441,11 @@ export class WorkspaceStore {
       await this.refresh();
       return s;
     });
+  connectTest = async (id: string) => this.run(async () => {
+    const session = await api.call("qa_observe", { id });
+    this.update(session);
+    if (this.value.selectedId === id) await this.loadFrame(id);
+  });
   command = async (
     tool: "qa_agent" | "qa_pause" | "qa_close" | "qa_observe" | "qa_replay",
     goal?: string,
@@ -494,6 +499,7 @@ export class WorkspaceStore {
       this.patch({ connected: true });
       ws.send(JSON.stringify({ type: "watch", id: this.value.selectedId }));
       void this.refresh();
+      if (this.value.selectedId) void this.connectTest(this.value.selectedId);
     };
     ws.onmessage = (event) => {
       if (event.data instanceof Blob) {

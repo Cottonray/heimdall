@@ -20,7 +20,6 @@ import { LoginPage } from "@/features/auth/login-page";
 import {
   Download,
   RotateCcw,
-  Square,
   AlertCircle,
   X,
   Plus,
@@ -456,6 +455,9 @@ function SessionContent({
   onNew: () => void;
   onExport: (data: SessionExport) => void;
 }) {
+  useEffect(() => {
+    if (active) void w.store.connectTest(s.id);
+  }, [active, s.id, w.store]);
   return (
     <>
       <div className="flex shrink-0 flex-wrap items-center justify-between gap-4 px-3 py-2">
@@ -494,17 +496,6 @@ function SessionContent({
             <RotateCcw />
             재실행
           </Button>
-          {s.state !== "closed" && (
-            <Button
-              variant="ghost"
-              size="sm"
-              disabled={w.busy}
-              onClick={() => void w.store.command("qa_close")}
-            >
-              <Square />
-              종료
-            </Button>
-          )}
           <Button size="sm" onClick={() => onNew()}>
             <Plus />새 테스트
           </Button>
@@ -537,8 +528,6 @@ function SessionContent({
               <DebugPanel
                 key={"debug-" + s.id}
                 session={s}
-                busy={w.busy}
-                onAction={w.store.action}
               />
             </div>
           </aside>

@@ -18,13 +18,16 @@ export function CodexTerminal({
   const target = useRef(sessionId);
   target.current = sessionId;
   useEffect(() => {
-    if (socket.current?.readyState === WebSocket.OPEN) socket.current.send(JSON.stringify({type:"target",id:sessionId}));
+    if (socket.current?.readyState === WebSocket.OPEN)
+      socket.current.send(JSON.stringify({ type: "target", id: sessionId }));
   }, [sessionId]);
   const element = useRef<HTMLDivElement>(null);
   const [generation, setGeneration] = useState(0);
   const [status, setStatus] = useState("연결 중");
   useEffect(() => {
     if (!active) return;
+    let disposed = false;
+    let retry: ReturnType<typeof setTimeout> | undefined;
     const terminal = new Terminal({
       cursorBlink: true,
       fontSize: 13,
@@ -61,7 +64,11 @@ export function CodexTerminal({
     ws.onmessage = (event) => {
       try {
         const message = JSON.parse(event.data);
-        if (message.type === "ready") { ws.send(JSON.stringify({type:"target",id:target.current})); setStatus(""); resize(); }
+        if (message.type === "ready") {
+          ws.send(JSON.stringify({ type: "target", id: target.current }));
+          setStatus("");
+          resize();
+        }
         if (message.type === "output") terminal.write(message.data);
         if (message.type === "error") {
           setStatus(message.error);
@@ -71,13 +78,19 @@ export function CodexTerminal({
         /* Ignore invalid protocol frames. */
       }
     };
-    ws.onclose = () => setStatus("연결 종료");
+    ws.onclose = () => {
+      if (disposed) return;
+      setStatus("다시 연결 중");
+      retry = setTimeout(() => setGeneration((value) => value + 1), 3000);
+    };
     const input = terminal.onData((data) => {
       if (ws.readyState === WebSocket.OPEN)
         ws.send(JSON.stringify({ type: "input", data }));
     });
     resize();
     return () => {
+      disposed = true;
+      clearTimeout(retry);
       observer.disconnect();
       input.dispose();
       socket.current = null;
@@ -86,12 +99,32 @@ export function CodexTerminal({
     };
   }, [generation, active]);
   return (
-    <BottomPanel id={"session-ai-" + sessionId} storageKey={"heimdall-ai-panel:" + projectId} toolbar={
-      <div className="flex min-w-0 flex-1 items-center justify-end gap-2">
-        {status && <span role="status" className="truncate text-xs text-muted-foreground">{status}</span>}
-        <Button size="sm" variant="ghost" onClick={() => {setStatus("연결 중");setGeneration(value => value + 1);}}>재연결</Button>
-      </div>
-    }>
+    <BottomPanel
+      id={"session-ai-" + sessionId}
+      storageKey={"heimdall-ai-panel:" + projectId}
+      toolbar={
+        <div className="flex min-w-0 flex-1 items-center justify-end gap-2">
+          {status && (
+            <span
+              role="status"
+              className="truncate text-xs text-muted-foreground"
+            >
+              {status}
+            </span>
+          )}
+          <Button
+            size="sm"
+            variant="ghost"
+            onClick={() => {
+              setStatus("연결 중");
+              setGeneration((value) => value + 1);
+            }}
+          >
+            재연결
+          </Button>
+        </div>
+      }
+    >
       <div
         ref={element}
         className="h-full min-h-0 overflow-hidden"

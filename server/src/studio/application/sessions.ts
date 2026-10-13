@@ -1,6 +1,12 @@
+import { watching } from "./test-presence.ts";
 import { requireDomain } from "../infrastructure/domains.ts";
 import { randomUUID } from "node:crypto";
-import type { Session, NewSession, Observation } from "../domain/types.ts";
+import type {
+  Session,
+  NewSession,
+  Observation,
+  PublicSession,
+} from "../domain/types.ts";
 import { sessions, publicSession } from "../domain/session.ts";
 import * as device from "../../device.ts";
 import * as appium from "../../appium.ts";
@@ -10,6 +16,7 @@ import {
   ensureDb,
   persist,
   requireProject,
+  saved,
 } from "../infrastructure/repository.ts";
 import { worker } from "../engines/browser.ts";
 import { observe } from "../engines/observe.ts";
@@ -20,7 +27,36 @@ function hasContent(observation?: Observation) {
     observation.tree.some((n) => n.text || n.desc)
   );
 }
-export async function open(data: NewSession) {
+let opening: Promise<unknown> = Promise.resolve();
+export function open(data: NewSession, restore?: PublicSession) {
+  const result = opening
+    .catch(() => {})
+    .then(() => openEnvironment(data, restore));
+  opening = result;
+  return result;
+}
+const reconnecting = new Map<string, Promise<Session>>();
+export async function ensureActive(id: string): Promise<Session> {
+  const pending = reconnecting.get(id);
+  if (pending) return pending;
+  const current = sessions.get(id);
+  if (current && current.state !== "closed") return current;
+  const result = (async () => {
+    const source = await saved(id);
+    await open(
+      { ...source, url: source.observation?.url || source.url },
+      source,
+    );
+    return sessions.get(id)!;
+  })();
+  reconnecting.set(id, result);
+  try {
+    return await result;
+  } finally {
+    reconnecting.delete(id);
+  }
+}
+async function openEnvironment(data: NewSession, restore?: PublicSession) {
   await ensureDb();
   const projectId = await requireProject(data.projectId || "default");
   const engine = ["web", "mobile-web", "api", "android"].includes(
@@ -30,6 +66,27 @@ export async function open(data: NewSession) {
     : "web";
   if (engine !== "android")
     await requireDomain(String(data.url || "http://127.0.0.1:8081/demo/"));
+  // Reclaim only unattended, idle environments. Running tests and other viewers stay connected.
+  for (const old of sessions.values()) {
+    const full =
+      engine === "android"
+        ? mobileReserved
+        : [...sessions.values()].filter(
+            (s) => s.engine !== "android" && s.state !== "closed",
+          ).length >= 2;
+    if (!full) break;
+    if (
+      old.state !== "closed" &&
+      old.state !== "opening" &&
+      !old.ai &&
+      !old.working &&
+      !watching(old.id) &&
+      (engine === "android"
+        ? old.engine === "android"
+        : old.engine !== "android")
+    )
+      await close(old);
+  }
   if (
     engine === "android" &&
     (mobileReserved || runner.busy() || control.snapshot().kind !== "none")
@@ -42,23 +99,23 @@ export async function open(data: NewSession) {
     ).length >= 2
   )
     throw new Error(
-      "브라우저 슬롯 두 개가 사용 중이에요. 세션을 종료해 주세요",
+      "다른 테스트 두 개가 실행 중이에요. 실행이 끝나면 다시 연결해 주세요",
     );
   if (engine === "android") {
     mobileReserved = true;
     control.lockForRunner("QA Studio");
   }
   const s: Session = {
-    id: randomUUID(),
+    id: restore?.id || randomUUID(),
     projectId,
     name: String(data.name || "새 테스트").slice(0, 80),
     engine,
-    url: String(data.url || "http://127.0.0.1:8081/demo/"),
+    url: restore?.url || String(data.url || "http://127.0.0.1:8081/demo/"),
     state: "opening",
     message: "테스트 환경을 준비해요",
-    created: new Date().toISOString(),
+    created: restore?.created || new Date().toISOString(),
     updated: Date.now(),
-    steps: [],
+    steps: restore?.steps || [],
     epoch: 0,
     working: false,
     ai: false,
@@ -76,7 +133,7 @@ export async function open(data: NewSession) {
     } else
       await worker("/open", {
         id: s.id,
-        url: s.url,
+        url: data.url || s.url,
         mobile: engine === "mobile-web",
       });
     await observe(s);
@@ -120,7 +177,7 @@ export async function close(s: Session) {
     control.unlockRunner();
   } else await worker("/close", { id: s.id });
   s.state = "closed";
-  s.message = "세션을 종료했어요. 기록은 보관돼요";
+  s.message = "실행 환경을 정리했어요. 테스트를 열면 다시 연결돼요";
   await persist(s);
   return publicSession(s);
 }

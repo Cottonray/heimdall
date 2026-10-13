@@ -3,7 +3,7 @@ import { get, publicSession } from "../domain/session.ts";
 import { listSessions, saved } from "../infrastructure/repository.ts";
 import { observe } from "../engines/observe.ts";
 import { script } from "../domain/export.ts";
-import { open, pause, close } from "./sessions.ts";
+import { open, pause, close, ensureActive } from "./sessions.ts";
 import { agent } from "./agent.ts";
 import { action } from "./actions.ts";
 import { replay } from "./replay.ts";
@@ -19,7 +19,9 @@ export async function dispatch(name: string, a: ToolArguments) {
     };
   }
   if (name === "qa_replay") return replay(await saved(a.id || ""));
-  const s = get(a.id || "");
+  const s = ["qa_observe", "qa_action", "qa_agent"].includes(name)
+    ? await ensureActive(a.id || "")
+    : get(a.id || "");
   if (name === "qa_observe") {
     await observe(s);
     return publicSession(s);
