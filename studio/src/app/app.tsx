@@ -1,5 +1,4 @@
 import { ScenarioPlanView } from "@/features/scenarios/scenario-plan";
-import { AppLibrary } from "@/features/apps/app-library";
 import { PanelResizeHandle } from "@/components/ui/panel-resize-handle";
 import { AiModelAdmin } from "@/features/auth/ai-model-admin";
 import { Community } from "@/features/community/community";
@@ -109,8 +108,6 @@ export function App() {
       id !== "settings" &&
       id !== "projects" &&
       id !== "devices" &&
-      id !== "device-admin" &&
-      id !== "app-admin" &&
       id !== "user-admin" &&
       (isPage(id) || projectSessions.some((s) => s.id === id)),
   );
@@ -121,10 +118,8 @@ export function App() {
       "projects",
       "devices",
       "community",
-      "device-admin",
       "user-admin",
       "ai-models",
-      "app-admin",
     ].includes(w.activeTab) && !!w.projectId;
   return (
     <div className="flex h-dvh flex-col overflow-hidden bg-background text-foreground md:flex-row">
@@ -162,8 +157,6 @@ export function App() {
                         ? "커뮤니티"
                         : id === "execution"
                           ? "테스트 실행"
-                          : id === "device-admin"
-                            ? "기기관리"
                             : id === "user-admin"
                               ? "사용자 관리"
                               : id === "test-data"
@@ -299,14 +292,7 @@ export function App() {
                       key={communityRevision}
                       user={w.user!}
                       active={w.activeTab === id}
-                    />
-                  ) : id === "app-admin" ? (
-                    w.user?.role === "admin" ? (
-                      <AppLibrary management />
-                    ) : (
-                      <p>관리자만 이용할 수 있어요.</p>
-                    )
-                  ) : id === "ai-models" ? (
+                    />                  ) : id === "ai-models" ? (
                     w.user?.role === "admin" ? (
                       <AiModelAdmin />
                     ) : (
@@ -317,14 +303,7 @@ export function App() {
                       <UserAdmin />
                     ) : (
                       <p>관리자만 이용할 수 있어요.</p>
-                    )
-                  ) : id === "device-admin" ? (
-                    w.user?.role === "admin" ? (
-                      <DeviceFarm active={w.activeTab === id} management />
-                    ) : (
-                      <p>관리자만 이용할 수 있어요.</p>
-                    )
-                  ) : id === "devices" ? (
+                    )                  ) : id === "devices" ? (
                     <DeviceFarm active={w.activeTab === "devices"} />
                   ) : id === "dashboard" ? (
                     <Dashboard

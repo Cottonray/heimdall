@@ -6,7 +6,6 @@ import { Brain, MessageSquare } from "lucide-react";
 import {
   Users,
   Play,
-  Settings2,
   Database,
   ListChecks,
   Folder,
@@ -123,12 +122,6 @@ export function SessionSidebar({
                 ...(admin
                   ? [
                       { page: "ai-models", label: "AI 모델 관리", icon: Brain },
-                      { page: "app-admin", label: "앱 관리", icon: Folder },
-                      {
-                        page: "device-admin",
-                        label: "기기관리",
-                        icon: Settings2,
-                      },
                       { page: "user-admin", label: "사용자 관리", icon: Users },
                     ]
                   : []),
@@ -213,21 +206,6 @@ export function SessionSidebar({
                 >
                   <Brain />
                   AI 모델 관리
-                </Button>
-                <Button
-                  variant={active === "app-admin" ? "secondary" : "ghost"}
-                  onClick={() => onNavigate("app-admin")}
-                  className="justify-start"
-                >
-                  <Settings2 />앱 관리
-                </Button>
-                <Button
-                  variant={active === "device-admin" ? "secondary" : "ghost"}
-                  onClick={() => onNavigate("device-admin")}
-                  className="justify-start"
-                >
-                  <Settings2 />
-                  기기관리
                 </Button>
                 <Button
                   variant={active === "user-admin" ? "secondary" : "ghost"}
