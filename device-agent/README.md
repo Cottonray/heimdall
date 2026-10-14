@@ -38,13 +38,11 @@
 
 ## 개발/빌드
 
-`node deploy/aiqa/device-agent/build.ts` (저장소 루트). 빌드에는 기존 studio의 esbuild가 필요하지만 생성된 CLI는 JS 의존성을 번들에 포함한다. 회귀검사는 이 명령에서 실행하지 않는다.
+`node device-agent/build.ts` (저장소 루트). 빌드에는 기존 studio의 esbuild가 필요하지만 생성된 CLI는 JS 의존성을 번들에 포함한다. 회귀검사는 이 명령에서 실행하지 않는다.
 
-현재 연결 Mac은 Xcode 26.2 / XCUITest 12.16.0이다. Xcode 26.2에 없는 lib_TestingInterop.dylib의 WDA 프로젝트 복사 항목을 로컬 설치본에서 제외해 WDA를 빌드했다. 다른 Mac은 Xcode와 드라이버의 호환성을 확인해야 한다. Xcode 자체나 서명 자격증명은 변경하지 않았다.
 
-운영 관리자 화면의 기기관리에서 macOS ZIP을 받을 수 있다. 에이전트 다운로드 API는 관리자 세션을 확인한다. 화면은 idb Simulator 영상(60fps 상한, 30% 축소, 품질 0.30)의 최신 JPEG를 전송한다. 직접 영상이 실패하거나 idb가 없으면 WDA MJPEG(15fps 상한, 30% 축소, 품질 30)로 전환한다. 각 프레임은 500KB 이하이며 오래된 프레임은 쌓지 않는다. 현재 Mac에는 사용자 LaunchAgent로 실행되어 로그인 상태에서 재접속한다. Windows 배포물은 아직 제공하지 않는다.
+빌드한 macOS ZIP을 기기 에이전트 배포물로 사용할 수 있다. 에이전트 다운로드 API는 관리자 세션을 확인한다. 화면은 idb Simulator 영상(60fps 상한, 30% 축소, 품질 0.30)의 최신 JPEG를 전송한다. 직접 영상이 실패하거나 idb가 없으면 WDA MJPEG(15fps 상한, 30% 축소, 품질 30)로 전환한다. 각 프레임은 500KB 이하이며 오래된 프레임은 쌓지 않는다. Windows 배포물은 아직 제공하지 않는다.
 
-2026-10-08 운영 반영: 로컬 Mac의 iPhone 17 Pro가 공개 마스터에 등록되고 웹 원격 화면으로 수신되는 것을 확인했다. 에이전트는 사용자 LaunchAgent `com.example.heimdall-agent`로 유지한다. 회귀검사는 실행하지 않았고 studio 빌드와 서버 TypeScript 컴파일만 수행했다.
 
 ## 저지연 경로 (2026-10-09)
 

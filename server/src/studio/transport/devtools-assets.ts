@@ -84,7 +84,7 @@ export async function serveDevTools(res: ServerResponse, route: string) {
     "x-content-type-options": "nosniff",
     "referrer-policy": "no-referrer",
     "content-security-policy":
-      "default-src 'self' blob: data:; script-src 'self' 'unsafe-eval' 'wasm-unsafe-eval'; style-src 'self' 'unsafe-inline'; connect-src 'self' wss://heimdall.example; frame-ancestors 'self'",
+      "default-src 'self' blob: data:; script-src 'self' 'unsafe-eval' 'wasm-unsafe-eval'; style-src 'self' 'unsafe-inline'; connect-src 'self'; frame-ancestors 'self'",
   });
   res.end(asset.compressed);
 }

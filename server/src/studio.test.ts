@@ -1,3 +1,4 @@
+process.env.HEIMDALL_ALLOWED_HOSTS = "gateway.example,heimdall.example";
 import test from 'node:test'
 import assert from 'node:assert/strict'
 import { allowed, validateAction, script } from './studio.ts'

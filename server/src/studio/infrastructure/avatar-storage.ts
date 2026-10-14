@@ -114,13 +114,13 @@ function configuration() {
   const account = process.env.R2_ACCOUNT_ID || "";
   const accessKey = process.env.R2_ACCESS_KEY_ID || "";
   const secretKey = process.env.R2_SECRET_ACCESS_KEY || "";
-  const bucket = process.env.R2_BUCKET || "example-media";
+  const bucket = process.env.R2_BUCKET || "";
   const prefix = process.env.R2_KEY_PREFIX || "heimdall";
   if (
     !/^[a-f0-9]{32}$/.test(account) ||
     !accessKey ||
     !secretKey ||
-    bucket !== "example-media" ||
+    !/^[a-z0-9][a-z0-9.-]{1,61}[a-z0-9]$/.test(bucket) ||
     !/^[a-z0-9][a-z0-9_-]{0,63}$/.test(prefix)
   )
     return null;

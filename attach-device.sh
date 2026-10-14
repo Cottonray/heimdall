@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
 # 실기기(안드로이드)를 AI QA 데모에 붙인다 — **로컬 Mac 에서** 실행한다.
 #
-#   ./deploy/aiqa/attach-device.sh pair   <폰IP>:<페어링포트> <6자리코드>   # 처음 한 번만
-#   ./deploy/aiqa/attach-device.sh connect <폰IP>:<디버깅포트>              # 이후 매번
-#   ./deploy/aiqa/attach-device.sh list                                     # 붙어 있는 것
-#   ./deploy/aiqa/attach-device.sh public <serial>[,<serial>...]            # 공개 화면에 열기
-#   ./deploy/aiqa/attach-device.sh detach <serial>
+#   ./attach-device.sh pair   <폰IP>:<페어링포트> <6자리코드>   # 처음 한 번만
+#   ./attach-device.sh connect <폰IP>:<디버깅포트>              # 이후 매번
+#   ./attach-device.sh list                                     # 붙어 있는 것
+#   ./attach-device.sh public <serial>[,<serial>...]            # 공개 화면에 열기
+#   ./attach-device.sh detach <serial>
 #
 # ## 왜 스크립트인가 — 화면에서 붙이지 않는 이유
 #
@@ -35,7 +35,7 @@
 # 그냥 보인다(페어링·connect 가 필요 없다).
 set -euo pipefail
 
-host=${HOME_SERVER_SSH:-heimdall-host}
+host=${HEIMDALL_SSH_HOST:?Set HEIMDALL_SSH_HOST to your deployment host}
 cmd=${1:-list}
 
 say() { printf '\n\033[1m▶ %s\033[0m\n' "$*"; }
@@ -50,7 +50,7 @@ case "$cmd" in
         ssh "$host" "printf '%s\n' '$code' | docker exec -i aiqa adb pair '$target'"
         echo
         echo "페어링이 됐으면 이제 connect 를 한 번 더 하세요 (포트가 다릅니다):"
-        echo "  ./deploy/aiqa/attach-device.sh connect <폰IP>:<디버깅포트>"
+        echo "  ./attach-device.sh connect <폰IP>:<디버깅포트>"
         ;;
 
     connect)
@@ -60,7 +60,7 @@ case "$cmd" in
         adb "devices -l"
         echo
         echo "공개 화면에서 고르게 하려면:"
-        echo "  ./deploy/aiqa/attach-device.sh public emulator-5554,$target"
+        echo "  ./attach-device.sh public emulator-5554,$target"
         ;;
 
     detach)

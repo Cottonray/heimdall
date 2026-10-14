@@ -2,7 +2,7 @@
 
 ## 측정 범위
 
-공개 HEIMDALL에 로그인한 테스트 세션에서 원격 기기 WebSocket을 사용했다. Android는 홈서버 emulator-5554, iOS는 Mac의 iPhone 17 Pro Simulator(iOS 26.2)다. 실물 iPhone 측정 결과가 아니다. 테스트 중에는 기기 점유를 획득하고 끝나면 해제했다.
+공개 HEIMDALL에 로그인한 테스트 세션에서 원격 기기 WebSocket을 사용했다. Android는 Linux 서버 emulator-5554, iOS는 Mac의 iPhone 17 Pro Simulator(iOS 26.2)다. 실물 iPhone 측정 결과가 아니다. 테스트 중에는 기기 점유를 획득하고 끝나면 해제했다.
 
 | 지표 | Android | iOS |
 |---|---:|---:|

@@ -9,3 +9,17 @@ node_modules/
 runs/
 
 terminal-runtime/
+
+# Local credentials, data and operational artifacts
+db.env
+*.pem
+*.key
+*.p12
+*.pfx
+*.jks
+*.keystore
+*.sqlite
+*.sqlite3
+*.dump
+release-backups/
+device-agent/dist/

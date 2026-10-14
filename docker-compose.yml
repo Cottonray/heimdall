@@ -1,9 +1,5 @@
 name: aiqa
 
-# **홈서버에서 돈다** (`ssh heimdall-host`). 메인서버 compose 와 아무것도 공유하지 않는다.
-#
-# 반영:  ./deploy/aiqa/deploy.sh   (로컬 맥에서 실행)
-# 주소:  https://qa.example/aiqa/  (edge nginx 가 넘긴다)
 
 services:
   aiqa-terminal:
@@ -48,7 +44,7 @@ services:
       timeout: 5s
       retries: 5
   # 시나리오별 걸린 시간 기록 (2026-09-30 timings.json 에서 옮겼다 — docs/rules.md §데이터베이스).
-  # 증적(스크린샷·xlsx)은 파일이 결과물이라 여기 두지 않는다. 비밀번호는 홈서버 ~/aiqa/db.env 에만 있다
+  # 증적(스크린샷·xlsx)은 파일이 결과물이라 여기 두지 않는다. 비밀번호는 서버 ~/aiqa/db.env 에만 있다
   aiqa-db:
     image: postgres:16-alpine
     container_name: aiqa-db
@@ -89,16 +85,18 @@ services:
     devices:
       - /dev/kvm:/dev/kvm
     environment:
-      # nginx 는 접두사를 떼지 않는다 — 앱이 자기 경로를 안다 (홈서버 규약)
+      # nginx 는 접두사를 떼지 않는다 — 앱이 자기 경로를 안다 (서버 규약)
       AIQA_BASE_PATH: /aiqa
       AIQA_PORT: 8080
+      HEIMDALL_ALLOWED_HOSTS: ${HEIMDALL_ALLOWED_HOSTS:?Set the public hostnames}
+      HEIMDALL_PUBLIC_URL: ${HEIMDALL_PUBLIC_URL:-}
       AIQA_SOURCE_HOSTS: ${AIQA_SOURCE_HOSTS:-github.com,gitlab.com,svn.apache.org}
       AIQA_WORKER_SECRET: ${AIQA_WORKER_SECRET:?AIQA_WORKER_SECRET required}
       AIQA_TEST_LOGIN_ENABLED: ${AIQA_TEST_LOGIN_ENABLED:-false}
       AIQA_TEST_USER_PASSWORD: ${AIQA_TEST_USER_PASSWORD:-}
       AIQA_TEST_ADMIN_PASSWORD: ${AIQA_TEST_ADMIN_PASSWORD:-}
       R2_ACCOUNT_ID: ${R2_ACCOUNT_ID:-}
-      R2_BUCKET: ${R2_BUCKET:-example-media}
+      R2_BUCKET: ${R2_BUCKET:-}
       R2_ACCESS_KEY_ID: ${R2_ACCESS_KEY_ID:-}
       R2_SECRET_ACCESS_KEY: ${R2_SECRET_ACCESS_KEY:-}
       R2_KEY_PREFIX: heimdall
@@ -179,4 +177,4 @@ networks:
   internal:
   edge:
     external: true
-    name: edge
+    name: ${HEIMDALL_EDGE_NETWORK:-heimdall-edge}

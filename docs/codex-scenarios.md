@@ -19,13 +19,6 @@ Playwright/Appium TypeScript는 동일한 생성기를 화면·내보내기·시
 
 검증: 실제 로컬 Codex CLI와 mock 제공자로 thread resume 2회, 제공자 인증 헤더 전달, upstream 도구 정의 미전달을 확인했다. 전체 검사와 Appium 코드/문자열 이스케이프·API 내보내기 회귀 검사를 수행한다.
 
-### 2026-10-12 운영 반영
-
-- 소스 `944d87bd`, 화면 자산 `a3a4dfc8207a`를 Jenkins `deploy-heimdall-codex #1`로 설치하고 aiqa를 재시작했다. 이 잡의 최초 헬스체크는 8081 포트를 잘못 사용해 실패 표시가 났고, 정본 포트 8080의 `/healthz`로 수정했다. 배포 전 백업은 공개 웹 밖 `release-backups/before-codex-944d87bd.tgz`에 보관한다.
-- 운영 컨테이너의 Codex 0.146.0을 실제 실행하고 AI 설정 DB의 연결로 `{ ok: true }` 응답을 확인했다. 키 값은 출력하지 않았다.
-- 공개 페이지에서 Playwright 코드 탭의 실제 코드와 실행 기록·디버깅 탭 제거를 확인했다. 종료된 세션은 기존과 같이 재실행 후 Codex를 사용할 수 있다.
-- 전체 `node check.ts` 통과. Appium 출력은 생성·이스케이프 검증까지이며 이번 변경으로 생성한 코드를 실제 Android에서 재생하는 검증은 수행하지 않았다.
-
 ## 프로젝트 소스 참고 (2026-10-12)
 
 프로젝트 설정의 표에서 최대 5개의 Git/SVN HTTPS 저장소를 등록하고 각 저장소의 설명을 따로 저장한다. 프로젝트 설명과 저장소별 설명·주소·revision·소스 발췌를 함께 AI에 전달한다. 기존 단일 저장소 설정도 읽으며 다음 저장 시 배열로 전환한다. aiqa_projects.source JSONB는 자동 추가하며 기존 프로젝트는 빈 설정을 유지한다. Codex 실행 시작 때 현재 프로젝트 소스를 임시 디렉터리로 읽고 revision과 최대 40개 파일·파일당 8,000자·총 80,000자의 발췌를 AI 설정의 모델에 전달한다. 참고 자료는 지시가 아닌 비신뢰 데이터이며 UI 관찰과 기존 동작 검증은 그대로 적용한다. 원본 저장소를 변경하거나 실행하지 않는다. Git은 체크아웃·서브모듈 없이 읽고 SVN은 list/cat만 실행한다. 임시 자료는 성공·실패 후 삭제한다. 조회 실패 시 테스트를 일시 정지하고 오류를 표시한다.
@@ -48,7 +41,6 @@ Codex의 model_catalog_json에 AI 설정 모델 한 개와 텍스트 게이트�
 
 Codex HOME은 전용 컨테이너의 /home/codex tmpfs에 생성한다. /tmp 아래 helper binary 생성 거부 경고를 피하며 연결 종료 시 제거한다.
 
-배포: 2026-10-13 `946e01b9`와 화면 `fe536d042635`를 홈서버에 설치했다. 기존 파일은 `release-backups/before-terminal-946e01b9.tgz`에 보관했다. /home/codex tmpfs를 추가한 aiqa-terminal 컨테이너 생성과 aiqa 재시작 명령이 완료됐다. 타입·린트·테스트 및 브라우저 동작 검증은 실행하지 않았다. 기존 화면은 한 번 새로고침해야 새 코드가 적용된다.
 
 2026-10-13 후속 수정: 운영 Codex가 필수로 요구하는 supports_parallel_tool_calls를 카탈로그에 false로 명시한다. 게이트웨이는 동작을 순서대로 실행하며 AI 설정 모델은 변경하지 않는다.
 

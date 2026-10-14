@@ -45,7 +45,7 @@ async function complete(messages: Msg[], timeoutMs: number): Promise<string> {
             authorization: `Bearer ${KEY}`,
             'content-type': 'application/json',
             // 대시보드에서 어느 데모가 쓴 건지 갈라 보려고 붙인다
-            'http-referer': 'https://qa.example/aiqa/',
+            'http-referer': process.env.HEIMDALL_PUBLIC_URL || 'http://localhost',
             'x-title': 'AI QA demo',
         },
         body: JSON.stringify({

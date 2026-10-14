@@ -1,3 +1,3 @@
 export const APP_ROOT =
-  location.hostname === "heimdall.example" ? "/" : "/aiqa/studio/";
+  location.pathname.startsWith("/aiqa/studio") ? "/aiqa/studio/" : "/";
 export const LOGIN_PATH = APP_ROOT + "login";
