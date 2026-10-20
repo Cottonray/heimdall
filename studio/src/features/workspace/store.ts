@@ -178,6 +178,22 @@ export class WorkspaceStore {
     });
     const result = await response.json();
     if (!response.ok) throw new Error(result.error || "삭제하지 못했어요.");
+    // A refresh merges returned sessions; absent rows must be removed explicitly.
+    // Ignore any status request started before the deletion completed.
+    this.refreshVersion++;
+    const removedIds = new Set(rows.map((row) => row.id));
+    this.patch({
+      sessions: this.value.sessions.filter((session) => !removedIds.has(session.id)),
+      status: this.value.status
+        ? {
+            ...this.value.status,
+            sessions: this.value.status.sessions.filter(
+              (session) => !removedIds.has(session.id),
+            ),
+          }
+        : null,
+    });
+    for (const row of rows) this.terminalKeys.delete(row.id);
     for (const row of rows) this.closeTab(row.id);
     await this.refresh();
   };
