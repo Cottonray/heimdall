@@ -18,10 +18,9 @@ import { useEffect, useRef, useState } from "react";
 import { LoginPage } from "@/features/auth/login-page";
 import {
   Download,
-  RotateCcw,
+  Play,
   AlertCircle,
   X,
-  Plus,
   LayoutDashboard,
   History,
   Settings as SettingsIcon,
@@ -386,7 +385,6 @@ export function App() {
                         w={w}
                         s={s}
                         active={w.activeTab === id}
-                        onNew={() => w.store.navigate("execution")}
                         onExport={setExported}
                       />
                     </div>
@@ -419,13 +417,11 @@ function SessionContent({
   w,
   s,
   active,
-  onNew,
   onExport,
 }: {
   w: ReturnType<typeof useWorkspace>;
   s: Session;
   active: boolean;
-  onNew: () => void;
   onExport: (data: SessionExport) => void;
 }) {
   useEffect(() => {
@@ -474,14 +470,11 @@ function SessionContent({
           <Button
             variant="outline"
             size="sm"
-            disabled={w.busy}
+            disabled={w.busy || s.working || s.ai || !s.steps.length}
             onClick={() => void w.store.command("qa_replay")}
           >
-            <RotateCcw />
-            재실행
-          </Button>
-          <Button size="sm" onClick={() => onNew()}>
-            <Plus />새 테스트
+            <Play />
+            실행
           </Button>
         </div>
       </div>
