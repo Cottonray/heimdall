@@ -431,7 +431,17 @@ function SessionContent({
   useEffect(() => {
     if (active && !s.plan) void w.store.connectTest(s.id);
   }, [active, s.id, s.plan, w.store]);
-  if (s.plan) return <ScenarioPlanView session={s} />;
+  if (s.plan)
+    return (
+      <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
+        <ScenarioPlanView session={s} />
+        <CodexTerminal
+          sessionId={s.id}
+          active={active}
+          projectId={s.projectId || "default"}
+        />
+      </div>
+    );
   return (
     <>
       <div className="flex shrink-0 flex-wrap items-center justify-between gap-4 px-3 py-2">
