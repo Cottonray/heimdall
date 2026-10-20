@@ -86,7 +86,7 @@ export function ScenarioList({
       />
       <DataTable
         onDeleteRows={onDelete}
-        data={sessions.filter((s) => s.steps.length > 0 || !!s.plan)}
+        data={sessions.filter((s) => s.steps.length > 0 || !!s.plan || !s.execution)}
         caption="저장된 시나리오"
         getRowId={(s) => s.id}
         getRowLabel={(s) => s.name}

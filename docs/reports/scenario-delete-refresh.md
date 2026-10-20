@@ -15,3 +15,8 @@ Source-based scenario drafts also retain the interactive Codex terminal below
 the plan. Previously, the draft-only early return hid the terminal entirely,
 preventing users from discussing and refining the scenario in its saved context.
 Drafts remain unexecuted; showing the terminal does not reconnect a test device.
+
+The scenario list also includes authoring sessions with no recorded steps.
+Connecting an older server to an authoring session can omit its plan metadata;
+the session must remain accessible for continued Codex conversation even before
+the first action is recorded. Empty execution records remain excluded.
