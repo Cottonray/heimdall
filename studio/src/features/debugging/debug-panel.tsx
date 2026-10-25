@@ -91,8 +91,12 @@ export function DebugPanel({ session }: { session: Session }) {
                         {activeStep.error && <p className="text-sm text-destructive">{activeStep.error}</p>}
                       </div>
                     )}
-                    {activeStep?.evidence ? (
-                      <EvidencePreview fill key={`${session.id}-${activeStep.evidence}`} src={evidenceUrl(session.id, activeStep.evidence)} step={activeStep.n} />
+                    {activeStep?.targetEvidence || activeStep?.evidence ? (
+                      <>
+                      {activeStep.targetEvidence && <p className="text-xs text-muted-foreground">조작 직전 · 빨간 박스가 클릭·입력 대상이에요. {activeStep.evidence && <a className="underline" href={evidenceUrl(session.id, activeStep.evidence)} target="_blank" rel="noreferrer">실행 후 화면</a>}</p>}
+                      {!activeStep.targetEvidence && <p className="text-xs text-muted-foreground">대상 위치가 기록되지 않은 증적이에요.</p>}
+                      <EvidencePreview fill key={`${session.id}-${activeStep.targetEvidence || activeStep.evidence}`} src={evidenceUrl(session.id, (activeStep.targetEvidence || activeStep.evidence)!)} step={activeStep.n} target={activeStep.targetEvidence ? activeStep.target : undefined} />
+                      </>
                     ) : (
                       <p role="status" className="py-12 text-center text-sm text-muted-foreground">표시할 내용이 없어요.</p>
                     )}

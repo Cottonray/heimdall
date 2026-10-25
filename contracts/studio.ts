@@ -69,6 +69,8 @@ export type Step = {
   ms: number;
   error?: string;
   evidence?: string;
+  targetEvidence?: string;
+  target?: { x: number; y: number; width: number; height: number; screenWidth: number; screenHeight: number };
   observation?: unknown;
 };
 export type ProjectRepository = {

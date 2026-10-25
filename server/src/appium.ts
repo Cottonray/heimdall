@@ -230,3 +230,9 @@ export async function launch(sessionId: string, appId: string, clearState: boole
 async function script(sessionId: string, name: string, args: Json) {
     return call('POST', `/session/${sessionId}/execute/sync`, { script: name, args: [args] }, 60_000)
 }
+
+export async function targetRect(sessionId: string, element?: string) {
+    const id = element || elementId(await call('GET', `/session/${sessionId}/element/active`));
+    if (!id) return null;
+    return await call('GET', `/session/${sessionId}/element/${id}/rect`) as { x: number; y: number; width: number; height: number };
+}

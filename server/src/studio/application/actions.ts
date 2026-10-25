@@ -1,3 +1,5 @@
+import * as appium from "../../appium.ts";
+import * as device from "../../device.ts";
 import { prepareTestTarget } from "../infrastructure/domains.ts";
 import { mkdir, writeFile } from "node:fs/promises";
 import path from "node:path";
@@ -25,6 +27,29 @@ export async function action(s: Session, input: Action, actor: string) {
         ok: false,
         ms: 0,
       };
+    // Capture before the action: navigation and keyboards can move the target.
+    if (["click", "fill", "type", "point"].includes(a.type)) {
+      try {
+        let target;
+        if (s.engine === "android") {
+          const size = await device.screenSize();
+          const el = a.type === "type" || a.type === "point" ? undefined :
+            a.selector ? await appium.findId(s.appiumId!, a.selector) : await appium.findText(s.appiumId!, String(a.text || ""));
+          const rect = a.type === "point" ? { x: Number(a.x) - 12, y: Number(a.y) - 12, width: 24, height: 24 } :
+            (el || a.type === "type") ? await appium.targetRect(s.appiumId!, el || undefined) : null;
+          if (rect) target = { ...rect, screenWidth: size.width, screenHeight: size.height };
+        } else {
+          target = await worker<Step["target"]>("/target", { id: s.id, action: a });
+        }
+        if (target && Object.values(target).every(Number.isFinite) && target.width > 0 && target.height > 0) {
+          await mkdir(path.join(DIR, s.id), { recursive: true });
+          const file = `${1000 + step.n}.jpg`;
+          await writeFile(path.join(DIR, s.id, file), await frame(s));
+          step.target = target;
+          step.targetEvidence = file;
+        }
+      } catch { /* Missing bounds must not block the actual action. */ }
+    }
     try {
       if (s.engine !== "android" && ["goto", "api"].includes(a.type) && a.url)
         await prepareTestTarget(a.url);

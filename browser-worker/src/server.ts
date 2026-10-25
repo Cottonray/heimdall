@@ -4,7 +4,7 @@ import { readFile } from "node:fs/promises";
 import { sessions, get } from "./sessions.ts";
 import { checkUrl, configureOrigins } from "./policy.ts";
 import { observe } from "./observe.ts";
-import { operate } from "./actions.ts";
+import { operate, targetRect } from "./actions.ts";
 const browser = await chromium.launch({ headless: true });
 let opening = 0;
 const server = http.createServer(async (req, res) => {
@@ -129,6 +129,8 @@ const server = http.createServer(async (req, res) => {
         opening--;
       }
     }
+    if (url.pathname === "/target")
+      return reply(200, await targetRect(data.id, data.action));
     if (url.pathname === "/action")
       return reply(200, await operate(data.id, data.action));
     if (url.pathname === "/close") {
