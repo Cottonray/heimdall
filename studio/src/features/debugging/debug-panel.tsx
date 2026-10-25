@@ -23,12 +23,12 @@ export function DebugPanel({ session }: { session: Session }) {
           value={tab}
           label="스튜디오 도구"
           items={[
-            { value: "results", label: "실행 결과", icon: <ListChecks /> },
             {
               value: "code",
               label: "코드",
               icon: <Code />,
             },
+            { value: "results", label: "실행 결과", icon: <ListChecks /> },
           ]}
         />
         <div className="p-3">
