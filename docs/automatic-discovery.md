@@ -12,3 +12,5 @@ Each case has at most three 12-action agent rounds. Only the explicit action-bud
 Campaign metadata is stored in `aiqa_campaigns`. Model output is untrusted; UI text renders as React text, and proposed actions still go through the existing action validation and engine. Android label/resource-id normalization only uses nodes in the current observation. No customer source, URLs, generated cases or operational results are committed with this feature.
 
 Verification follows the repository policy: build the Studio and verify the requested flows against a synthetic app. Type checks, lint and test suites are not run. A passed demo run does not establish model accuracy for other applications or full feature coverage.
+
+The outcome review can conservatively flag valid runs as attention cases (including ambiguous wording or invalid assertion references). Attention is not a confirmed application defect. The original action trace and screen evidence remain authoritative for human review.
