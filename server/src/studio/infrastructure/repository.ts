@@ -134,7 +134,7 @@ export async function renameProject(
   await ensureDb();
   const normalizedSource = source ? normalizeProjectSources(source) : null;
   const rows =
-    await db!`update aiqa_projects set name=${normalized}, source=source || coalesce(${normalizedSource ? db!.json(normalizedSource) : null}::jsonb, source) where id=${id} returning id`;
+    await db!`update aiqa_projects set name=${normalized}, source=coalesce(${normalizedSource ? db!.json(normalizedSource) : null}::jsonb, source) || jsonb_strip_nulls(jsonb_build_object('demoScenarioIds', source->'demoScenarioIds')) where id=${id} returning id`;
   if (!rows.length) throw new Error("프로젝트를 찾지 못했어요");
   const project = (await listProjects()).find((item) => item.id === id);
   if (!project) throw new Error("프로젝트를 찾지 못했어요");
