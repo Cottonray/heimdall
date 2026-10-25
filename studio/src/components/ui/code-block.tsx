@@ -14,7 +14,7 @@ export function CodeBlock({ code }: { code: string }) {
       const part = source[index];
       if (index % 2 === 1 && part.startsWith("//") && line.trim()) {
         const indent = line.match(/^\s*/)?.[0] || "";
-        formatted += `${indent}${part}\n${line.trimEnd()}\n`;
+        formatted += `${indent}${part}\n${line.trimEnd()}`;
         line = "";
       } else {
         const lines = part.split("\n");
@@ -31,7 +31,7 @@ export function CodeBlock({ code }: { code: string }) {
     <pre
       data-selectable
       aria-label="테스트 코드"
-      className="test-code min-w-0 max-w-full whitespace-pre-wrap break-words rounded-lg bg-muted p-4 text-xs leading-6 [overflow-wrap:anywhere]"
+      className="test-code min-w-0 max-w-full whitespace-pre-wrap break-words rounded-lg bg-muted p-4 text-xs leading-5 [overflow-wrap:anywhere]"
     >
       <code>
         {parts.map((part, index) => {
