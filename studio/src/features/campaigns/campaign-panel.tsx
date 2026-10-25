@@ -225,7 +225,7 @@ export function CampaignPanel({
           AI 동작 {cases.reduce((n, x) => n + x.steps - x.humanActions, 0)}회
         </span>
         <span>사람 동작 {cases.reduce((n, x) => n + x.humanActions, 0)}회</span>
-        <span>발견 범위의 결과이며 전체 기능 커버리지가 아니에요.</span>
+        <span>발견 범위의 결과이며 전체 기능 커버리지가 아니에요. 확인 필요는 앱 결함 확정이 아니에요.</span>
       </div>
       <p className="text-sm" role="status">
         {campaign?.message ||
