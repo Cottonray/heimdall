@@ -86,7 +86,7 @@ export async function connectCodexTerminal(
                 const previous = await saved(id);
                 if (message.id === id) return;
                 if (
-                  next.parent !== id ||
+                  (next.parent !== id && next.parent !== previous.execution?.sourceId) ||
                   next.projectId !== previous.projectId ||
                   running.has(next.id)
                 )

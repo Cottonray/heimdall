@@ -18,7 +18,6 @@ import {
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Badge } from "@/components/ui/badge";
 import type { Session, Action } from "../../../../contracts/studio";
 export function LivePreview({
   session,
@@ -57,13 +56,8 @@ export function LivePreview({
               실행 화면
             </span>
           </CardTitle>
-          {session.state !== "closed" && <Badge variant="outline">LIVE</Badge>}
         </div>
-        {session.engine === "android" ? (
-          <p className="text-xs text-muted-foreground">
-            Android · 연결된 테스트 기기
-          </p>
-        ) : (
+        {session.engine !== "android" && (
           <form
             className="flex min-w-0 gap-2"
             onSubmit={(event) => {

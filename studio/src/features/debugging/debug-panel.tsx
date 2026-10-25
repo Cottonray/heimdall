@@ -26,10 +26,7 @@ export function DebugPanel({ session }: { session: Session }) {
             { value: "results", label: "실행 결과", icon: <ListChecks /> },
             {
               value: "code",
-              label:
-                session.engine === "android"
-                  ? "Appium 코드"
-                  : "Playwright 코드",
+              label: "코드",
               icon: <Code />,
             },
           ]}
@@ -57,7 +54,8 @@ export function DebugPanel({ session }: { session: Session }) {
               {session.execution && (
                 <ol className="space-y-3">
                   {session.steps.map((step) => (
-                    <li key={step.n} className="space-y-2 rounded-md border p-3">
+                    <li key={step.n} className="flex flex-wrap items-start justify-between gap-4 rounded-md border p-3">
+                      <div className="min-w-40 flex-1 space-y-2">
                       <div className="flex flex-wrap items-center gap-2">
                         <Badge variant={step.ok && !step.error ? "secondary" : "destructive"}>
                           {step.ok && !step.error ? "완료" : "실패"}
@@ -69,6 +67,7 @@ export function DebugPanel({ session }: { session: Session }) {
                         {step.action.text || step.action.selector || step.action.url || step.action.key}
                       </p>
                       {step.error && <p className="text-sm text-destructive">{step.error}</p>}
+                      </div>
                       {step.evidence && (
                         <EvidencePreview key={step.evidence} src={evidenceUrl(session.id, step.evidence)} step={step.n} />
                       )}
