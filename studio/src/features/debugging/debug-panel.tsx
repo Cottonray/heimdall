@@ -78,7 +78,7 @@ export function DebugPanel({ session }: { session: Session }) {
             </div>
           </TabsContent>
           <TabsContent value="code">
-            <CodeBlock code={script(session)} />
+            <CodeBlock code={script(session, { stepsOnly: true })} />
           </TabsContent>
         </div>
       </Tabs>

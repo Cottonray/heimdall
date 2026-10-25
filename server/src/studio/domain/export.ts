@@ -7,11 +7,11 @@ type ExportSource = {
   url: string;
   steps: { action: Action; ok?: boolean }[];
 };
-export function script(source: ExportSource) {
+export function script(source: ExportSource, options: { stepsOnly?: boolean } = {}) {
   const q = JSON.stringify;
   if (source.plan) return "// 소스 기반 시나리오 초안 · 미실행\nexport const scenarioPlan = " + q(source.plan, null, 2) + ";\n";
-  if (source.engine === "android") return appiumScript(source);
-  const lines = [
+  if (source.engine === "android") return appiumScript(source, options.stepsOnly);
+  const lines = options.stepsOnly ? [] : [
     `import { test, expect } from '@playwright/test';`,
     `test(${q(source.name)}, async ({ page, request }) => {`,
     ...(source.engine === "api"
@@ -51,12 +51,14 @@ export function script(source: ExportSource) {
       lines.push("  }");
     }
   }
-  return lines.concat("});").join("\n");
+  return options.stepsOnly
+    ? lines.map((line) => line.replace(/^  /, "")).join("\n") || "// 기록된 동작이 없어요."
+    : lines.concat("});").join("\n");
 }
 
-function appiumScript(source: ExportSource) {
+function appiumScript(source: ExportSource, stepsOnly = false) {
   const q = JSON.stringify;
-  const lines = [
+  const lines = stepsOnly ? [] : [
     'import { remote } from "webdriverio";',
     'import assert from "node:assert/strict";',
     "// Set APPIUM_URL and ANDROID_UDID for your test device.",
@@ -110,6 +112,7 @@ function appiumScript(source: ExportSource) {
           ");",
       );
   }
+  if (stepsOnly) return lines.map((line) => line.replace(/^  /, "")).join("\n") || "// 기록된 동작이 없어요.";
   return lines
     .concat("} finally {", "  await driver.deleteSession();", "}")
     .join("\n");
