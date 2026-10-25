@@ -7,3 +7,7 @@ The shared opening queue serializes the handoff: stop Android campaigns, cancel 
 Automatic campaign opens and reconnection of saved sessions do not preempt the new holder. Revoked viewer sockets close with 4409, which the existing client does not automatically reconnect. Inspection helpers continue using the existing lease rather than triggering a takeover. iOS remote control revokes an existing human lease; no iOS automated runner is implemented here.
 
 Verification policy: build Studio and exercise actual synthetic-device handoffs; do not run type checks, lint or test suites.
+
+## Passive observation and explicit reconnect
+
+Opening an existing tab or reconnecting its event socket only reads the saved/current session (`passiveObservation`). It never starts an environment or competes for a device. Explicit observation, action and agent commands restore with takeover enabled; new runs already use the same takeover queue. This prevents an old tab's automatic refresh from raising an occupancy error or reclaiming a device from a newer run.

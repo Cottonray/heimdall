@@ -167,6 +167,7 @@ export type ToolArguments = NewSession &
   RunOptions & {
     id?: string;
     goal?: string;
+    passiveObservation?: boolean;
     action?: Action;
   };
 export interface ToolResults {

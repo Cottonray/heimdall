@@ -453,7 +453,7 @@ export class WorkspaceStore {
   });
   connectTest = async (id: string) => this.run(async () => {
     if (this.value.sessions.find((s) => s.id === id)?.plan) return;
-    const session = await api.call("qa_observe", { id });
+    const session = await api.call("qa_observe", { id, passiveObservation: true });
     this.update(session);
     if (this.value.selectedId === id) await this.loadFrame(id);
   });

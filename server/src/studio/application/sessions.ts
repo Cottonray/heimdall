@@ -40,7 +40,7 @@ export function open(data: NewSession, restore?: PublicSession, takeover = true)
   return exclusiveDevice(() => openEnvironment(data, restore, takeover));
 }
 const reconnecting = new Map<string, Promise<Session>>();
-export async function ensureActive(id: string): Promise<Session> {
+export async function ensureActive(id: string, takeover = false): Promise<Session> {
   const pending = reconnecting.get(id);
   if (pending) return pending;
   const current = sessions.get(id);
@@ -51,7 +51,7 @@ export async function ensureActive(id: string): Promise<Session> {
     await open(
       { ...source, url: source.observation?.url || source.url },
       source,
-      false,
+      takeover,
     );
     return sessions.get(id)!;
   })();
