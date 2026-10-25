@@ -5,7 +5,7 @@ import { Card } from "@/components/ui/card";
 import { Tabs, PanelTabsList, TabsContent } from "@/components/ui/tabs";
 import { script } from "../../../../server/src/studio/domain/export";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
+import { EvidencePreview } from "@/components/ui/evidence-preview";
 import { evidenceUrl } from "@/lib/api";
 import { runStatus } from "@/lib/labels";
 
@@ -70,9 +70,7 @@ export function DebugPanel({ session }: { session: Session }) {
                       </p>
                       {step.error && <p className="text-sm text-destructive">{step.error}</p>}
                       {step.evidence && (
-                        <Button variant="link" size="sm" asChild>
-                          <a href={evidenceUrl(session.id, step.evidence)} target="_blank" rel="noreferrer">화면 증적</a>
-                        </Button>
+                        <EvidencePreview key={step.evidence} src={evidenceUrl(session.id, step.evidence)} step={step.n} />
                       )}
                     </li>
                   ))}
