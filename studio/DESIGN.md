@@ -33,7 +33,7 @@ React + shadcn/ui 기반의 QA 워크스페이스. 현재 디자인의 정본은
 
 `Item asChild` 내부의 실제 `button`은 의미와 이벤트만 담당한다. 화면 코드에서 버튼 클래스, 기본 HTML 입력·대화상자, 별도 CSS를 작성하지 않는다. 외부 레이아웃은 정적 Tailwind 클래스로 지정하고 공통 컴포넌트의 색·모양·내부 여백은 사용부에서 덮어쓰지 않는다. 새로운 모양이 필요하면 공통 variant를 추가한다.
 
-간격은 Tailwind 기본 스케일, 색은 `background/foreground`, `primary`, `muted`, `border/input/ring`, `success/destructive`, `sidebar` 토큰을 쓴다. 상태는 색뿐 아니라 텍스트로도 전달한다. 아이콘은 Lucide를 사용하고 입력에는 라벨, 아이콘 버튼에는 접근 가능한 이름을 제공한다. Radix가 Dialog/Tabs/Select의 키보드 및 포커스를 처리한다.
+간격은 Tailwind 기본 스케일, 색은 `background/foreground`, `primary`, `muted`, `border/input/ring`, `success/destructive`, `sidebar` 토큰을 쓴다. 상태는 색뿐 아니라 텍스트로도 전달한다. 아이콘은 공통 `material-icons.tsx`의 Google Material Symbols Outlined SVG를 사용하고 입력에는 라벨, 아이콘 버튼에는 접근 가능한 이름을 제공한다. Radix가 Dialog/Tabs/Select의 키보드 및 포커스를 처리한다.
 
 ## 테마와 동작
 
@@ -363,3 +363,7 @@ DataTable의 onRowClick 옵션으로 일반 셀 영역 전체에 행 액션을 �
 ## 대시보드와 기기 실행 — 2026-10-25
 
 사용자 요청으로 대시보드의 AI 자동 탐색 영역을 제거했어요. 대시보드는 기존 테스트 현황을 표시해요. 기존 생성 결과와 실행 기록은 삭제하지 않아요. 기기 연결은 사용 중 상태에서도 가능하며, 새 실행 요청이 기존 실행·원격 조작을 정리한 뒤 권한을 가져와요. 이전 창은 권한 전환 안내를 표시하고 자동으로 다시 빼앗지 않아요.
+
+## 아이콘 — 2026-10-26
+
+메뉴·버튼·상태 아이콘은 Material Symbols Outlined 24px 원본으로 통일해요. 공통 컴포넌트에서 currentColor와 기존 크기를 적용하며, 외부 폰트 대신 SVG를 번들에 포함해요. 장식 아이콘은 보조기술에서 숨기고 버튼의 접근 가능한 이름은 유지해요. 서비스 로고와 플랫폼 상표는 기존 전용 자산을 사용해요.

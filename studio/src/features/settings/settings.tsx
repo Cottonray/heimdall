@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { ProfileEditor } from "@/features/auth/profile-editor";
 import type { ProfileActionResult } from "@/lib/api";
-import { Download, UserRound, Plug } from "lucide-react";
+import { Download, UserRound, Plug } from "@/components/ui/material-icons";
 import { Button } from "@/components/ui/button";
 import { downloadMcp } from "@/features/integrations/mcp";
 import {

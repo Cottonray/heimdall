@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Bell, CheckCheck } from "lucide-react";
+import { Bell, CheckCheck } from "@/components/ui/material-icons";
 import { Button } from "@/components/ui/button";
 import {
   Popover,

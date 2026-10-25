@@ -26,7 +26,7 @@ import {
   Settings as SettingsIcon,
   Monitor,
   Folder,
-} from "lucide-react";
+} from "@/components/ui/material-icons";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, WorkspaceTab } from "@/components/ui/tabs";

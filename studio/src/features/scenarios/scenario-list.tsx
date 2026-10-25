@@ -11,7 +11,7 @@ import {
 import { TestExecution } from "@/features/sessions/test-execution";
 import { DataTable } from "@/components/data-table";
 import { Button } from "@/components/ui/button";
-import { Plus } from "lucide-react";
+import { Plus } from "@/components/ui/material-icons";
 import type { Session, NewSession } from "../../../../contracts/studio";
 export function ScenarioList({
   sessions,

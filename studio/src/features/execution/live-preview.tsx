@@ -8,7 +8,7 @@ import {
   Send,
   Monitor,
   MousePointer2,
-} from "lucide-react";
+} from "@/components/ui/material-icons";
 import {
   Card,
   CardHeader,

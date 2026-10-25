@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { AlertCircle, X } from "lucide-react";
+import { AlertCircle, X } from "@/components/ui/material-icons";
 import { Button } from "@/components/ui/button";
 
 export function ErrorToast({ message }: { message?: string }) {

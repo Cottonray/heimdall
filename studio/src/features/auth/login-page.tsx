@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { UserRound, Shield, ArrowRight, Sun, Moon } from "lucide-react";
+import { UserRound, Shield, ArrowRight, Sun, Moon } from "@/components/ui/material-icons";
 import { HeimdallWordmark } from "@/components/heimdall-wordmark";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";

@@ -1,4 +1,4 @@
-import { Download } from "lucide-react";
+import { Download } from "@/components/ui/material-icons";
 import {
   Dialog,
   DialogContent,

@@ -14,7 +14,7 @@ import {
   ChevronLeft,
   ChevronRight,
   MoreVertical,
-} from "lucide-react";
+} from "@/components/ui/material-icons";
 import {
   DropdownMenu,
   DropdownMenuTrigger,

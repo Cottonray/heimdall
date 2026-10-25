@@ -18,7 +18,7 @@ import {
   Camera,
   Video,
   X,
-} from "lucide-react";
+} from "@/components/ui/material-icons";
 import { PlatformIcon } from "@/components/platform-icon";
 import { StatusDot } from "@/components/ui/status-dot";
 import { Button } from "@/components/ui/button";

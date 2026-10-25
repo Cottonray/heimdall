@@ -9,7 +9,7 @@ import {
   TableHead,
   TableCell,
 } from "@/components/ui/table";
-import { Plus, Check, Minus } from "lucide-react";
+import { Plus, Check, Minus } from "@/components/ui/material-icons";
 import {
   Bar,
   BarChart,

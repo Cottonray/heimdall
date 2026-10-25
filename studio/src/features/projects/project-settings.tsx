@@ -16,7 +16,7 @@ import {
 } from "@/components/ui/select";
 import { PageHeader } from "@/components/page-header";
 import { useId, useState } from "react";
-import { Save } from "lucide-react";
+import { Save } from "@/components/ui/material-icons";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";

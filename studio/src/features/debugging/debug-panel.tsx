@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Code, ListChecks } from "lucide-react";
+import { Code, ListChecks } from "@/components/ui/material-icons";
 import { CodeBlock } from "@/components/ui/code-block";
 import { Card } from "@/components/ui/card";
 import { Tabs, PanelTabsList, TabsContent } from "@/components/ui/tabs";

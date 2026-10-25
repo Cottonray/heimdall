@@ -10,7 +10,7 @@ import { RefreshControl } from "@/components/refresh-control";
 import { DeviceManagement } from "./device-management";
 import { useEffect, useState } from "react";
 import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem } from "@/components/ui/dropdown-menu";
-import { ExternalLink, LayoutGrid, List, MoreHorizontal } from "lucide-react";
+import { ExternalLink, LayoutGrid, List, MoreHorizontal } from "@/components/ui/material-icons";
 import { PageHeader } from "@/components/page-header";
 import { PlatformIcon } from "@/components/platform-icon";
 import { Button } from "@/components/ui/button";

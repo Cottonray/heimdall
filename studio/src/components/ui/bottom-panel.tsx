@@ -1,5 +1,5 @@
 import { useState, type ReactNode } from "react";
-import { ChevronDown, ChevronUp } from "lucide-react";
+import { ChevronDown, ChevronUp } from "@/components/ui/material-icons";
 import { Button } from "./button";
 import { PanelResizeHandle } from "./panel-resize-handle";
 

@@ -1,8 +1,8 @@
 import logo from "@/assets/heimdall.png";
-import { Sun, Moon } from "lucide-react";
+import { Sun, Moon } from "@/components/ui/material-icons";
 import { useState, useId } from "react";
-import { PanelLeftClose, PanelLeftOpen } from "lucide-react";
-import { Brain, MessageSquare } from "lucide-react";
+import { PanelLeftClose, PanelLeftOpen } from "@/components/ui/material-icons";
+import { Brain, MessageSquare } from "@/components/ui/material-icons";
 import {
   Users,
   Play,
@@ -10,8 +10,8 @@ import {
   ListChecks,
   Folder,
   Smartphone,
-} from "lucide-react";
-import { ArrowLeft, LayoutDashboard, History, Settings } from "lucide-react";
+} from "@/components/ui/material-icons";
+import { ArrowLeft, LayoutDashboard, History, Settings } from "@/components/ui/material-icons";
 import { Button } from "@/components/ui/button";
 import { HeimdallWordmark } from "@/components/heimdall-wordmark";
 import type { Page } from "@/features/workspace/tabs";
