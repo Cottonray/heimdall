@@ -4,7 +4,7 @@ import { CodeBlock } from "@/components/ui/code-block";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Tabs, PanelTabsList, TabsContent } from "@/components/ui/tabs";
-import { script } from "../../../../server/src/studio/domain/export";
+import { script, actionComment } from "../../../../server/src/studio/domain/export";
 import { Badge } from "@/components/ui/badge";
 import { EvidencePreview } from "@/components/ui/evidence-preview";
 import { evidenceUrl } from "@/lib/api";
@@ -71,13 +71,13 @@ export function DebugPanel({ session }: { session: Session }) {
                             onClick={() => setSelected(step.n)}
                           >
                             <span className="flex flex-wrap items-center gap-2">
-                              <Badge variant={step.ok && !step.error ? "secondary" : "destructive"}>
-                                {step.ok && !step.error ? "완료" : "실패"}
+                              <Badge variant={step.ok && !step.error ? "success" : "destructive"}>
+                                {step.ok && !step.error ? "정상" : "실패"}
                               </Badge>
                               <span>{step.n}. {step.action.type}</span>
                             </span>
                             <span className="break-all text-xs text-muted-foreground">
-                              {step.action.text || step.action.selector || step.action.url || step.action.key}
+                              {actionComment(step.action)}
                             </span>
                           </Button>
                         </li>

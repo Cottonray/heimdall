@@ -122,7 +122,7 @@ function appiumScript(source: ExportSource, stepsOnly = false) {
     .join("\n");
 }
 
-function actionComment(a: Action) {
+export function actionComment(a: Action) {
   const target = a.text || a.selector || "대상 요소";
   const descriptions: Record<string, string> = { click: target + " 선택", fill: target + "에 테스트 값 입력", type: "선택한 입력칸에 텍스트 입력", point: "지정 좌표 선택", key: (a.key || "키") + " 입력", scroll: (a.direction === "up" ? "위" : "아래") + "로 스크롤", goto: "테스트 주소로 이동", assert: target + " 표시 여부 검증", api: "API 응답 상태와 내용 검증" };
   return String(a.comment || descriptions[a.type] || "테스트 동작 수행").replace(/[\r\n\u2028\u2029]/g, " ").slice(0, 300);
