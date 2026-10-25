@@ -21,8 +21,8 @@ export function DebugPanel({ session }: { session: Session }) {
   }, [session.execution?.started, session.execution?.status]);
   const status = session.execution ? runStatus(session) : "미실행";
   return (
-    <Card variant="panel">
-      <Tabs variant="flush" value={tab} onValueChange={setTab}>
+    <Card variant="panel" className="h-full min-h-0">
+      <Tabs className="min-h-0 flex-1" variant="flush" value={tab} onValueChange={setTab}>
         <PanelTabsList
           value={tab}
           label="스튜디오 도구"
@@ -35,9 +35,9 @@ export function DebugPanel({ session }: { session: Session }) {
             { value: "results", label: "실행 결과", icon: <ListChecks /> },
           ]}
         />
-        <div className="p-3">
-          <TabsContent value="results">
-            <div className="space-y-4" aria-live="polite">
+        <div className="min-h-0 flex-1 overflow-auto p-3">
+          <TabsContent value="results" className="h-full">
+            <div className="flex h-full min-h-0 flex-col gap-4" aria-live="polite">
               <div className="flex flex-wrap items-center gap-2">
                 <Badge variant={status === "실패" ? "failure" : status === "통과" ? "success" : "secondary"}>
                   {status}
@@ -56,8 +56,8 @@ export function DebugPanel({ session }: { session: Session }) {
                     : "아직 실행할 동작이 없어요. 코덱스와 화면을 조작해 동작을 기록하면 실행할 수 있어요."}
               </p>
               {session.execution && (
-                <div className="grid min-h-80 grid-cols-[minmax(8rem,1fr)_minmax(0,2fr)] gap-3">
-                  <nav aria-label="실행 단계" className="max-h-[65vh] overflow-y-auto border-r pr-3">
+                <div className="grid min-h-0 flex-1 grid-cols-[minmax(8rem,1fr)_minmax(0,2fr)] gap-3">
+                  <nav aria-label="실행 단계" className="min-h-0 overflow-y-auto border-r pr-3">
                     <ol className="space-y-1">
                       {session.steps.map((step) => (
                         <li key={step.n}>
@@ -84,7 +84,7 @@ export function DebugPanel({ session }: { session: Session }) {
                       ))}
                     </ol>
                   </nav>
-                  <section id={`evidence-${session.id}`} aria-label="선택한 단계 증적" className="min-w-0 space-y-3">
+                  <section id={`evidence-${session.id}`} aria-label="선택한 단계 증적" className="flex min-h-0 min-w-0 flex-col gap-3">
                     {activeStep && (
                       <div className="space-y-1">
                         <p className="text-sm font-medium">{activeStep.n}단계 · {activeStep.action.type} · {activeStep.ms}ms</p>
@@ -92,7 +92,7 @@ export function DebugPanel({ session }: { session: Session }) {
                       </div>
                     )}
                     {activeStep?.evidence ? (
-                      <EvidencePreview key={`${session.id}-${activeStep.evidence}`} src={evidenceUrl(session.id, activeStep.evidence)} step={activeStep.n} />
+                      <EvidencePreview fill key={`${session.id}-${activeStep.evidence}`} src={evidenceUrl(session.id, activeStep.evidence)} step={activeStep.n} />
                     ) : (
                       <p role="status" className="py-12 text-center text-sm text-muted-foreground">표시할 내용이 없어요.</p>
                     )}
