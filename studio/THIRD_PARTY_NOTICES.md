@@ -24,3 +24,7 @@ The WebView inspector loads the unmodified Chromium DevTools frontend correspond
 ## Google Material Symbols
 
 UI actions, navigation and statuses use Google's Material Symbols Outlined (24px), pinned to [commit 10ecc14790612ca8fd164e3f4ffe9c16fc50d5b7](https://github.com/google/material-design-icons/tree/10ecc14790612ca8fd164e3f4ffe9c16fc50d5b7/symbols/web). The original path data is embedded in `src/components/ui/material-icons.tsx`; React wrappers supply size, foreground color and decorative accessibility semantics. No external icon font requests are made. Distributed under Apache-2.0; the full license is in `MATERIAL_ICONS_LICENSE`.
+
+## Execution engine logos
+
+The execution title identifies the actual automation engine using its unmodified project logo. Appium's [PNG](https://github.com/appium/appium/blob/db41945811bdef5f8bf5e2c2053c81a3e6a5b317/packages/appium/docs/overrides/assets/images/appium-logo.png) is from the Appium project (Apache-2.0). Playwright's [PNG](https://github.com/microsoft/playwright/blob/8c1b148f3d73120aa90f10119920358062fda177/browser_patches/webkit/embedder/Playwright/Images.xcassets/AppIcon.appiconset/logo-128.png) is from Microsoft Playwright (Apache-2.0). Apache-2.0 text is retained in MATERIAL_ICONS_LICENSE. Trademarks remain their owners' property; these marks identify the engines and do not imply endorsement.

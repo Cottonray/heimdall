@@ -1,3 +1,4 @@
+import { EngineLogo } from "@/components/engine-logo";
 import { ScenarioPlanView } from "@/features/scenarios/scenario-plan";
 import { PanelResizeHandle } from "@/components/ui/panel-resize-handle";
 import { AiModelAdmin } from "@/features/auth/ai-model-admin";
@@ -441,7 +442,8 @@ function SessionContent({
   return (
     <>
       <div className="flex shrink-0 flex-wrap items-center justify-between gap-4 px-3 py-2">
-        <div>
+        <div className="flex min-w-0 items-center gap-2">
+          <EngineLogo engine={s.engine} />
           <h1 className="text-2xl font-semibold tracking-tight">{s.name}</h1>
         </div>
         <div className="flex flex-wrap gap-2">
