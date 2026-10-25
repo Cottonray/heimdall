@@ -98,7 +98,7 @@ export async function discoverCampaign(input: {
         engine: c.engine,
         url: c.url,
         name: "AI 시나리오 발견",
-      });
+      }, undefined, false);
       sessionId = s.id;
       const source = await readProjectSources(project);
       c.sourceFiles = source.repositories.reduce(
@@ -296,7 +296,7 @@ export async function runCampaign(projectId: string) {
             engine: c.engine,
             url: c.url,
             name: `AI · ${item.title}`,
-          });
+          }, undefined, false);
           sessionId = opened.id;
           item.sessionId = sessionId;
           const s = sessions.get(sessionId)!;
@@ -369,4 +369,11 @@ export async function stopCampaign(projectId: string) {
   }
   await save(c);
   return c;
+}
+
+/** An explicit device launch cancels queued automation as well as its current session. */
+export async function stopAndroidCampaigns() {
+  for (const c of active.values()) {
+    if (c.engine === "android" && ["running", "discovering"].includes(c.status)) await stopCampaign(c.projectId);
+  }
 }

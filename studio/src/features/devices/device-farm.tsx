@@ -305,8 +305,7 @@ export function DeviceFarm({
               id: "open",
               header: "연결",
               cell: (device) =>
-                deviceStatus(device, !!error) === "사용가능" ||
-                device.ownedByMe ? (
+                ["사용가능", "사용 중", "사용 중 · 나"].includes(deviceStatus(device, !!error)) ? (
                   <Button variant="outline" size="sm" asChild>
                     <a
                       href={remoteUrl(device)}
@@ -333,7 +332,7 @@ export function DeviceFarm({
             const platformName = platform === "ios" ? "iOS" : "Android";
             const virtual = device.kind === "emulator";
             const state = deviceStatus(device, !!error);
-            const ready = state === "사용가능" || !!device.ownedByMe;
+            const ready = ["사용가능", "사용 중", "사용 중 · 나"].includes(state);
             const name =
               device.model ||
               `${platformName} ${virtual ? "가상 기기" : "실물 기기"}`;

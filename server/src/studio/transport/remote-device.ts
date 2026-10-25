@@ -325,7 +325,7 @@ export function connectRemoteDevice(
     },
   });
   lease?.onRevoke?.(async () => {
-    fail("관리자가 기기 점유를 해제했어요", 4409);
+    fail("다른 기기 실행으로 조작 권한이 전환됐어요", 4409);
     await queue;
     await releaseTouch();
   });

@@ -1,3 +1,4 @@
+import { prepareDeviceTakeover } from "./device-takeover.ts";
 import { watching } from "./test-presence.ts";
 import { prepareTestTarget } from "../infrastructure/domains.ts";
 import { randomUUID } from "node:crypto";
@@ -30,12 +31,13 @@ function hasContent(observation?: Observation) {
   );
 }
 let opening: Promise<unknown> = Promise.resolve();
-export function open(data: NewSession, restore?: PublicSession) {
-  const result = opening
-    .catch(() => {})
-    .then(() => openEnvironment(data, restore));
+export function exclusiveDevice<T>(work: () => Promise<T>): Promise<T> {
+  const result = opening.catch(() => {}).then(work);
   opening = result;
   return result;
+}
+export function open(data: NewSession, restore?: PublicSession, takeover = true) {
+  return exclusiveDevice(() => openEnvironment(data, restore, takeover));
 }
 const reconnecting = new Map<string, Promise<Session>>();
 export async function ensureActive(id: string): Promise<Session> {
@@ -49,6 +51,7 @@ export async function ensureActive(id: string): Promise<Session> {
     await open(
       { ...source, url: source.observation?.url || source.url },
       source,
+      false,
     );
     return sessions.get(id)!;
   })();
@@ -59,7 +62,7 @@ export async function ensureActive(id: string): Promise<Session> {
     reconnecting.delete(id);
   }
 }
-async function openEnvironment(data: NewSession, restore?: PublicSession) {
+async function openEnvironment(data: NewSession, restore?: PublicSession, takeover = true) {
   await ensureDb();
   const projectId = await requireProject(data.projectId || "default");
   const project = (await listProjects()).find((p) => p.id === projectId);
@@ -71,6 +74,7 @@ async function openEnvironment(data: NewSession, restore?: PublicSession) {
     : "web";
   if (engine !== "android")
     await prepareTestTarget(String(data.url || "http://127.0.0.1:8081/demo/"));
+  if (engine === "android" && takeover) await prepareDeviceTakeover(device.target());
   // Reclaim only unattended, idle environments. Running tests and other viewers stay connected.
   for (const old of sessions.values()) {
     const full =
@@ -179,7 +183,16 @@ export async function pause(s: Session) {
   await persist(s);
   return publicSession(s);
 }
-export async function close(s: Session) {
+const closing = new WeakMap<Session, Promise<PublicSession>>();
+export function close(s: Session): Promise<PublicSession> {
+  if (s.state === "closed") return Promise.resolve(publicSession(s));
+  const pending = closing.get(s);
+  if (pending) return pending;
+  const result = closeEnvironment(s).finally(() => closing.delete(s));
+  closing.set(s, result);
+  return result;
+}
+async function closeEnvironment(s: Session) {
   await pause(s);
   if (s.appiumId) {
     await appium.close(s.appiumId);

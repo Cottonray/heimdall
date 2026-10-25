@@ -1,3 +1,4 @@
+import { acquireDeviceControl } from "./studio/application/device-takeover.ts"
 import { connectCodexTerminal } from './studio/transport/codex-terminal.ts'
 import { connectAgent } from "./studio/infrastructure/agent-registry.ts"
 import { authenticate, authEvents, localRequest } from "./studio/infrastructure/auth.ts"
@@ -123,7 +124,7 @@ server.on('upgrade', async (req, socket) => {
                     else ws.ping()
                 }, 5000)
                 try {
-                    lease = reserveDevice(url.searchParams.get('device') ?? '', auth!.hash)
+                    lease = await acquireDeviceControl(url.searchParams.get('device') ?? '', auth!.hash)
                     ws.on({ onClose: () => { clearInterval(waiting); lease?.release() } })
                     ws.send(JSON.stringify({ type: 'reserved' }))
                     const remote = await prepareRemoteDevice(url.searchParams.get('device') ?? '')
