@@ -56,6 +56,7 @@ export async function readProjectSource(settings: SourceSettings) {
   // Never return transport endpoints or credentials in project/source responses.
   let transportUrl = config.sourceUrl;
   let authorization = "";
+  let sourceRef = "";
   if (process.env.AIQA_SOURCE_CONNECTIONS_FILE) {
     try {
       const connections = JSON.parse(await readFile(process.env.AIQA_SOURCE_CONNECTIONS_FILE, "utf8"));
@@ -67,6 +68,8 @@ export async function readProjectSource(settings: SourceSettings) {
         transportUrl = endpoint.href;
         authorization = connection.authorization || "";
         if (typeof authorization !== "string" || /[\r\n]/.test(authorization)) throw new Error("Invalid credentials");
+        sourceRef = connection.ref || "";
+        if (typeof sourceRef !== "string" || sourceRef.length > 200 || (sourceRef && !/^[A-Za-z0-9][A-Za-z0-9._/-]*$/.test(sourceRef))) throw new Error("Invalid ref");
       }
     } catch {
       throw new Error("서버의 저장소 연결 설정을 확인해 주세요.");
@@ -117,6 +120,7 @@ export async function readProjectSource(settings: SourceSettings) {
         "clone",
         "--depth=1",
         "--no-checkout",
+        ...(sourceRef ? ["--branch", sourceRef] : []),
         "--",
         transportUrl,
         "repo",

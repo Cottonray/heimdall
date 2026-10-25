@@ -3,7 +3,8 @@
 Project settings retain a credential-free HTTPS URL. Operators may set
 `AIQA_SOURCE_CONNECTIONS_FILE` to a JSON file readable only by the service user.
 Its keys are exact project repository URLs; each value contains a transport `url`
-and optionally an `authorization` header. Store this file outside the repository,
+and optionally an `authorization` header and Git branch/tag `ref`. Pin `ref` to the
+deployed test target branch when its default branch differs. Store this file outside the repository,
 public assets, terminal container, and exports. Use narrowly scoped read-only
 credentials. An internal HTTP endpoint is allowed only through this explicit
 operator mapping; user-supplied addresses still require the host allowlist and HTTPS.
