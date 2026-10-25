@@ -1,3 +1,4 @@
+import { CampaignPanel } from "@/features/campaigns/campaign-panel";
 import { PageHeader } from "@/components/page-header";
 import { useEffect, useState } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -49,6 +50,7 @@ const coverageConfig = {
 
 export function Dashboard({
   sessions,
+  projectId,
   onNew,
   onSelect,
   overview = false,
@@ -56,6 +58,7 @@ export function Dashboard({
   active = true,
 }: {
   sessions: Session[];
+  projectId?: string;
   onNew?: () => void;
   onSelect?: (id: string) => void;
   overview?: boolean;
@@ -149,6 +152,7 @@ export function Dashboard({
     );
   return (
     <div className="space-y-6">
+      {projectId && <CampaignPanel key={projectId} projectId={projectId} active={active} onSelect={onSelect} />}
       <PageHeader
         title="테스트 현황"
         headingLevel={overview ? "h2" : "h1"}

@@ -343,7 +343,11 @@ requires_openai_auth = false
       child?.kill("SIGKILL");
       gateway.closeAllConnections();
       await new Promise<void>((resolve) => gateway.close(() => resolve()));
-      await rm(home, { recursive: true, force: true });
+      await rm(home, { recursive: true, force: true, maxRetries: 5, retryDelay: 200 }).catch(() => {
+        // A short-lived helper can still be releasing its cache directory.
+        // Cleanup failure must not terminate the server or lose test results.
+        console.warn("Scenario temporary directory cleanup was deferred");
+      });
     },
   };
 }

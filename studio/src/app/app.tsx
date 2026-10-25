@@ -308,6 +308,7 @@ export function App() {
                     <DeviceFarm active={w.activeTab === "devices"} admin={w.user?.role === "admin"} />
                   ) : id === "dashboard" ? (
                     <Dashboard
+                      projectId={w.projectId}
                       loading={w.loading}
                       active={w.activeTab === id}
                       sessions={w.status?.sessions || []}

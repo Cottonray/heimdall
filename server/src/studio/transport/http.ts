@@ -1,3 +1,4 @@
+import { latestCampaign, discoverCampaign, runCampaign, stopCampaign } from "../application/campaigns.ts";
 import {
   readPhoneSettings,
   updatePhoneSettings,
@@ -458,6 +459,10 @@ export async function handle(
       }
       return true;
     }
+    if (route === "/api/studio/campaigns" && req.method === "GET") {
+      send(200, await latestCampaign(url.searchParams.get("projectId") || ""));
+      return true;
+    }
     if (route === "/api/studio/status") {
       send(200, {
         browser: await worker("/healthz").catch(() => ({ ok: false })),
@@ -504,6 +509,15 @@ export async function handle(
         throw new Error("요청이 너무 커요");
     }
     const data = JSON.parse(body || "{}");
+    if (route === "/api/studio/campaigns") {
+      if (!localRequest(req) && (!auth || !allowedBrowserOrigin(req))) { send(403, {error:"로그인 후 이용해 주세요"}); return true; }
+      const projectId = String(data.projectId || "");
+      if (data.action === "discover") send(202, await discoverCampaign({projectId, engine:data.engine, url:data.url}));
+      else if (data.action === "run") send(202, await runCampaign(projectId));
+      else if (data.action === "stop") send(200, await stopCampaign(projectId));
+      else send(400, {error:"작업을 선택해 주세요"});
+      return true;
+    }
     if (route === "/api/studio/phone-settings") {
       const serial = url.searchParams.get("serial") || "";
       const viewer = url.searchParams.get("viewer") || "";
