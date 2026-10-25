@@ -39,7 +39,7 @@ export function DebugPanel({ session }: { session: Session }) {
           <TabsContent value="results">
             <div className="space-y-4" aria-live="polite">
               <div className="flex flex-wrap items-center gap-2">
-                <Badge variant={status === "실패" ? "destructive" : status === "통과" ? "success" : "secondary"}>
+                <Badge variant={status === "실패" ? "failure" : status === "통과" ? "success" : "secondary"}>
                   {status}
                 </Badge>
                 <span className="text-sm">
@@ -71,7 +71,7 @@ export function DebugPanel({ session }: { session: Session }) {
                             onClick={() => setSelected(step.n)}
                           >
                             <span className="flex flex-wrap items-center gap-2">
-                              <Badge variant={step.ok && !step.error ? "success" : "destructive"}>
+                              <Badge variant={step.ok && !step.error ? "success" : "failure"}>
                                 {step.ok && !step.error ? "정상" : "실패"}
                               </Badge>
                               <span>{step.n}. {step.action.type}</span>
