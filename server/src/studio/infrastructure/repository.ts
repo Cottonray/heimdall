@@ -67,6 +67,16 @@ export async function listSessions(
   await ensureDb();
   const rows =
     await db!`select body from aiqa_studio where ${projectId ?? null}::text is null or coalesce((case when jsonb_typeof(body)='string' then (body #>> '{}')::jsonb else body end)->>'projectId', 'default')=${projectId ?? null} order by updated desc limit 60`;
+  // Pinned demo scenarios must remain selectable after many replay records.
+  if (projectId) {
+    const projects = await db!`select source from aiqa_projects where id=${projectId}`;
+    const ids = projects[0]?.source?.demoScenarioIds;
+    if (Array.isArray(ids) && ids.length) {
+      const pinned = await db!`select body from aiqa_studio where id in ${db!(ids.slice(0, 5))}`;
+      const present = new Set(rows.map(row => readSessionBody(row.body).id));
+      for (const row of pinned) if (!present.has(readSessionBody(row.body).id)) rows.push(row);
+    }
+  }
   return rows.map((row) => {
     const body = readSessionBody(row.body);
     return compact(
@@ -124,7 +134,7 @@ export async function renameProject(
   await ensureDb();
   const normalizedSource = source ? normalizeProjectSources(source) : null;
   const rows =
-    await db!`update aiqa_projects set name=${normalized}, source=coalesce(${normalizedSource ? db!.json(normalizedSource) : null}::jsonb, source) where id=${id} returning id`;
+    await db!`update aiqa_projects set name=${normalized}, source=source || coalesce(${normalizedSource ? db!.json(normalizedSource) : null}::jsonb, source) where id=${id} returning id`;
   if (!rows.length) throw new Error("프로젝트를 찾지 못했어요");
   const project = (await listProjects()).find((item) => item.id === id);
   if (!project) throw new Error("프로젝트를 찾지 못했어요");

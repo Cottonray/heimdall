@@ -11,6 +11,8 @@ import { persist } from "../infrastructure/repository.ts";
 export async function action(s: Session, input: Action, actor: string) {
   if (s.working) throw new Error("현재 동작이 끝나면 조작할 수 있어요");
   if (s.steps.length >= 80) throw new Error("한 세션에 80단계까지 기록해요");
+  if (["AI", "Codex"].includes(actor) && (typeof input.comment !== "string" || !input.comment.trim()))
+    throw new Error("AI 동작에는 목적을 설명하는 한국어 comment가 반드시 필요해요.");
   const a = validateAction(input);
   s.working = true;
   const work = (async () => {

@@ -95,6 +95,8 @@ export function App() {
     return (
       <RemoteDevice serial={remoteDevice} onAuthExpired={w.store.refresh} />
     );
+  const demoIds = w.status?.projects.find(p => p.id === w.projectId)?.demoScenarioIds;
+  const demoScenarios = w.sessions.filter(s => (s.projectId || "default") === w.projectId && (demoIds ? demoIds.includes(s.id) : !s.execution));
   const projectSessions = w.sessions.filter(
     (s) => (s.projectId || "default") === w.projectId,
   );
@@ -318,7 +320,7 @@ export function App() {
                     <ScenarioExecution
                       key={w.projectId}
                       projectId={w.projectId}
-                      sessions={projectSessions}
+                      sessions={demoScenarios}
                       active={w.activeTab === "execution"}
                       busy={w.busy}
                       onRun={w.store.executeScenario}
@@ -342,7 +344,7 @@ export function App() {
                     <ScenarioList
                       onDelete={w.store.removeSessions}
                       key={w.projectId}
-                      sessions={projectSessions}
+                      sessions={demoScenarios}
                       onSelect={w.store.select}
                       onCreate={w.store.open}
                       busy={w.busy}

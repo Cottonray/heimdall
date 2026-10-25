@@ -18,6 +18,7 @@ export type Engine = "web" | "mobile-web" | "api" | "android";
 export type SessionState =
   "opening" | "manual" | "ai" | "replay" | "paused" | "passed" | "closed";
 export type Action = {
+  comment?: string;
   type: string;
   text?: string;
   selector?: string;
@@ -76,6 +77,7 @@ export type ProjectRepository = {
   description: string;
 };
 export type Project = {
+  demoScenarioIds?: string[];
   appPackage?: string;
   repositories?: ProjectRepository[];
   sourceType?: "git" | "svn";

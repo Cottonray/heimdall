@@ -66,6 +66,8 @@ async function openEnvironment(data: NewSession, restore?: PublicSession, takeov
   await ensureDb();
   const projectId = await requireProject(data.projectId || "default");
   const project = (await listProjects()).find((p) => p.id === projectId);
+  if (!restore && !data.parent && project?.demoScenarioIds?.length >= 5)
+    throw new Error("데모 시나리오는 최대 5개예요. 기존 시나리오를 수정하거나 재실행해 주세요.");
   const appPackage = normalizeAppPackage(restore?.appPackage || data.appPackage || project?.appPackage) || device.APP_ID;
   const engine = ["web", "mobile-web", "api", "android"].includes(
     data.engine || "",
