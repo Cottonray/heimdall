@@ -9,7 +9,7 @@ export function EngineLogo({ engine }: { engine: Engine }) {
       src={engine === "android" ? appium : playwright}
       alt={name}
       title={name}
-      className="size-7 shrink-0 object-contain"
+      className="size-6 shrink-0 object-contain"
     />
   );
 }
