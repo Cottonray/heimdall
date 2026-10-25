@@ -252,7 +252,7 @@ export function RemoteDevice({
                 <Monitor className="mx-auto size-8" />
                 <p className="text-sm">
                   {remote.connection === "closed"
-                    ? "기기 화면을 불러오지 못했어요."
+                    ? remote.error || "기기 화면을 불러오지 못했어요."
                     : "기기 화면을 연결하고 있어요."}
                 </p>
               </div>
