@@ -67,7 +67,7 @@ export function DeviceFarm({
     }
   }, [view]);
   const [filter, setFilter] = useState<DeviceFilter>(
-    management ? "all" : "available",
+    "all",
   );
   useEffect(() => {
     if (!active) return;
