@@ -1,4 +1,4 @@
-import { latestCampaign, discoverCampaign, runCampaign, stopCampaign } from "../application/campaigns.ts";
+import { latestCampaign, discoverCampaign, runCampaign, stopCampaign, auditCampaign } from "../application/campaigns.ts";
 import {
   readPhoneSettings,
   updatePhoneSettings,
@@ -514,6 +514,7 @@ export async function handle(
       const projectId = String(data.projectId || "");
       if (data.action === "discover") send(202, await discoverCampaign({projectId, engine:data.engine, url:data.url}));
       else if (data.action === "run") send(202, await runCampaign(projectId));
+      else if (data.action === "audit") send(200, await auditCampaign(projectId));
       else if (data.action === "stop") send(200, await stopCampaign(projectId));
       else send(400, {error:"작업을 선택해 주세요"});
       return true;

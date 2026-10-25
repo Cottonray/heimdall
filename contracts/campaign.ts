@@ -12,6 +12,7 @@ export type CampaignCase = {
   evidence?: string;
   message?: string;
   trace?: string[];
+  review?: string;
 };
 export type Campaign = {
   id: string;

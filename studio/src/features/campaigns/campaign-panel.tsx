@@ -276,6 +276,11 @@ export function CampaignPanel({
                       <p className="text-sm text-muted-foreground">
                         {item.expected}
                       </p>
+                      {item.review && (
+                        <p className="text-xs text-muted-foreground">
+                          검토 · {item.review}
+                        </p>
+                      )}
                       <div className="flex flex-wrap items-center gap-3 text-xs text-muted-foreground">
                         <span>{item.steps}단계</span>
                         <span>검증 {item.assertions}회</span>
@@ -316,10 +321,20 @@ export function CampaignPanel({
               </CardHeader>
               <CardContent>
                 <div className="mx-auto max-w-64">
-                  {current?.sessionId && (current.evidence || current.status === "running") ? (
+                  {current?.sessionId &&
+                  (current.evidence || current.status === "running") ? (
                     <img
                       className="h-auto w-full rounded-xl border"
-                      src={current.status === "running" ? API + "/frame?" + new URLSearchParams({id:current.sessionId, tick:String(campaign?.updated)}) : evidenceUrl(current.sessionId, current.evidence!)}
+                      src={
+                        current.status === "running"
+                          ? API +
+                            "/frame?" +
+                            new URLSearchParams({
+                              id: current.sessionId,
+                              tick: String(campaign?.updated),
+                            })
+                          : evidenceUrl(current.sessionId, current.evidence!)
+                      }
                       alt={`${current.title} 실제 실행 화면`}
                     />
                   ) : (
