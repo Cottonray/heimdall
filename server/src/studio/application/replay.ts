@@ -46,6 +46,7 @@ export async function replay(source: PublicSession, options: RunOptions = {}) {
     (
       await open({
         engine: source.engine,
+        appPackage: source.appPackage,
         url: prepared.url,
         name: `${source.name} · ${data?.name || "재실행"}`,
         parent: source.id,

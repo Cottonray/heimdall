@@ -76,6 +76,7 @@ export type ProjectRepository = {
   description: string;
 };
 export type Project = {
+  appPackage?: string;
   repositories?: ProjectRepository[];
   sourceType?: "git" | "svn";
   sourceUrl?: string;
@@ -126,6 +127,7 @@ export type ScenarioPlan = {
   branches: { title: string; expected: string; source: string }[];
 };
 export type Session = {
+  appPackage?: string;
   plan?: ScenarioPlan;
   execution?: Execution;
   projectId?: string;
@@ -145,6 +147,7 @@ export type Session = {
   parent?: string;
 };
 export type NewSession = {
+  appPackage?: string;
   projectId?: string;
   engine?: Engine;
   name?: string;

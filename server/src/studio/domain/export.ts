@@ -1,5 +1,6 @@
 import type { Action, ScenarioPlan } from "../../../../contracts/studio.ts";
 type ExportSource = {
+  appPackage?: string;
   plan?: ScenarioPlan;
   engine: string;
   name: string;
@@ -62,6 +63,7 @@ function appiumScript(source: ExportSource) {
     'const endpoint = new URL(process.env.APPIUM_URL || "http://127.0.0.1:4723");',
     'const driver = await remote({ hostname: endpoint.hostname, port: Number(endpoint.port || 4723), path: endpoint.pathname, capabilities: { platformName: "Android", "appium:automationName": "UiAutomator2", "appium:udid": process.env.ANDROID_UDID, "appium:noReset": true } });',
     "try {",
+    ...(source.appPackage ? [`  await driver.activateApp(${q(source.appPackage)});`] : []),
   ];
   for (const { action: a } of source.steps) {
     const selector = a.selector

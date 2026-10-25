@@ -17,7 +17,9 @@ import {
   persist,
   requireProject,
   saved,
+  listProjects,
 } from "../infrastructure/repository.ts";
+import { normalizeAppPackage } from "../infrastructure/project-source.ts";
 import { worker } from "../engines/browser.ts";
 import { observe } from "../engines/observe.ts";
 let mobileReserved = false;
@@ -60,6 +62,8 @@ export async function ensureActive(id: string): Promise<Session> {
 async function openEnvironment(data: NewSession, restore?: PublicSession) {
   await ensureDb();
   const projectId = await requireProject(data.projectId || "default");
+  const project = (await listProjects()).find((p) => p.id === projectId);
+  const appPackage = normalizeAppPackage(restore?.appPackage || data.appPackage || project?.appPackage) || device.APP_ID;
   const engine = ["web", "mobile-web", "api", "android"].includes(
     data.engine || "",
   )
@@ -111,6 +115,7 @@ async function openEnvironment(data: NewSession, restore?: PublicSession) {
     projectId,
     name: String(data.name || "새 테스트").slice(0, 80),
     engine,
+    ...(engine === "android" ? { appPackage } : {}),
     url: restore?.url || String(data.url || "http://127.0.0.1:8081/demo/"),
     state: "opening",
     message: "테스트 환경을 준비해요",
@@ -133,7 +138,7 @@ async function openEnvironment(data: NewSession, restore?: PublicSession) {
       if (!(await device.state()).booted)
         throw new Error("Android 기기가 준비되지 않았어요");
       s.appiumId = await appium.open(1200);
-      await appium.launch(s.appiumId, device.APP_ID, false);
+      await appium.launch(s.appiumId, appPackage, false);
       device.invalidateDump();
     } else
       await worker("/open", {

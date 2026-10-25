@@ -1,16 +1,17 @@
 import { execFile } from "node:child_process";
-import { mkdtemp, rm } from "node:fs/promises";
+import { mkdtemp, rm, readFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
 
 export type SourceSettings = {
+  appPackage?: string;
   sourceType?: "git" | "svn";
   sourceUrl?: string;
   description?: string;
 };
 export function normalizeSource(
   data: SourceSettings,
-): Required<SourceSettings> {
+): { sourceType: "git" | "svn"; sourceUrl: string; description: string } {
   const sourceType = data.sourceType ?? "git";
   const sourceUrl = (data.sourceUrl ?? "").trim();
   const description = (data.description ?? "").trim();
@@ -51,6 +52,26 @@ export async function readProjectSource(settings: SourceSettings) {
   const config = normalizeSource(settings);
   if (!config.sourceUrl)
     return { description: config.description, files: [], truncated: false };
+  // Operator-only transport mappings support repositories behind an SSO gateway.
+  // Never return transport endpoints or credentials in project/source responses.
+  let transportUrl = config.sourceUrl;
+  let authorization = "";
+  if (process.env.AIQA_SOURCE_CONNECTIONS_FILE) {
+    try {
+      const connections = JSON.parse(await readFile(process.env.AIQA_SOURCE_CONNECTIONS_FILE, "utf8"));
+      const connection = connections[config.sourceUrl];
+      if (connection) {
+        const endpoint = new URL(connection.url);
+        if (!["https:", "http:"].includes(endpoint.protocol) || endpoint.username || endpoint.password || endpoint.search || endpoint.hash)
+          throw new Error("Invalid transport");
+        transportUrl = endpoint.href;
+        authorization = connection.authorization || "";
+        if (typeof authorization !== "string" || /[\r\n]/.test(authorization)) throw new Error("Invalid credentials");
+      }
+    } catch {
+      throw new Error("서버의 저장소 연결 설정을 확인해 주세요.");
+    }
+  }
   const folder = await mkdtemp(path.join(tmpdir(), "heimdall-source-"));
   const deadline = Date.now() + 60000;
   const run = (binary: string, args: string[]) =>
@@ -68,7 +89,12 @@ export async function readProjectSource(settings: SourceSettings) {
             GIT_CONFIG_NOSYSTEM: "1",
             GIT_CONFIG_GLOBAL: "/dev/null",
             GIT_TERMINAL_PROMPT: "0",
-            GIT_ALLOW_PROTOCOL: "https",
+            GIT_ALLOW_PROTOCOL: transportUrl.startsWith("http:") ? "http:https" : "https",
+            ...(authorization ? {
+              GIT_CONFIG_COUNT: "1",
+              GIT_CONFIG_KEY_0: `http.${transportUrl}.extraHeader`,
+              GIT_CONFIG_VALUE_0: `Authorization: ${authorization}`,
+            } : {}),
           },
         },
         (error, stdout) =>
@@ -92,7 +118,7 @@ export async function readProjectSource(settings: SourceSettings) {
         "--depth=1",
         "--no-checkout",
         "--",
-        config.sourceUrl,
+        transportUrl,
         "repo",
       ]);
       revision = (await run("git", ["-C", "repo", "rev-parse", "HEAD"])).trim();
@@ -181,9 +207,16 @@ export function normalizeProjectSources(
   )
     throw new Error("같은 저장소 주소를 중복 등록할 수 없어요.");
   return {
+    appPackage: normalizeAppPackage(data.appPackage),
     description: normalizeSource({ description: data.description }).description,
     repositories,
   };
+}
+export function normalizeAppPackage(value?: string) {
+  if (value === undefined || value === "") return undefined;
+  if (typeof value !== "string" || value.length > 200 || !/^[A-Za-z][A-Za-z0-9_]*(\.[A-Za-z][A-Za-z0-9_]*)+$/.test(value))
+    throw new Error("Android 앱 패키지 이름을 확인해 주세요.");
+  return value;
 }
 export async function readProjectSources(
   data: SourceSettings & { repositories?: SourceSettings[] },

@@ -67,8 +67,8 @@ const server = http.createServer(async (req, res) => {
             return
         }
         // Studio가 테스트하는 Android 샘플 앱의 WebView. 구형 QA 콘솔과 별개다.
-        if (req.method === 'GET' && /^\/webapp\/(?:index\.html|app\.css|app\.js|copy\.json)?$/.test(route)) {
-            await serveStatic(res, route === '/webapp/' ? 'webapp/index.html' : route.slice(1))
+        if (req.method === 'GET' && /^\/webapp\/(?:[a-z0-9-]+\/)?(?:index\.html|app\.css|app\.js|copy\.json)?$/.test(route)) {
+            await serveStatic(res, route.endsWith('/') ? route.slice(1) + 'index.html' : route.slice(1))
             return
         }
         // 이전에 열어둔 탭도 더 이상 기기나 실행기에 접근하지 못한다.

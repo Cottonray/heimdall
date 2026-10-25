@@ -91,6 +91,7 @@ services:
       HEIMDALL_ALLOWED_HOSTS: ${HEIMDALL_ALLOWED_HOSTS:?Set the public hostnames}
       HEIMDALL_PUBLIC_URL: ${HEIMDALL_PUBLIC_URL:-}
       AIQA_SOURCE_HOSTS: ${AIQA_SOURCE_HOSTS:-github.com,gitlab.com,svn.apache.org}
+      AIQA_SOURCE_CONNECTIONS_FILE: ${AIQA_SOURCE_CONNECTIONS_FILE:-}
       AIQA_WORKER_SECRET: ${AIQA_WORKER_SECRET:?AIQA_WORKER_SECRET required}
       AIQA_TEST_LOGIN_ENABLED: ${AIQA_TEST_LOGIN_ENABLED:-false}
       AIQA_TEST_USER_PASSWORD: ${AIQA_TEST_USER_PASSWORD:-}
@@ -144,6 +145,7 @@ services:
       # **자주 바뀌는 것은 굽지 않는다.** 서버 소스·화면·시나리오를 마운트해 두면
       # 문구 하나 고치자고 3GB 이미지를 다시 만들 일이 없다 (AICC 의 web/ 과 같은 판단)
       - ./server:/opt/aiqa/server:ro
+      - ${AIQA_SOURCE_CONNECTIONS_HOST_PATH:-/dev/null}:/opt/aiqa/source-connections.json:ro
       - ./contracts:/opt/aiqa/contracts:ro
       - ./web:/opt/aiqa/web:ro
       - ./flows:/opt/aiqa/flows:ro

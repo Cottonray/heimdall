@@ -8,7 +8,7 @@ export async function observe(s: Session) {
     s.observation = {
       serial: device.target(),
       tree: (await appium.source(s.appiumId!))
-        .filter((n) => n.package === device.APP_ID)
+        .filter((n) => n.package === (s.appPackage || device.APP_ID))
         .map((n) => ({
           text: n.text,
           selector: n.id,
