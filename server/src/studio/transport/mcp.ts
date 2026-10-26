@@ -34,6 +34,7 @@ export const tools = [
           url: { type: "string" },
           status: { type: "number" },
           contains: { type: "string" },
+          present: { type: "boolean", description: "assert: false means target must be absent; true (default) means present" },
           key: { type: "string" },
           direction: { type: "string" },
           x: { type: "number" },

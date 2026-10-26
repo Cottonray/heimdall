@@ -236,3 +236,16 @@ export async function targetRect(sessionId: string, element?: string) {
     if (!id) return null;
     return await call('GET', `/session/${sessionId}/element/${id}/rect`) as { x: number; y: number; width: number; height: number };
 }
+
+/** Assertion lookup: transport/session failures must never count as absence. */
+export async function assertionExists(sessionId: string, text?: string, selector?: string): Promise<boolean> {
+    const expressions = text
+        ? [`new UiSelector().text("${javaString(text)}")`, `new UiSelector().description("${javaString(text)}")`]
+        : [`new UiSelector().resourceId("${javaString(selector || '')}")`];
+    for (const value of expressions) {
+        const result = await call('POST', `/session/${sessionId}/elements`, { using: '-android uiautomator', value }, 30000);
+        if (!Array.isArray(result)) throw new AppiumError('요소 목록 응답을 읽지 못했어요');
+        if (result.length) return true;
+    }
+    return false;
+}

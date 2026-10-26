@@ -212,6 +212,7 @@ export async function connectCodexTerminal(
                       key: { type: "string" },
                       url: { type: "string" },
                       contains: { type: "string" },
+          present: { type: "boolean", description: "assert: false means target must be absent; true (default) means present" },
                       status: { type: "number" },
                     },
                     required: ["type", "comment"],

@@ -30,6 +30,7 @@ export type Action = {
   url?: string;
   status?: number;
   contains?: string;
+  present?: boolean;
 };
 export type UiNode = {
   text?: string;

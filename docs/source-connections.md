@@ -91,3 +91,10 @@ start beneath the label and wrap within the message bubble.
 Disclosure details animate their height and opacity over 200ms, with matching
 chevron rotation. Reduced-motion preferences disable these transitions; collapsed
 content is inert and hidden from assistive technologies.
+
+Assertions carry an explicit `present` boolean: false verifies absence, while
+true (or omitted for legacy steps) verifies presence. AI instructions, tool schemas,
+Android/browser execution and exported scripts preserve this polarity. Android
+assertion lookups propagate transport failures rather than treating them as absence.
+Existing stored assertions retain their recorded meaning and must be regenerated
+when an earlier scenario incorrectly encoded disappearance as presence.

@@ -44,7 +44,7 @@ function rawScript(source: ExportSource, options: { stepsOnly?: boolean } = {}) 
     if (a.type === "goto") lines.push(`  await page.goto(${q(a.url)});`);
     if (a.type === "assert")
       lines.push(
-        `  await expect(${a.text ? `page.text(${q(a.text)}, { exact: false })` : loc}).toBeVisible();`,
+        `  await expect(${a.text ? `page.text(${q(a.text)}, { exact: false })` : loc}).${a.present === false ? "not." : ""}toBeVisible();`,
       );
     if (a.type === "api") {
       lines.push(
@@ -108,7 +108,7 @@ function appiumScript(source: ExportSource, stepsOnly = false) {
       );
     else if (a.type === "assert")
       lines.push(
-        "  assert.ok(await " +
+        "  assert.ok(" + (a.present === false ? "!" : "") + "await " +
           el +
           ".isExisting(), " +
           q(a.text || a.selector || "element") +

@@ -65,7 +65,7 @@ export async function operate(id: string, a: Action) {
         a.text
           ? p.getByText(String(a.text), { exact: false }).first()
           : locator()
-      ).waitFor({ state: "visible", timeout: 6000 });
+      ).waitFor({ state: a.present === false ? "hidden" : "visible", timeout: 6000 });
       break;
     case "api": {
       const r = await s.context.request.get(checkUrl(String(a.url)), {
