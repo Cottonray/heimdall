@@ -66,16 +66,15 @@ function appiumScript(source: ExportSource, stepsOnly = false) {
     "// Set APPIUM_URL and ANDROID_UDID for your test device.",
     'const endpoint = new URL(process.env.APPIUM_URL || "http://127.0.0.1:4723");',
     'const driver = await remote({ hostname: endpoint.hostname, port: Number(endpoint.port || 4723), path: endpoint.pathname, capabilities: { platformName: "Android", "appium:automationName": "UiAutomator2", "appium:udid": process.env.ANDROID_UDID, "appium:noReset": true } });',
-    'const page = Object.assign(driver.$.bind(driver), { back: driver.back.bind(driver), keys: driver.keys.bind(driver), pressKeyCode: driver.pressKeyCode.bind(driver), execute: driver.execute.bind(driver), getWindowRect: driver.getWindowRect.bind(driver), activateApp: driver.activateApp.bind(driver), deleteSession: driver.deleteSession.bind(driver) });',
+    'const page = Object.assign(driver.$.bind(driver), { text: (value) => driver.$("android=new UiSelector().text(" + JSON.stringify(value) + ")"), back: driver.back.bind(driver), keys: driver.keys.bind(driver), pressKeyCode: driver.pressKeyCode.bind(driver), execute: driver.execute.bind(driver), getWindowRect: driver.getWindowRect.bind(driver), activateApp: driver.activateApp.bind(driver), deleteSession: driver.deleteSession.bind(driver) });',
     "try {",
     ...(source.appPackage ? [`  await page.activateApp(${q(source.appPackage)});`] : []),
   ];
   for (const { action: a } of source.steps) {
     const start = lines.length;
-    const selector = a.selector
-      ? "id=" + a.selector
-      : "android=new UiSelector().text(" + q(a.text || "") + ")";
-    const el = "page(" + q(selector) + ")";
+    const el = a.selector
+      ? "page(" + q("id=" + a.selector) + ")"
+      : "page.text(" + q(a.text || "") + ")";
     if (a.type === "click") lines.push("  await " + el + ".click();");
     else if (a.type === "fill")
       lines.push("  await " + el + ".setValue(" + q(a.value || "") + ");");
