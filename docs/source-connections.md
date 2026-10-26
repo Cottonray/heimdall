@@ -64,8 +64,12 @@ Before interaction, a separate review rewrites the proposed scenario to remove
 unrelated navigation, duplicate assertions and legacy steps from another goal.
 Only explicitly retained prerequisites and newly recorded actions form the current
 scenario; the original step/evidence history is preserved. Each proposed action is
-also checked against the reviewed goal and current UI before it can execute. Three
-consecutive rejected proposals stop the run without claiming success.
+also checked against the reviewed goal and current UI before it can execute. Rejected
+proposals are excluded before recording or execution. The agent rewrites the
+remaining plan using current UI, source analysis and completed actions, then
+continues automatically. Assertions after relevant state changes are not treated
+as duplicates. The overall execution budget and real failure/manual-stop
+boundaries still apply; rejection alone does not mark the run stopped.
 
 A structured checklist is stored inside an assistant message: source analysis,
 planning, unnecessary-step review and execution verification. Completed items use
