@@ -343,7 +343,7 @@ export function DeviceFarm({
               {admin && <div className="absolute right-3 top-3 z-10">{releaseMenu(device)}</div>}
               <Item
                 variant="project"
-                size="project"
+                size="device"
                 className={admin ? "pr-14" : undefined}
                 asChild
               >
@@ -356,7 +356,7 @@ export function DeviceFarm({
                     ready ? `${name} 원격 조작 새 창 열기` : `${name} ${state}`
                   }
                 >
-                  <div className="space-y-6">
+                  <div className="w-full min-w-0 space-y-6">
                     <div className="space-y-3">
                       <div className="flex items-center justify-between gap-2">
                         <PlatformIcon platform={platform} />
@@ -373,7 +373,7 @@ export function DeviceFarm({
                         </Badge>
                       </div>
                       <div className="flex items-center justify-between gap-2">
-                        <h2 className="font-semibold">{name}</h2>
+                        <h2 className="truncate font-semibold" title={name}>{name}</h2>
                         <ExternalLink
                           aria-hidden="true"
                           className="size-4 shrink-0 text-muted-foreground"
@@ -396,7 +396,8 @@ export function DeviceFarm({
                       </div>
                       <p
                         data-selectable
-                        className="break-all text-xs text-muted-foreground"
+                        title={device.serial}
+                        className="line-clamp-2 break-all text-xs text-muted-foreground"
                       >
                         ID · {device.serial}
                       </p>
