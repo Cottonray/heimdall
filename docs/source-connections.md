@@ -30,3 +30,18 @@ recorded for that session. Existing sessions without a package use the default a
 Synthetic web test targets can be served from `web/webapp/<sample>/` using the fixed
 `index.html`, `app.css`, `app.js`, and `copy.json` filenames. These are public targets;
 never deploy confidential source or data into them.
+
+## Chat scenario workflow
+
+Session chat first analyzes the connected source excerpts for relevant paths,
+conditions and expected outcomes. Requests to create, replace or run tests then
+produce a separate scenario plan before the observed-UI action loop starts.
+The analysis and plan are passed to every action decision. Analysis-only and
+no-interaction requests remain conversational and do not operate the device.
+Replies stay concise (normally three short sentences/bullets at most); the full
+internal analysis is not copied into the chat. Routine choices are resolved from
+source, history and UI. Human assistance is reserved for unavailable credentials,
+human-only challenges, external permission or essential unrecoverable facts.
+Bounded source excerpts are not a claim of exhaustive analysis. The action loop
+retains an explicit 48-step execution budget and requires a successful assertion
+before reporting completion.
