@@ -117,6 +117,7 @@ export function WebViewDebugging({
     src: string;
   } | null>(null);
   const [opening, setOpening] = useState(false);
+  const [external, setExternal] = useState(false);
   const [error, setError] = useState("");
   const target =
     discovery.targets.find((item) => key(item) === selected) ||
@@ -126,6 +127,7 @@ export function WebViewDebugging({
   async function inspect() {
     if (!target || !canControl) return;
     setInspector(null);
+    setExternal(false);
     setOpening(true);
     setError("");
     try {
@@ -216,6 +218,14 @@ export function WebViewDebugging({
           {opening ? "연결 중" : "인스펙터"}
         </Button>
         {current && (
+          <Button variant="outline" asChild>
+            <a href={current.src} target="_blank" rel="noopener noreferrer"
+              onClick={() => setExternal(true)}>
+              새 창
+            </a>
+          </Button>
+        )}
+        {current && (
           <Button
             variant="ghost"
             size="icon"
@@ -236,7 +246,11 @@ export function WebViewDebugging({
           일부 웹뷰가 응답하지 않아요. 잠시 후 다시 확인해 주세요.
         </p>
       )}
-      {current ? (
+      {current && external ? (
+        <p role="status" className="p-6 text-sm text-muted-foreground">
+          새 창에서 웹페이지를 확인해 주세요. 기기 연결을 유지하려면 이 창을 열어 두세요.
+        </p>
+      ) : current ? (
         <iframe
           key={current.instance}
           title="Chrome DevTools 웹뷰 인스펙터"

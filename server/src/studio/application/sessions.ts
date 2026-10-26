@@ -68,7 +68,7 @@ async function openEnvironment(data: NewSession, restore?: PublicSession, takeov
   const project = (await listProjects()).find((p) => p.id === projectId);
   if (!restore && !data.parent && project?.demoScenarioIds?.length >= 5)
     throw new Error("데모 시나리오는 최대 5개예요. 기존 시나리오를 수정하거나 재실행해 주세요.");
-  const appPackage = normalizeAppPackage(restore?.appPackage || data.appPackage || project?.appPackage) || device.APP_ID;
+  const appPackage = normalizeAppPackage(restore?.appPackage || data.appPackage || project?.appPackage);
   const engine = ["web", "mobile-web", "api", "android"].includes(
     data.engine || "",
   )
@@ -148,7 +148,8 @@ async function openEnvironment(data: NewSession, restore?: PublicSession, takeov
       if (!(await device.state()).booted)
         throw new Error("Android 기기가 준비되지 않았어요");
       s.appiumId = await appium.open(1200);
-      await appium.launch(s.appiumId, appPackage, false);
+      if (appPackage) await appium.launch(s.appiumId, appPackage, false);
+      else s.appPackage = normalizeAppPackage(await appium.currentPackage(s.appiumId));
       device.invalidateDump();
     } else
       await worker("/open", {

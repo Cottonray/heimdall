@@ -53,6 +53,10 @@ export async function source(sessionId: string): Promise<device.UiNode[]> {
     return device.parseUiSource(String(await call('GET', `/session/${sessionId}/source`)))
 }
 
+export async function currentPackage(sessionId: string): Promise<string> {
+    return String(await call('GET', `/session/${sessionId}/appium/device/current_package`))
+}
+
 // ── 세션 ─────────────────────────────────────────────────────────────────────
 
 /**

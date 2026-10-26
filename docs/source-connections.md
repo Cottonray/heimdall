@@ -120,3 +120,13 @@ as completion evidence, not old chat claims. Confirmed product discrepancies,
 human-only blockers and exhausted recovery are reported distinctly. Agent runs
 do not offer the generic replay-confirmation prompt after completion or failure;
 manually edited scenarios retain that control.
+
+When a new Android session has no configured package, it attaches to the app
+already open on the connected device and saves that package for reconnection.
+An explicit scenario or project package still takes precedence. Observation
+includes the foreground package as well as the configured target, so a system
+screen or another app opened during inspection does not produce an empty tree.
+
+The WebView inspector also offers **새 창** after connection. Opening it unloads
+the embedded client to avoid two DevTools clients controlling the same target.
+Keep the remote-device window open to retain the existing device lease.

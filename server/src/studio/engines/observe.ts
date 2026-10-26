@@ -5,10 +5,11 @@ import { worker } from "./browser.ts";
 import { WORKER } from "../infrastructure/config.ts";
 export async function observe(s: Session) {
   if (s.engine === "android") {
+    const foregroundPackage = await appium.currentPackage(s.appiumId!);
     s.observation = {
       serial: device.target(),
       tree: (await appium.source(s.appiumId!))
-        .filter((n) => n.package === (s.appPackage || device.APP_ID))
+        .filter((n) => n.package === foregroundPackage || n.package === s.appPackage)
         .map((n) => ({
           text: n.text,
           selector: n.id,
