@@ -21,8 +21,8 @@ export function ChatPanel({session,busy,onCommand}: {session:Session;busy:boolea
     <div className="flex h-full min-h-0 flex-col bg-background">
       <div role="log" aria-label="AI 대화" aria-live="polite" className="min-h-0 flex-1 space-y-3 overflow-y-auto p-4">
         {messages.map((message,index)=><div key={`${message.at}-${index}`} className={message.role==="user"?"flex justify-end":"flex justify-start"}>
-          <div className={message.role==="user"?"max-w-[85%] whitespace-pre-wrap break-words rounded-xl bg-primary/10 px-4 py-2 text-sm":"max-w-[85%] whitespace-pre-wrap break-words rounded-xl bg-muted px-4 py-2 text-sm"}>
-            <p className="mb-1 text-xs text-muted-foreground">{message.role==="user"?"나":"AI"}</p>{message.text}
+          <div className={message.role==="user"?"max-w-[85%] whitespace-pre-wrap break-words rounded-xl bg-primary px-4 py-2 text-sm text-primary-foreground":"max-w-[85%] whitespace-pre-wrap break-words rounded-xl border border-primary/20 bg-primary/10 px-4 py-2 text-sm"}>
+            <p className={message.role==="user"?"mb-1 text-xs text-primary-foreground/80":"mb-1 text-xs text-primary"}>{message.role==="user"?"나":"AI"}</p>{message.text}
           </div>
         </div>)}
         {session.ai && <p role="status" className="text-sm text-muted-foreground">화면을 확인하고 있어요…</p>}
