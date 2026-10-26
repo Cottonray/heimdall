@@ -59,3 +59,17 @@ area. Manual resizing remains available and uses its own saved height. Reading
 older messages no longer forces a jump when the assistant responds; a latest
 message button appears when content remains below the viewport. At the bottom,
 new responses remain in view automatically.
+
+Before interaction, a separate review rewrites the proposed scenario to remove
+unrelated navigation, duplicate assertions and legacy steps from another goal.
+Only explicitly retained prerequisites and newly recorded actions form the current
+scenario; the original step/evidence history is preserved. Each proposed action is
+also checked against the reviewed goal and current UI before it can execute. Three
+consecutive rejected proposals stop the run without claiming success.
+
+A structured checklist is stored inside an assistant message: source analysis,
+planning, unnecessary-step review and execution verification. Completed items use
+a green circular check icon; unavailable source is skipped, and failure or manual
+interruption is not marked complete. Only a successful executed assertion can
+complete the execution-verification item. This is model-assisted relevance review,
+not a proof of a globally shortest navigation path.

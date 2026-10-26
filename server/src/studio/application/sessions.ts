@@ -129,8 +129,9 @@ async function openEnvironment(data: NewSession, restore?: PublicSession, takeov
     created: restore?.created || new Date().toISOString(),
     updated: Date.now(),
     steps: restore?.steps || [],
-    chat: restore?.chat || [],
+    chat: (restore?.chat || []).map(message => ({ ...message, checklist: message.checklist?.map(item => item.status === "running" ? { ...item, status: "blocked" as const } : item) })),
     verificationPending: restore?.verificationPending,
+    scenarioActions: restore?.scenarioActions,
     execution:
       restore?.execution?.status === "running"
         ? { ...restore.execution, status: "interrupted", finished: Date.now() }
@@ -181,7 +182,9 @@ async function openEnvironment(data: NewSession, restore?: PublicSession, takeov
   }
 }
 export async function pause(s: Session) {
+  for (const message of s.chat || []) for (const item of message.checklist || []) if (item.status === "running") item.status = "blocked";
   s.epoch++;
+  s.ai = false;
   s.state = "paused";
   s.message = "진행 중인 한 동작이 끝나면 직접 조작할 수 있어요";
   await s.tail.catch(() => {});

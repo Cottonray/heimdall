@@ -1,6 +1,7 @@
 import { scenarioActions } from "./scenario-actions.ts";
 import type { Action, ScenarioPlan } from "../../../../contracts/studio.ts";
 type ExportSource = {
+  scenarioActions?: Action[];
   execution?: { actions?: Action[] };
   appPackage?: string;
   plan?: ScenarioPlan;

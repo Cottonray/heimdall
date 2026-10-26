@@ -83,8 +83,9 @@ export async function action(s: Session, input: Action, actor: string) {
     step.ms = Date.now() - t;
     s.steps.push(step);
     if (["AI", "Codex", "Human"].includes(actor)) {
+      if (s.scenarioActions) s.scenarioActions.push(structuredClone(step.action));
       if (s.execution) {
-        s.execution.actions = s.steps.map(record => structuredClone(record.action));
+        s.execution.actions = structuredClone(s.scenarioActions ?? s.steps.map(record => record.action));
         s.execution.total = s.execution.actions.length;
       }
       s.verificationPending = true;

@@ -132,9 +132,11 @@ export type ScenarioPlan = {
   steps: { title: string; action: string; expected: string; source: string }[];
   branches: { title: string; expected: string; source: string }[];
 };
+export type ChatCheck = { label: string; status: "pending" | "running" | "done" | "blocked" | "skipped" };
 export type Session = {
+  scenarioActions?: Action[];
   verificationPending?: boolean;
-  chat?: { role: "user" | "assistant"; text: string; at: number }[];
+  chat?: { role: "user" | "assistant"; text: string; at: number; checklist?: ChatCheck[] }[];
   appPackage?: string;
   plan?: ScenarioPlan;
   execution?: Execution;
