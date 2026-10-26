@@ -84,3 +84,6 @@ published before source loading so its first phase can visibly show progress.
 Checklist rows share four aligned columns for the status icon, label, status text
 and disclosure control. Rows have a consistent minimum height; expanded details
 start beneath the label and wrap within the message bubble.
+Disclosure details animate their height and opacity over 200ms, with matching
+chevron rotation. Reduced-motion preferences disable these transitions; collapsed
+content is inert and hidden from assistive technologies.

@@ -1,5 +1,5 @@
 import { useId, useState } from "react";
-import { Check, ChevronDown, ChevronUp } from "./material-icons";
+import { Check, ChevronDown } from "./material-icons";
 import { Button } from "./button";
 import type { ChatCheck } from "../../../../contracts/studio";
 
@@ -14,9 +14,9 @@ function CheckItem({ item }: { item: ChatCheck }) {
       </span>
       <span className="min-w-0 whitespace-normal leading-5">{item.label}</span>
       <span className="whitespace-nowrap text-center text-xs text-muted-foreground">{labels[item.status]}</span>
-      <div className="flex justify-end">{!!item.details?.length && <Button size="sm" variant="ghost" aria-expanded={open} aria-controls={id} aria-label={`시나리오 작성 상세 ${open ? "접기" : "펼치기"}`} onClick={() => setOpen(!open)}>{open ? <ChevronUp /> : <ChevronDown />}{item.details.length}개</Button>}</div>
+      <div className="flex justify-end">{!!item.details?.length && <Button size="sm" variant="ghost" aria-expanded={open} aria-controls={id} aria-label={`시나리오 작성 상세 ${open ? "접기" : "펼치기"}`} onClick={() => setOpen(!open)}><ChevronDown className={`transition-transform duration-200 motion-reduce:transition-none ${open ? "rotate-180" : ""}`} />{item.details.length}개</Button>}</div>
     </div>
-    {!!item.details?.length && <ol id={id} hidden={!open} className="col-start-2 col-span-3 my-2 list-decimal space-y-1 whitespace-normal pl-4 text-xs text-muted-foreground">{item.details.map((text, index) => <li key={index}>{text}</li>)}</ol>}
+    {!!item.details?.length && <div id={id} aria-hidden={!open} inert={!open} className={`col-start-2 col-span-3 grid transition-[grid-template-rows,opacity] duration-200 ease-in-out motion-reduce:transition-none ${open ? "grid-rows-[1fr] opacity-100" : "grid-rows-[0fr] opacity-0"}`}><div className="min-h-0 overflow-hidden"><ol className="my-2 list-decimal space-y-1 whitespace-normal pl-4 text-xs text-muted-foreground">{item.details.map((text, index) => <li key={index}>{text}</li>)}</ol></div></div>}
   </li>;
 }
 export function ChatChecklist({ items }: { items: ChatCheck[] }) {
