@@ -66,29 +66,30 @@ function appiumScript(source: ExportSource, stepsOnly = false) {
     "// Set APPIUM_URL and ANDROID_UDID for your test device.",
     'const endpoint = new URL(process.env.APPIUM_URL || "http://127.0.0.1:4723");',
     'const driver = await remote({ hostname: endpoint.hostname, port: Number(endpoint.port || 4723), path: endpoint.pathname, capabilities: { platformName: "Android", "appium:automationName": "UiAutomator2", "appium:udid": process.env.ANDROID_UDID, "appium:noReset": true } });',
+    'const page = Object.assign(driver.$.bind(driver), { back: driver.back.bind(driver), keys: driver.keys.bind(driver), pressKeyCode: driver.pressKeyCode.bind(driver), execute: driver.execute.bind(driver), getWindowRect: driver.getWindowRect.bind(driver), activateApp: driver.activateApp.bind(driver), deleteSession: driver.deleteSession.bind(driver) });',
     "try {",
-    ...(source.appPackage ? [`  await driver.activateApp(${q(source.appPackage)});`] : []),
+    ...(source.appPackage ? [`  await page.activateApp(${q(source.appPackage)});`] : []),
   ];
   for (const { action: a } of source.steps) {
     const start = lines.length;
     const selector = a.selector
       ? "id=" + a.selector
       : "android=new UiSelector().text(" + q(a.text || "") + ")";
-    const el = "driver.$(" + q(selector) + ")";
+    const el = "page(" + q(selector) + ")";
     if (a.type === "click") lines.push("  await " + el + ".click();");
     else if (a.type === "fill")
       lines.push("  await " + el + ".setValue(" + q(a.value || "") + ");");
     else if (a.type === "type")
-      lines.push("  await driver.keys(" + q(a.value || "") + ");");
+      lines.push("  await page.keys(" + q(a.value || "") + ");");
     else if (a.type === "key")
       lines.push(
         a.key === "Back"
-          ? "  await driver.back();"
-          : "  await driver.pressKeyCode(66);",
+          ? "  await page.back();"
+          : "  await page.pressKeyCode(66);",
       );
     else if (a.type === "point")
       lines.push(
-        '  await driver.execute("mobile: clickGesture", { x: ' +
+        '  await page.execute("mobile: clickGesture", { x: ' +
           Number(a.x) +
           ", y: " +
           Number(a.y) +
@@ -96,7 +97,7 @@ function appiumScript(source: ExportSource, stepsOnly = false) {
       );
     else if (a.type === "scroll")
       lines.push(
-        '  { const { width, height } = await driver.getWindowRect(); await driver.execute("mobile: swipeGesture", { left: 0, top: 0, width, height, direction: ' +
+        '  { const { width, height } = await page.getWindowRect(); await page.execute("mobile: swipeGesture", { left: 0, top: 0, width, height, direction: ' +
           q(a.direction === "up" ? "down" : "up") +
           ", percent: 0.6 }); }",
       );
@@ -118,7 +119,7 @@ function appiumScript(source: ExportSource, stepsOnly = false) {
   }
   if (stepsOnly) return lines.map((line) => line.replace(/^  /, "")).join("\n") || "// 기록된 동작이 없어요.";
   return lines
-    .concat("} finally {", "  await driver.deleteSession();", "}")
+    .concat("} finally {", "  await page.deleteSession();", "}")
     .join("\n");
 }
 
