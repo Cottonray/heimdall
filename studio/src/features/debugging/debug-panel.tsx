@@ -16,7 +16,7 @@ export function DebugPanel({ session, source }: { session: Session; source?: Ses
   const [selected, setSelected] = useState<number | null>(null);
   useEffect(() => setSelected(null), [session.id]);
   const activeStep = session.steps.find(step => step.n === selected) || session.steps[0];
-  const [tab, setTab] = useState("results");
+  const [tab, setTab] = useState("code");
   useEffect(() => {
     if (session.execution?.status === "running") setTab("results");
   }, [session.execution?.started, session.execution?.status]);
