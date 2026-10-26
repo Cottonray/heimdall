@@ -209,6 +209,10 @@
 .dark .test-code [data-token="number"] {
   color: #fcd34d;
 }
+.dashboard-implementation-overlay {
+  @apply absolute inset-0 z-20 flex items-center justify-center bg-background/80 text-3xl font-semibold text-foreground backdrop-blur-sm;
+}
+
 .dark .test-code [data-token="comment"] {
   color: #94a3b8;
 }
