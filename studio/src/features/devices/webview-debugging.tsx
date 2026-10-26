@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Code, RefreshCw, X } from "lucide-react";
+import { Code, RefreshCw, X } from "@/components/ui/material-icons";
 import { Button } from "@/components/ui/button";
 import {
   Select,

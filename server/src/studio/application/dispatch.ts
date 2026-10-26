@@ -1,5 +1,6 @@
+import { scenarioActions } from "../domain/scenario-actions.ts";
 import type { ToolArguments } from "../domain/types.ts";
-import { get, publicSession } from "../domain/session.ts";
+import { get, publicSession, sessions } from "../domain/session.ts";
 import { listSessions, saved } from "../infrastructure/repository.ts";
 import { observe } from "../engines/observe.ts";
 import { script } from "../domain/export.ts";
@@ -15,7 +16,7 @@ export async function dispatch(name: string, a: ToolArguments) {
     return {
       session: s,
       code: script(s),
-      jsonl: s.steps.map((x) => JSON.stringify(x)).join("\n"),
+      jsonl: scenarioActions(s).map((action, index) => JSON.stringify({ n: index + 1, action })).join("\n"),
     };
   }
   if (name === "qa_run") {
@@ -25,8 +26,13 @@ export async function dispatch(name: string, a: ToolArguments) {
     return replay(source, a);
   }
   if (name === "qa_replay") return replay(await saved(a.id || ""));
+  // Passive UI refresh must never reopen a closed device session.
+  if (name === "qa_observe" && a.passiveObservation) {
+    const current = sessions.get(a.id || "");
+    return current ? publicSession(current) : saved(a.id || "");
+  }
   const s = ["qa_observe", "qa_action", "qa_agent"].includes(name)
-    ? await ensureActive(a.id || "")
+    ? await ensureActive(a.id || "", true)
     : get(a.id || "");
   if (name === "qa_observe") {
     await observe(s);

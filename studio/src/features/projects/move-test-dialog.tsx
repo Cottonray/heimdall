@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { FolderInput } from "lucide-react";
+import { FolderInput } from "@/components/ui/material-icons";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,

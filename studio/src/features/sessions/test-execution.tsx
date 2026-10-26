@@ -7,7 +7,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useId, useState } from "react";
-import { ArrowRight } from "lucide-react";
+import { ArrowRight } from "@/components/ui/material-icons";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";

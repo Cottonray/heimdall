@@ -1,5 +1,5 @@
 import { aiConnection } from "./ai-model.ts";
-export async function complete(system: string, content: string) {
+export async function complete(system: string, content: string, maxTokens = 1200) {
   const connection = await aiConnection();
   if (connection.provider === "openrouter" && !connection.apiKey)
     throw new Error("OpenRouter 키가 설정되지 않았어요");
@@ -19,7 +19,7 @@ export async function complete(system: string, content: string) {
         ? { reasoning: { enabled: false } }
         : {}),
       temperature: 0.1,
-      max_tokens: 1200,
+      max_tokens: Math.min(4000, Math.max(1200, maxTokens)),
       messages: [
         { role: "system", content: system },
         { role: "user", content },

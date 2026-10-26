@@ -17,6 +17,8 @@ export function validateAction(a: Action) {
     ].includes(a.type)
   )
     throw new Error("지원하지 않는 동작이에요");
+  if (a.present !== undefined && typeof a.present !== "boolean")
+    throw new Error("검증의 present는 true 또는 false여야 해요");
   if (JSON.stringify(a).length > 4000)
     throw new Error("동작 내용이 너무 길어요");
   if (["click", "fill", "assert"].includes(a.type) && !a.text && !a.selector)

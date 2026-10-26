@@ -67,8 +67,8 @@ export async function android(s: Session, a: Action) {
       );
       break;
     case "assert":
-      if (!(a.text ? await appium.findText(id, a.text) : await find()))
-        throw new Error(`확인 실패: ${a.text || a.selector}`);
+      if ((await appium.assertionExists(id, a.text, a.selector)) !== (a.present !== false))
+        throw new Error(`확인 실패: ${a.text || a.selector} (${a.present === false ? "없어야 해요" : "있어야 해요"})`);
       break;
     default:
       throw new Error("Android에서 지원하지 않는 동작이에요");

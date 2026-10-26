@@ -191,8 +191,8 @@ export async function createScenarioCodex(
       description: "기본모델",
       default_reasoning_level: "none", supported_reasoning_levels: [],
       shell_type: "shell_command", visibility: "list", supported_in_api: true,
-      priority: 0, upgrade: null, base_instructions: "Help write and run this HEIMDALL test only. Respond in Korean.",
-      model_messages: {instructions_template: "Help write and run this HEIMDALL test only. Respond in Korean.", instructions_variables: {personality_default:"",personality_friendly:"",personality_pragmatic:""}, approvals:null},
+      priority: 0, upgrade: null, base_instructions: "Help write and run this HEIMDALL test only. Respond in Korean. Every code statement must have a Korean explanatory comment. Every qa_action must include a nonempty Korean comment. Keep demo scenarios to at most five representative cases.",
+      model_messages: {instructions_template: "Help write and run this HEIMDALL test only. Respond in Korean. Every code statement must have a Korean explanatory comment. Every qa_action must include a nonempty Korean comment. Keep demo scenarios to at most five representative cases.", instructions_variables: {personality_default:"",personality_friendly:"",personality_pragmatic:""}, approvals:null},
       supports_reasoning_summary_parameter: false, supports_reasoning_summaries: false, support_verbosity: false,
       default_reasoning_summary: "none", default_verbosity: null,
       apply_patch_tool_type: null, truncation_policy: {mode:"tokens",limit:10000},
@@ -343,7 +343,11 @@ requires_openai_auth = false
       child?.kill("SIGKILL");
       gateway.closeAllConnections();
       await new Promise<void>((resolve) => gateway.close(() => resolve()));
-      await rm(home, { recursive: true, force: true });
+      await rm(home, { recursive: true, force: true, maxRetries: 5, retryDelay: 200 }).catch(() => {
+        // A short-lived helper can still be releasing its cache directory.
+        // Cleanup failure must not terminate the server or lose test results.
+        console.warn("Scenario temporary directory cleanup was deferred");
+      });
     },
   };
 }

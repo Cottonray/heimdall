@@ -10,6 +10,7 @@ const badgeVariants = cva(
       variant: {
         offline:
           "border-border bg-muted text-muted-foreground",
+        failure: "bg-destructive/10 text-destructive border-destructive/15",
         success: "bg-success/10 text-success border-success/15",
         default: "bg-primary text-primary-foreground [a&]:hover:bg-primary/90",
         secondary:

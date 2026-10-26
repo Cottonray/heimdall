@@ -1,3 +1,4 @@
+import { acquireDeviceControl } from "./studio/application/device-takeover.ts"
 import { connectCodexTerminal } from './studio/transport/codex-terminal.ts'
 import { connectAgent } from "./studio/infrastructure/agent-registry.ts"
 import { authenticate, authEvents, localRequest } from "./studio/infrastructure/auth.ts"
@@ -67,8 +68,8 @@ const server = http.createServer(async (req, res) => {
             return
         }
         // Studio가 테스트하는 Android 샘플 앱의 WebView. 구형 QA 콘솔과 별개다.
-        if (req.method === 'GET' && /^\/webapp\/(?:index\.html|app\.css|app\.js|copy\.json)?$/.test(route)) {
-            await serveStatic(res, route === '/webapp/' ? 'webapp/index.html' : route.slice(1))
+        if (req.method === 'GET' && /^\/webapp\/(?:[a-z0-9-]+\/)?(?:index\.html|app\.css|app\.js|copy\.json)?$/.test(route)) {
+            await serveStatic(res, route.endsWith('/') ? route.slice(1) + 'index.html' : route.slice(1))
             return
         }
         // 이전에 열어둔 탭도 더 이상 기기나 실행기에 접근하지 못한다.
@@ -123,7 +124,7 @@ server.on('upgrade', async (req, socket) => {
                     else ws.ping()
                 }, 5000)
                 try {
-                    lease = reserveDevice(url.searchParams.get('device') ?? '', auth!.hash)
+                    lease = await acquireDeviceControl(url.searchParams.get('device') ?? '', auth!.hash)
                     ws.on({ onClose: () => { clearInterval(waiting); lease?.release() } })
                     ws.send(JSON.stringify({ type: 'reserved' }))
                     const remote = await prepareRemoteDevice(url.searchParams.get('device') ?? '')

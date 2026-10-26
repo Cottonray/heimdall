@@ -1,5 +1,5 @@
 import { useState, type ReactNode } from "react";
-import { ChevronDown, ChevronUp } from "lucide-react";
+import { ChevronDown, ChevronUp } from "@/components/ui/material-icons";
 import { Button } from "./button";
 import { PanelResizeHandle } from "./panel-resize-handle";
 
@@ -8,11 +8,15 @@ export function BottomPanel({
   storageKey,
   children,
   toolbar,
+  title = "터미널",
+  autoHeight,
 }: {
+  autoHeight?: number;
   id: string;
   storageKey: string;
   children: ReactNode;
   toolbar?: ReactNode;
+  title?: string;
 }) {
   const [collapsed, setCollapsed] = useState(() => {
     try {
@@ -28,8 +32,10 @@ export function BottomPanel({
           targetId={id}
           orientation="vertical"
           label="AI 패널 높이"
-          initialWidth={40}
-          storageKey={storageKey + ":height"}
+          initialWidth={autoHeight ? 25 : 40}
+          minSize={autoHeight ? 15 : 25}
+          autoSize={autoHeight ? `min(${autoHeight}px, 40%)` : undefined}
+          storageKey={storageKey + (autoHeight ? ":adaptive-height" : ":height")}
         />
       )}
       <section
@@ -42,7 +48,7 @@ export function BottomPanel({
         }
       >
         <div className="flex shrink-0 items-center justify-between gap-2 px-3 py-1">
-          <span className="text-sm font-medium">터미널</span>
+          <span className="text-sm font-medium">{title}</span>
           {toolbar}
           <Button
             variant="ghost"

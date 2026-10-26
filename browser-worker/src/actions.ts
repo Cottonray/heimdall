@@ -65,7 +65,7 @@ export async function operate(id: string, a: Action) {
         a.text
           ? p.getByText(String(a.text), { exact: false }).first()
           : locator()
-      ).waitFor({ state: "visible", timeout: 6000 });
+      ).waitFor({ state: a.present === false ? "hidden" : "visible", timeout: 6000 });
       break;
     case "api": {
       const r = await s.context.request.get(checkUrl(String(a.url)), {
@@ -84,4 +84,23 @@ export async function operate(id: string, a: Action) {
       throw new Error("지원하지 않는 브라우저 동작이에요");
   }
   return { action: a, ...(await observe(p)) };
+}
+
+export async function targetRect(id: string, a: Action) {
+  const p = get(id).page;
+  let rect;
+  if (a.type === "point") {
+    rect = await p.evaluate(({x,y}) => {
+      const el = document.elementFromPoint(x,y);
+      if (!el) return {x:x-12,y:y-12,width:24,height:24};
+      const r = el.getBoundingClientRect();
+      return {x:r.x,y:r.y,width:r.width,height:r.height};
+    }, {x:Number(a.x),y:Number(a.y)});
+  } else {
+    const locator = a.type === "type" ? p.locator(":focus") : a.selector ? p.locator(a.selector).first() : p.getByText(String(a.text),{exact:true}).first();
+    await locator.scrollIntoViewIfNeeded({timeout:2000});
+    rect = await locator.boundingBox({timeout:2000});
+  }
+  const size = p.viewportSize();
+  return rect && size ? {...rect,screenWidth:size.width,screenHeight:size.height} : null;
 }

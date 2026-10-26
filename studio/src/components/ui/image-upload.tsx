@@ -1,5 +1,5 @@
 import type { ChangeEventHandler, RefObject } from "react";
-import { ImagePlus } from "lucide-react";
+import { ImagePlus } from "@/components/ui/material-icons";
 import { Button } from "@/components/ui/button";
 
 export function ImageUpload({

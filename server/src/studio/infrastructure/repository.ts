@@ -23,7 +23,7 @@ export async function ensureDb() {
     await db`create table if not exists aiqa_studio (id text primary key, body jsonb not null, updated bigint not null)`;
     await db`create table if not exists aiqa_projects (id text primary key, name text not null, created timestamptz not null default now())`;
     await db`alter table aiqa_projects add column if not exists source jsonb not null default '{}'::jsonb`;
-    await db`insert into aiqa_projects (id, name) values ('default', '기본 프로젝트') on conflict (id) do nothing`;
+    await db`insert into aiqa_projects (id, name) select 'default', '기본 프로젝트' where not exists (select 1 from aiqa_projects) on conflict (id) do nothing`;
   })().catch((e) => {
     schema = undefined;
     throw e;
@@ -67,6 +67,23 @@ export async function listSessions(
   await ensureDb();
   const rows =
     await db!`select body from aiqa_studio where ${projectId ?? null}::text is null or coalesce((case when jsonb_typeof(body)='string' then (body #>> '{}')::jsonb else body end)->>'projectId', 'default')=${projectId ?? null} order by updated desc limit 60`;
+  // Pinned demo scenarios must remain selectable after many replay records.
+  if (projectId) {
+    const projects = await db!`select source from aiqa_projects where id=${projectId}`;
+    const ids = projects[0]?.source?.demoScenarioIds;
+    if (Array.isArray(ids) && ids.length) {
+      const pinned = await db!`select body from aiqa_studio where id in ${db!(ids.slice(0, 5))}`;
+      const present = new Set(rows.map(row => readSessionBody(row.body).id));
+      for (const row of pinned) if (!present.has(readSessionBody(row.body).id)) rows.push(row);
+    }
+  }
+  // Keep the latest run for each listed scenario even beyond the history window.
+  const sourceIds = rows.map(row => readSessionBody(row.body)).filter(s => !s.execution).map(s => s.id);
+  if (sourceIds.length) {
+    const latest = await db!`select distinct on (body->'execution'->>'sourceId') body from aiqa_studio where body->'execution'->>'sourceId' in ${db!(sourceIds)} order by body->'execution'->>'sourceId', (body->'execution'->>'started')::bigint desc`;
+    const present = new Set(rows.map(row => readSessionBody(row.body).id));
+    for (const row of latest) if (!present.has(readSessionBody(row.body).id)) rows.push(row);
+  }
   return rows.map((row) => {
     const body = readSessionBody(row.body);
     return compact(
@@ -124,7 +141,7 @@ export async function renameProject(
   await ensureDb();
   const normalizedSource = source ? normalizeProjectSources(source) : null;
   const rows =
-    await db!`update aiqa_projects set name=${normalized}, source=coalesce(${normalizedSource ? db!.json(normalizedSource) : null}::jsonb, source) where id=${id} returning id`;
+    await db!`update aiqa_projects set name=${normalized}, source=coalesce(${normalizedSource ? db!.json(normalizedSource) : null}::jsonb, source) || jsonb_strip_nulls(jsonb_build_object('demoScenarioIds', source->'demoScenarioIds')) where id=${id} returning id`;
   if (!rows.length) throw new Error("프로젝트를 찾지 못했어요");
   const project = (await listProjects()).find((item) => item.id === id);
   if (!project) throw new Error("프로젝트를 찾지 못했어요");

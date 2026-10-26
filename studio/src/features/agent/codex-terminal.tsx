@@ -14,6 +14,8 @@ export function CodexTerminal({
   active: boolean;
   projectId: string;
 }) {
+  const [started, setStarted] = useState(active);
+  useEffect(() => { if (active) setStarted(true); }, [active]);
   const socket = useRef<WebSocket | null>(null);
   const target = useRef(sessionId);
   target.current = sessionId;
@@ -25,7 +27,7 @@ export function CodexTerminal({
   const [generation, setGeneration] = useState(0);
   const [status, setStatus] = useState("연결 중");
   useEffect(() => {
-    if (!active) return;
+    if (!started) return;
     let disposed = false;
     let retry: ReturnType<typeof setTimeout> | undefined;
     const terminal = new Terminal({
@@ -97,7 +99,7 @@ export function CodexTerminal({
       ws.close();
       terminal.dispose();
     };
-  }, [generation, active]);
+  }, [generation, started]);
   return (
     <BottomPanel
       id={"session-ai-" + sessionId}

@@ -18,6 +18,7 @@ export type Engine = "web" | "mobile-web" | "api" | "android";
 export type SessionState =
   "opening" | "manual" | "ai" | "replay" | "paused" | "passed" | "closed";
 export type Action = {
+  comment?: string;
   type: string;
   text?: string;
   selector?: string;
@@ -29,6 +30,7 @@ export type Action = {
   url?: string;
   status?: number;
   contains?: string;
+  present?: boolean;
 };
 export type UiNode = {
   text?: string;
@@ -68,6 +70,9 @@ export type Step = {
   ms: number;
   error?: string;
   evidence?: string;
+  targetEvidence?: string;
+  targetCaptureError?: string;
+  target?: { x: number; y: number; width: number; height: number; screenWidth: number; screenHeight: number };
   observation?: unknown;
 };
 export type ProjectRepository = {
@@ -76,6 +81,8 @@ export type ProjectRepository = {
   description: string;
 };
 export type Project = {
+  demoScenarioIds?: string[];
+  appPackage?: string;
   repositories?: ProjectRepository[];
   sourceType?: "git" | "svn";
   sourceUrl?: string;
@@ -105,6 +112,7 @@ export type RunOptions = {
   bindings?: DataBinding[];
 };
 export type Execution = {
+  actions?: Action[];
   sourceId: string;
   sourceName: string;
   testDataId?: string;
@@ -125,7 +133,12 @@ export type ScenarioPlan = {
   steps: { title: string; action: string; expected: string; source: string }[];
   branches: { title: string; expected: string; source: string }[];
 };
+export type ChatCheck = { details?: string[]; label: string; status: "pending" | "running" | "done" | "blocked" | "skipped" };
 export type Session = {
+  scenarioActions?: Action[];
+  verificationPending?: boolean;
+  chat?: { role: "user" | "assistant"; text: string; at: number; checklist?: ChatCheck[] }[];
+  appPackage?: string;
   plan?: ScenarioPlan;
   execution?: Execution;
   projectId?: string;
@@ -145,6 +158,7 @@ export type Session = {
   parent?: string;
 };
 export type NewSession = {
+  appPackage?: string;
   projectId?: string;
   engine?: Engine;
   name?: string;
@@ -164,6 +178,7 @@ export type ToolArguments = NewSession &
   RunOptions & {
     id?: string;
     goal?: string;
+    passiveObservation?: boolean;
     action?: Action;
   };
 export interface ToolResults {

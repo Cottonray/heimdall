@@ -93,7 +93,7 @@ export function deviceOwned(serial: string, owner: string) {
   );
 }
 
-/** Admin revocation removes every connection sharing the current human lease. */
+/** Explicit handoff or admin revocation closes every connection sharing the human lease. */
 export async function releaseDeviceOccupancy(serial: string) {
   if (!isIos(serial) && serial !== device.target())
     throw new RemoteDeviceError(404, "기기를 찾을 수 없어요");

@@ -46,6 +46,7 @@ const itemVariants = cva(
         default: "gap-4 p-4",
         sm: "gap-2.5 px-4 py-3",
         project: "p-6",
+        device: "h-52 overflow-hidden p-6",
         row: "w-full gap-4 px-0 py-4",
       },
     },

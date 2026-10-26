@@ -83,6 +83,7 @@ export function useRemoteDevice(serial: string, onAuthExpired: () => void) {
 
   useEffect(() => {
     let disposed = false;
+    let reconnectBlocked = false;
     let closeRenderer = () => {};
     let retry: ReturnType<typeof setTimeout> | undefined;
     let handshake: ReturnType<typeof setTimeout> | undefined;
@@ -301,6 +302,7 @@ export function useRemoteDevice(serial: string, onAuthExpired: () => void) {
             previous.error ||
             "기기에 연결하지 못했어요. 상태를 확인한 뒤 다시 연결해 주세요.",
         }));
+        reconnectBlocked = !mayRetryRemoteClose(event.code);
         if (event.code === 4401) {
           onAuthExpired();
           return;
@@ -311,7 +313,7 @@ export function useRemoteDevice(serial: string, onAuthExpired: () => void) {
       };
     }
     function visibilityChanged() {
-      if (!document.hidden) {
+      if (!document.hidden && !reconnectBlocked) {
         attempt = 0;
         connect();
       }

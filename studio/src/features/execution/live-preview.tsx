@@ -7,8 +7,7 @@ import {
   RefreshCw,
   Send,
   Monitor,
-  MousePointer2,
-} from "lucide-react";
+} from "@/components/ui/material-icons";
 import {
   Card,
   CardHeader,
@@ -18,7 +17,6 @@ import {
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Badge } from "@/components/ui/badge";
 import type { Session, Action } from "../../../../contracts/studio";
 export function LivePreview({
   session,
@@ -57,13 +55,8 @@ export function LivePreview({
               실행 화면
             </span>
           </CardTitle>
-          {session.state !== "closed" && <Badge variant="outline">LIVE</Badge>}
         </div>
-        {session.engine === "android" ? (
-          <p className="text-xs text-muted-foreground">
-            Android · 연결된 테스트 기기
-          </p>
-        ) : (
+        {session.engine !== "android" && (
           <form
             className="flex min-w-0 gap-2"
             onSubmit={(event) => {
@@ -213,12 +206,7 @@ export function LivePreview({
                 </Button>
               </form>
             </div>
-            <p className="flex items-center gap-2 text-xs text-muted-foreground">
-              <MousePointer2 className="size-3" />
-              {session.ai
-                ? "사람 개입을 누르면 직접 조작할 수 있어요."
-                : "화면을 누르면 수행한 단계가 자동으로 기록돼요."}
-            </p>
+
           </div>
         </CardFooter>
       )}

@@ -1,3 +1,4 @@
+import { prepareDeviceTakeover } from "./device-takeover.ts";
 import { watching } from "./test-presence.ts";
 import { prepareTestTarget } from "../infrastructure/domains.ts";
 import { randomUUID } from "node:crypto";
@@ -17,7 +18,9 @@ import {
   persist,
   requireProject,
   saved,
+  listProjects,
 } from "../infrastructure/repository.ts";
+import { normalizeAppPackage } from "../infrastructure/project-source.ts";
 import { worker } from "../engines/browser.ts";
 import { observe } from "../engines/observe.ts";
 let mobileReserved = false;
@@ -28,15 +31,16 @@ function hasContent(observation?: Observation) {
   );
 }
 let opening: Promise<unknown> = Promise.resolve();
-export function open(data: NewSession, restore?: PublicSession) {
-  const result = opening
-    .catch(() => {})
-    .then(() => openEnvironment(data, restore));
+export function exclusiveDevice<T>(work: () => Promise<T>): Promise<T> {
+  const result = opening.catch(() => {}).then(work);
   opening = result;
   return result;
 }
+export function open(data: NewSession, restore?: PublicSession, takeover = true) {
+  return exclusiveDevice(() => openEnvironment(data, restore, takeover));
+}
 const reconnecting = new Map<string, Promise<Session>>();
-export async function ensureActive(id: string): Promise<Session> {
+export async function ensureActive(id: string, takeover = false): Promise<Session> {
   const pending = reconnecting.get(id);
   if (pending) return pending;
   const current = sessions.get(id);
@@ -47,6 +51,7 @@ export async function ensureActive(id: string): Promise<Session> {
     await open(
       { ...source, url: source.observation?.url || source.url },
       source,
+      takeover,
     );
     return sessions.get(id)!;
   })();
@@ -57,9 +62,13 @@ export async function ensureActive(id: string): Promise<Session> {
     reconnecting.delete(id);
   }
 }
-async function openEnvironment(data: NewSession, restore?: PublicSession) {
+async function openEnvironment(data: NewSession, restore?: PublicSession, takeover = true) {
   await ensureDb();
   const projectId = await requireProject(data.projectId || "default");
+  const project = (await listProjects()).find((p) => p.id === projectId);
+  if (!restore && !data.parent && project?.demoScenarioIds?.length >= 5)
+    throw new Error("데모 시나리오는 최대 5개예요. 기존 시나리오를 수정하거나 재실행해 주세요.");
+  const appPackage = normalizeAppPackage(restore?.appPackage || data.appPackage || project?.appPackage) || device.APP_ID;
   const engine = ["web", "mobile-web", "api", "android"].includes(
     data.engine || "",
   )
@@ -67,6 +76,8 @@ async function openEnvironment(data: NewSession, restore?: PublicSession) {
     : "web";
   if (engine !== "android")
     await prepareTestTarget(String(data.url || "http://127.0.0.1:8081/demo/"));
+  if (engine === "android" && takeover) await prepareDeviceTakeover(device.target());
+  const browserCapacity = engine === "android" ? 0 : (await worker<{ capacity: number }>("/healthz")).capacity;
   // Reclaim only unattended, idle environments. Running tests and other viewers stay connected.
   for (const old of sessions.values()) {
     const full =
@@ -74,7 +85,7 @@ async function openEnvironment(data: NewSession, restore?: PublicSession) {
         ? mobileReserved
         : [...sessions.values()].filter(
             (s) => s.engine !== "android" && s.state !== "closed",
-          ).length >= 2;
+          ).length >= browserCapacity;
     if (!full) break;
     if (
       old.state !== "closed" &&
@@ -97,10 +108,10 @@ async function openEnvironment(data: NewSession, restore?: PublicSession) {
     engine !== "android" &&
     [...sessions.values()].filter(
       (s) => s.engine !== "android" && s.state !== "closed",
-    ).length >= 2
+    ).length >= browserCapacity
   )
     throw new Error(
-      "다른 테스트 두 개가 실행 중이에요. 실행이 끝나면 다시 연결해 주세요",
+      `브라우저 ${browserCapacity}개가 실행 중이에요. 사용하지 않는 테스트를 닫아 주세요`,
     );
   if (engine === "android") {
     mobileReserved = true;
@@ -111,12 +122,16 @@ async function openEnvironment(data: NewSession, restore?: PublicSession) {
     projectId,
     name: String(data.name || "새 테스트").slice(0, 80),
     engine,
+    ...(engine === "android" ? { appPackage } : {}),
     url: restore?.url || String(data.url || "http://127.0.0.1:8081/demo/"),
     state: "opening",
     message: "테스트 환경을 준비해요",
     created: restore?.created || new Date().toISOString(),
     updated: Date.now(),
     steps: restore?.steps || [],
+    chat: (restore?.chat || []).map(message => ({ ...message, checklist: message.checklist?.map(item => item.status === "running" ? { ...item, status: "blocked" as const } : item) })),
+    verificationPending: restore?.verificationPending,
+    scenarioActions: restore?.scenarioActions,
     execution:
       restore?.execution?.status === "running"
         ? { ...restore.execution, status: "interrupted", finished: Date.now() }
@@ -133,7 +148,7 @@ async function openEnvironment(data: NewSession, restore?: PublicSession) {
       if (!(await device.state()).booted)
         throw new Error("Android 기기가 준비되지 않았어요");
       s.appiumId = await appium.open(1200);
-      await appium.launch(s.appiumId, device.APP_ID, false);
+      await appium.launch(s.appiumId, appPackage, false);
       device.invalidateDump();
     } else
       await worker("/open", {
@@ -167,14 +182,25 @@ async function openEnvironment(data: NewSession, restore?: PublicSession) {
   }
 }
 export async function pause(s: Session) {
+  for (const message of s.chat || []) for (const item of message.checklist || []) if (item.status === "running") item.status = "blocked";
   s.epoch++;
+  s.ai = false;
   s.state = "paused";
   s.message = "진행 중인 한 동작이 끝나면 직접 조작할 수 있어요";
   await s.tail.catch(() => {});
   await persist(s);
   return publicSession(s);
 }
-export async function close(s: Session) {
+const closing = new WeakMap<Session, Promise<PublicSession>>();
+export function close(s: Session): Promise<PublicSession> {
+  if (s.state === "closed") return Promise.resolve(publicSession(s));
+  const pending = closing.get(s);
+  if (pending) return pending;
+  const result = closeEnvironment(s).finally(() => closing.delete(s));
+  closing.set(s, result);
+  return result;
+}
+async function closeEnvironment(s: Session) {
   await pause(s);
   if (s.appiumId) {
     await appium.close(s.appiumId);

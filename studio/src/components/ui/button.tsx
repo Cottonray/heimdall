@@ -27,6 +27,7 @@ const buttonVariants = cva(
         link: "text-primary underline-offset-4 hover:underline",
       },
       size: {
+        step: "h-auto w-full flex-col items-start justify-start whitespace-normal px-3 py-2 text-left",
         default: "h-9 px-4 py-2 has-[>svg]:px-3",
         download:
           "h-auto min-h-9 max-w-full whitespace-normal py-2 text-center",

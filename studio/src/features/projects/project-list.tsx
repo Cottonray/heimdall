@@ -1,7 +1,7 @@
 import { Item } from "@/components/ui/item";
 import { PageHeader } from "@/components/page-header";
 import { useState, type ReactNode } from "react";
-import { Folder, Plus, ArrowUpRight, LayoutGrid, List } from "lucide-react";
+import { Folder, Plus, ArrowUpRight, LayoutGrid, List } from "@/components/ui/material-icons";
 import { Button } from "@/components/ui/button";
 import {
   Table,

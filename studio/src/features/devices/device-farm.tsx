@@ -10,7 +10,7 @@ import { RefreshControl } from "@/components/refresh-control";
 import { DeviceManagement } from "./device-management";
 import { useEffect, useState } from "react";
 import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem } from "@/components/ui/dropdown-menu";
-import { ExternalLink, LayoutGrid, List, MoreHorizontal } from "lucide-react";
+import { ExternalLink, LayoutGrid, List, MoreHorizontal } from "@/components/ui/material-icons";
 import { PageHeader } from "@/components/page-header";
 import { PlatformIcon } from "@/components/platform-icon";
 import { Button } from "@/components/ui/button";
@@ -67,7 +67,7 @@ export function DeviceFarm({
     }
   }, [view]);
   const [filter, setFilter] = useState<DeviceFilter>(
-    management ? "all" : "available",
+    "all",
   );
   useEffect(() => {
     if (!active) return;
@@ -305,8 +305,7 @@ export function DeviceFarm({
               id: "open",
               header: "연결",
               cell: (device) =>
-                deviceStatus(device, !!error) === "사용가능" ||
-                device.ownedByMe ? (
+                ["사용가능", "사용 중", "사용 중 · 나"].includes(deviceStatus(device, !!error)) ? (
                   <Button variant="outline" size="sm" asChild>
                     <a
                       href={remoteUrl(device)}
@@ -333,7 +332,7 @@ export function DeviceFarm({
             const platformName = platform === "ios" ? "iOS" : "Android";
             const virtual = device.kind === "emulator";
             const state = deviceStatus(device, !!error);
-            const ready = state === "사용가능" || !!device.ownedByMe;
+            const ready = ["사용가능", "사용 중", "사용 중 · 나"].includes(state);
             const name =
               device.model ||
               `${platformName} ${virtual ? "가상 기기" : "실물 기기"}`;
@@ -344,7 +343,7 @@ export function DeviceFarm({
               {admin && <div className="absolute right-3 top-3 z-10">{releaseMenu(device)}</div>}
               <Item
                 variant="project"
-                size="project"
+                size="device"
                 className={admin ? "pr-14" : undefined}
                 asChild
               >
@@ -357,7 +356,7 @@ export function DeviceFarm({
                     ready ? `${name} 원격 조작 새 창 열기` : `${name} ${state}`
                   }
                 >
-                  <div className="space-y-6">
+                  <div className="w-full min-w-0 space-y-6">
                     <div className="space-y-3">
                       <div className="flex items-center justify-between gap-2">
                         <PlatformIcon platform={platform} />
@@ -374,7 +373,7 @@ export function DeviceFarm({
                         </Badge>
                       </div>
                       <div className="flex items-center justify-between gap-2">
-                        <h2 className="font-semibold">{name}</h2>
+                        <h2 className="truncate font-semibold" title={name}>{name}</h2>
                         <ExternalLink
                           aria-hidden="true"
                           className="size-4 shrink-0 text-muted-foreground"
@@ -397,7 +396,8 @@ export function DeviceFarm({
                       </div>
                       <p
                         data-selectable
-                        className="break-all text-xs text-muted-foreground"
+                        title={device.serial}
+                        className="line-clamp-2 break-all text-xs text-muted-foreground"
                       >
                         ID · {device.serial}
                       </p>

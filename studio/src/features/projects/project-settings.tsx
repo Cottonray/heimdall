@@ -16,7 +16,7 @@ import {
 } from "@/components/ui/select";
 import { PageHeader } from "@/components/page-header";
 import { useId, useState } from "react";
-import { Save } from "lucide-react";
+import { Save } from "@/components/ui/material-icons";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -27,7 +27,7 @@ type ProjectSettingsProps = {
   busy: boolean;
   onSave: (
     name: string,
-    source: Pick<Project, "repositories" | "description">,
+    source: Pick<Project, "repositories" | "description" | "appPackage">,
   ) => Promise<boolean>;
 };
 
@@ -61,11 +61,13 @@ function ProjectSettingsForm({
     setSaved(false);
   };
   const [description, setDescription] = useState(project.description || "");
+  const [appPackage, setAppPackage] = useState(project.appPackage || "");
   const [pending, setPending] = useState(false);
   const [saved, setSaved] = useState(false);
   const locked = busy || pending;
   const changed =
     name.trim() !== project.name ||
+    appPackage.trim() !== (project.appPackage || "") ||
     JSON.stringify(repositories) !== JSON.stringify(initialRepositories) ||
     description.trim() !== (project.description || "");
   return (
@@ -89,6 +91,7 @@ function ProjectSettingsForm({
                 if (
                   await onSave(name.trim(), {
                     repositories,
+                    appPackage: appPackage.trim(),
                     description: description.trim(),
                   })
                 ) {
@@ -127,6 +130,13 @@ function ProjectSettingsForm({
                 }}
                 placeholder="주요 기능과 테스트할 업무 흐름을 적어 주세요."
               />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor={nameId + "-app-package"}>Android 앱 패키지</Label>
+              <Input id={nameId + "-app-package"} value={appPackage} maxLength={200} disabled={locked}
+                placeholder="com.example.demo"
+                onChange={(e) => { setAppPackage(e.target.value); setSaved(false); }} />
+              <p className="text-sm text-muted-foreground">앱 테스트를 열 때 실행할 설치된 앱이에요. 비워두면 기본 앱을 사용해요.</p>
             </div>
             <section className="space-y-3" aria-label="참고 저장소">
               <div className="flex items-center justify-between gap-3">

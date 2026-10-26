@@ -68,7 +68,7 @@ export const api = {
   renameProject: (
     id: string,
     name: string,
-    source?: Pick<Project, "repositories" | "description">,
+    source?: Pick<Project, "repositories" | "description" | "appPackage">,
   ) => post<Project>("/projects", { id, name, source }),
   moveSession: (id: string, projectId: string) =>
     fetch(API + "/project-assignment", {

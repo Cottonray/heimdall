@@ -189,26 +189,14 @@
 }
 
 .test-code [data-token="keyword"] {
-  color: #7c3aed;
-}
-.test-code [data-token="string"] {
-  color: #047857;
-}
-.test-code [data-token="number"] {
-  color: #b45309;
-}
-.test-code [data-token="comment"] {
-  color: #64748b;
-}
-.dark .test-code [data-token="keyword"] {
   color: #c4b5fd;
 }
-.dark .test-code [data-token="string"] {
+.test-code [data-token="string"] {
   color: #6ee7b7;
 }
-.dark .test-code [data-token="number"] {
+.test-code [data-token="number"] {
   color: #fcd34d;
 }
-.dark .test-code [data-token="comment"] {
+.test-code [data-token="comment"] {
   color: #94a3b8;
 }

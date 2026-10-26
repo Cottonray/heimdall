@@ -1,5 +1,5 @@
 import { useId, useRef, useState } from "react";
-import { Check, LockKeyhole, Trash2, Camera } from "lucide-react";
+import { Check, LockKeyhole, Trash2, Camera } from "@/components/ui/material-icons";
 import {
   DropdownMenu,
   DropdownMenuTrigger,

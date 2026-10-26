@@ -1,5 +1,5 @@
 import { useId, useState } from "react";
-import { Sparkles, Play, Hand, CheckCheck } from "lucide-react";
+import { Sparkles, Play, Hand, CheckCheck } from "@/components/ui/material-icons";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";

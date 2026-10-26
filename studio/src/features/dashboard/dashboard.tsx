@@ -9,7 +9,7 @@ import {
   TableHead,
   TableCell,
 } from "@/components/ui/table";
-import { Plus, Check, Minus } from "lucide-react";
+import { Plus, Check, Minus } from "@/components/ui/material-icons";
 import {
   Bar,
   BarChart,
@@ -87,9 +87,9 @@ export function Dashboard({
       detail: `총 ${metrics.actions}개 동작`,
     },
     {
-      label: "검증 성공률",
+      label: "단계 검증 통과율",
       value: metrics.successRate === null ? "—" : `${metrics.successRate}%`,
-      detail: `${metrics.assertions}회 중 ${metrics.passed}회 통과`,
+      detail: `${metrics.assertions}회 중 ${metrics.passed}회 · 시나리오 통과율과 달라요`,
     },
     {
       label: "유형 커버리지",

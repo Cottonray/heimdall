@@ -1,3 +1,4 @@
+import { EngineLogo } from "@/components/engine-logo";
 import { ScenarioPlanView } from "@/features/scenarios/scenario-plan";
 import { PanelResizeHandle } from "@/components/ui/panel-resize-handle";
 import { AiModelAdmin } from "@/features/auth/ai-model-admin";
@@ -26,7 +27,7 @@ import {
   Settings as SettingsIcon,
   Monitor,
   Folder,
-} from "lucide-react";
+} from "@/components/ui/material-icons";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, WorkspaceTab } from "@/components/ui/tabs";
@@ -39,7 +40,7 @@ import { Dashboard } from "@/features/dashboard/dashboard";
 import { Settings } from "@/features/settings/settings";
 import { useTheme } from "@/features/settings/use-theme";
 import { LivePreview } from "@/features/execution/live-preview";
-import { CodexTerminal } from "@/features/agent/codex-terminal";
+import { ChatPanel } from "@/features/agent/chat-panel";
 import { DebugPanel } from "@/features/debugging/debug-panel";
 import { ExportDialog } from "@/features/scenarios/export-dialog";
 import { api } from "@/lib/api";
@@ -94,6 +95,8 @@ export function App() {
     return (
       <RemoteDevice serial={remoteDevice} onAuthExpired={w.store.refresh} />
     );
+  const demoIds = w.status?.projects.find(p => p.id === w.projectId)?.demoScenarioIds;
+  const demoScenarios = w.sessions.filter(s => (s.projectId || "default") === w.projectId && (demoIds ? demoIds.includes(s.id) : !s.execution));
   const projectSessions = w.sessions.filter(
     (s) => (s.projectId || "default") === w.projectId,
   );
@@ -317,7 +320,7 @@ export function App() {
                     <ScenarioExecution
                       key={w.projectId}
                       projectId={w.projectId}
-                      sessions={projectSessions}
+                      sessions={demoScenarios}
                       active={w.activeTab === "execution"}
                       busy={w.busy}
                       onRun={w.store.executeScenario}
@@ -341,7 +344,7 @@ export function App() {
                     <ScenarioList
                       onDelete={w.store.removeSessions}
                       key={w.projectId}
-                      sessions={projectSessions}
+                      sessions={demoScenarios}
                       onSelect={w.store.select}
                       onCreate={w.store.open}
                       busy={w.busy}
@@ -431,17 +434,14 @@ function SessionContent({
     return (
       <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
         <ScenarioPlanView session={s} />
-        <CodexTerminal
-          sessionId={s.id}
-          active={active}
-          projectId={s.projectId || "default"}
-        />
+        <ChatPanel session={s} busy={w.busy} onCommand={(tool, goal) => w.store.command(tool, goal)} />
       </div>
     );
   return (
     <>
       <div className="flex shrink-0 flex-wrap items-center justify-between gap-4 px-3 py-2">
-        <div>
+        <div className="flex min-w-0 items-center gap-2">
+          <EngineLogo engine={s.engine} />
           <h1 className="text-2xl font-semibold tracking-tight">{s.name}</h1>
         </div>
         <div className="flex flex-wrap gap-2">
@@ -502,15 +502,11 @@ function SessionContent({
             className="flex w-7/10 min-w-0 shrink-0 flex-col"
           >
             <div className="min-h-0 flex-1 overflow-auto">
-              <DebugPanel key={"debug-" + s.id} session={s} />
+              <DebugPanel key={"debug-" + s.id} session={s} latestRun={w.sessions.filter(item => item.execution?.sourceId === s.id && item.projectId === s.projectId).sort((a, b) => (b.execution?.started || 0) - (a.execution?.started || 0))[0]} source={w.sessions.find(item => item.id === s.execution?.sourceId)} />
             </div>
           </aside>
         </div>
-        <CodexTerminal
-          sessionId={s.id}
-          active={active}
-          projectId={s.projectId || "default"}
-        />
+        <ChatPanel session={s} busy={w.busy} onCommand={(tool, goal) => w.store.command(tool, goal)} />
       </div>
     </>
   );

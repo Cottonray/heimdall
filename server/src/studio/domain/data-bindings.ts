@@ -1,3 +1,4 @@
+import { scenarioActions } from "./scenario-actions.ts";
 import type {
   Action,
   DataBinding,
@@ -15,7 +16,8 @@ export function bindingTargets(source: Session): BindingTarget[] {
     source.engine === "android"
       ? []
       : [{ step: 0, field: "url", label: "시작 주소", value: source.url }];
-  for (const step of source.steps) {
+  for (const [index, action] of scenarioActions(source).entries()) {
+    const step = { n: index + 1, action };
     const a = step.action;
     const fields: DataBinding["field"][] =
       a.type === "fill" || a.type === "type"
@@ -70,9 +72,7 @@ export function bindActions(
     throw new Error("테스트데이터를 적용할 입력·검증 항목을 선택해 주세요.");
   const targets = bindingTargets(source);
   const fields = dataFields(entry);
-  const actions: Action[] = source.steps.map((step) =>
-    structuredClone(step.action),
-  );
+  const actions: Action[] = scenarioActions(source).map(action => structuredClone(action));
   let url = source.url;
   const used = new Set<string>();
   for (const binding of bindings) {
@@ -94,7 +94,7 @@ export function bindActions(
       url = String(field.value);
       continue;
     }
-    const index = source.steps.findIndex((step) => step.n === binding.step);
+    const index = binding.step - 1;
     if (binding.field === "status") {
       const status = Number(field.value);
       if (!Number.isInteger(status) || status < 100 || status > 599)
