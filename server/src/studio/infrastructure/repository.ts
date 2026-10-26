@@ -23,7 +23,7 @@ export async function ensureDb() {
     await db`create table if not exists aiqa_studio (id text primary key, body jsonb not null, updated bigint not null)`;
     await db`create table if not exists aiqa_projects (id text primary key, name text not null, created timestamptz not null default now())`;
     await db`alter table aiqa_projects add column if not exists source jsonb not null default '{}'::jsonb`;
-    await db`insert into aiqa_projects (id, name) values ('default', '기본 프로젝트') on conflict (id) do nothing`;
+    await db`insert into aiqa_projects (id, name) select 'default', '기본 프로젝트' where not exists (select 1 from aiqa_projects) on conflict (id) do nothing`;
   })().catch((e) => {
     schema = undefined;
     throw e;
