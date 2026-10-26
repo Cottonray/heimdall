@@ -5,7 +5,11 @@ export function PanelResizeHandle({
   initialWidth = 60,
   storageKey,
   orientation = "horizontal",
+  autoSize,
+  minSize = 25,
 }: {
+  autoSize?: string;
+  minSize?: number;
   targetId: string;
   label?: string;
   initialWidth?: number;
@@ -13,26 +17,26 @@ export function PanelResizeHandle({
   orientation?: "horizontal" | "vertical";
 }) {
   const pointer = useRef<number | null>(null);
-  const [width, setWidth] = useState(() => {
+  const [width, setWidth] = useState<number | null>(() => {
     if (storageKey) {
       try {
         const saved = localStorage.getItem(storageKey);
         const value = saved === null ? NaN : Number(saved);
-        if (Number.isFinite(value) && value >= 25 && value <= 75) return value;
+        if (Number.isFinite(value) && value >= minSize && value <= 75) return value;
       } catch {
         /* Storage may be unavailable. */
       }
     }
-    return initialWidth;
+    return autoSize ? null : initialWidth;
   });
   useLayoutEffect(() => {
     const panel = document.getElementById(targetId);
     if (panel)
       panel.style[orientation === "vertical" ? "height" : "width"] =
-        `${width}%`;
-  }, [targetId, width, orientation]);
+        width === null ? autoSize! : `${width}%`;
+  }, [targetId, width, orientation, autoSize]);
   const resize = (value: number) => {
-    const next = Math.max(25, Math.min(75, value));
+    const next = Math.max(minSize, Math.min(75, value));
     const panel = document.getElementById(targetId);
     if (panel)
       panel.style[orientation === "vertical" ? "height" : "width"] = `${next}%`;
@@ -50,9 +54,9 @@ export function PanelResizeHandle({
       role="slider"
       aria-label={label}
       aria-orientation={orientation}
-      aria-valuemin={25}
+      aria-valuemin={minSize}
       aria-valuemax={75}
-      aria-valuenow={width}
+      aria-valuenow={width ?? initialWidth}
       tabIndex={0}
       className={
         orientation === "vertical"
@@ -90,7 +94,7 @@ export function PanelResizeHandle({
           orientation === "vertical" ? "ArrowDown" : "ArrowRight";
         if (event.key === increase || event.key === decrease) {
           event.preventDefault();
-          resize(width + (event.key === increase ? 5 : -5));
+          resize((width ?? initialWidth) + (event.key === increase ? 5 : -5));
         }
       }}
     />

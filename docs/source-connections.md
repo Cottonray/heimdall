@@ -53,3 +53,9 @@ snapshot, including steps not reached by a failed run. New recorded edits replac
 that snapshot with the updated recorded sequence; previous run records are kept.
 The confirmation is a verification run, not a claim that drafting already proved
 repeatability. A failed earlier step can still prevent later steps from running.
+
+Chat panels start compact and grow with message content up to 40% of the work
+area. Manual resizing remains available and uses its own saved height. Reading
+older messages no longer forces a jump when the assistant responds; a latest
+message button appears when content remains below the viewport. At the bottom,
+new responses remain in view automatically.

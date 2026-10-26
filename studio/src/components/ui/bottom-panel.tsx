@@ -9,7 +9,9 @@ export function BottomPanel({
   children,
   toolbar,
   title = "터미널",
+  autoHeight,
 }: {
+  autoHeight?: number;
   id: string;
   storageKey: string;
   children: ReactNode;
@@ -30,8 +32,10 @@ export function BottomPanel({
           targetId={id}
           orientation="vertical"
           label="AI 패널 높이"
-          initialWidth={40}
-          storageKey={storageKey + ":height"}
+          initialWidth={autoHeight ? 25 : 40}
+          minSize={autoHeight ? 15 : 25}
+          autoSize={autoHeight ? `min(${autoHeight}px, 40%)` : undefined}
+          storageKey={storageKey + (autoHeight ? ":adaptive-height" : ":height")}
         />
       )}
       <section
