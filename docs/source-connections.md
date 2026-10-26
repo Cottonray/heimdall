@@ -102,3 +102,11 @@ when an earlier scenario incorrectly encoded disappearance as presence.
 Checklist message bubbles use a stable 30rem width capped at 85% of the chat
 viewport. Status text and expanded details wrap inside that width rather than
 resizing the bubble as content changes. Ordinary chat bubbles remain content-sized.
+
+Source coverage review extracts a fixed inventory for the requested feature from
+supplied paths, including normal/error/boundary/state cases. The plan retains this
+inventory across replanning. A final audit maps cases only to successful executed
+assertion/API step IDs; unverified cases stay in the denominator and detail list.
+The checklist reports verified/total for the analyzed scope. Missing or truncated
+source and analysis limitations prevent an overall 100% completion claim. This
+is model-assisted case coverage, not instrumented line or branch coverage.
