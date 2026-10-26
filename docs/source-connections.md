@@ -110,3 +110,13 @@ assertion/API step IDs; unverified cases stay in the denominator and detail list
 The checklist reports verified/total for the analyzed scope. Missing or truncated
 source and analysis limitations prevent an overall 100% completion claim. This
 is model-assisted case coverage, not instrumented line or branch coverage.
+
+Failed agent actions trigger a fresh observation and source-grounded diagnosis.
+Wrong state, selectors or prerequisites are repaired automatically (up to three
+repairs within the existing execution budget), preserving the original expected
+result. Failed attempts remain in evidence history but are removed from the
+replayable scenario when repaired. Decisions use only the current run's actions
+as completion evidence, not old chat claims. Confirmed product discrepancies,
+human-only blockers and exhausted recovery are reported distinctly. Agent runs
+do not offer the generic replay-confirmation prompt after completion or failure;
+manually edited scenarios retain that control.
