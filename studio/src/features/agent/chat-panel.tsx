@@ -29,7 +29,7 @@ export function ChatPanel({session,busy,onCommand}: {session:Session;busy:boolea
     observer.observe(el);
     return ()=>observer.disconnect();
   },[session.id]);
-  const messages: NonNullable<Session["chat"]> =session.chat?.length ? session.chat : [{ role: "assistant" as const, text: "어떤 테스트를 만들까요? 확인할 동작과 기대 결과를 알려주세요.", at: 0 }];
+  const messages: NonNullable<Session["chat"]> =session.chat?.length ? groupProgress(session.chat, session.ai) : [{ role: "assistant" as const, text: "어떤 테스트를 만들까요? 확인할 동작과 기대 결과를 알려주세요.", at: 0 }];
   useEffect(()=>{if(pinned.current)end.current?.scrollIntoView({block:"nearest"});},[messages.length,session.ai]);
   useEffect(()=>{setDraft("");pinned.current=true;setBelow(false);},[session.id]);
   async function send(){
@@ -64,4 +64,26 @@ export function ChatPanel({session,busy,onCommand}: {session:Session;busy:boolea
       </form>
     </div>
   </BottomPanel>;
+}
+
+// Present older step-by-step replies inside their checklist without rewriting history.
+function groupProgress(chat: NonNullable<Session["chat"]>, running: boolean) {
+  const result: NonNullable<Session["chat"]> = [];
+  for (let index = 0; index < chat.length; index++) {
+    const message = chat[index]!;
+    if (!message.checklist) { result.push(message); continue; }
+    const checklist = message.checklist.map(item => ({ ...item, details: [...(item.details || [])] }));
+    const writing = checklist[1];
+    if (writing) writing.label = "시나리오 작성";
+    let end = index + 1;
+    while (end < chat.length && chat[end]!.role === "assistant" && !chat[end]!.checklist) end++;
+    const detailEnd = end === chat.length && running ? end : Math.max(index + 1, end - 1);
+    for (let cursor = index + 1; cursor < detailEnd; cursor++) {
+      const text = chat[cursor]!.text;
+      if (writing && writing.details.at(-1) !== text) writing.details.push(text);
+    }
+    result.push({ ...message, checklist });
+    index = detailEnd - 1;
+  }
+  return result;
 }

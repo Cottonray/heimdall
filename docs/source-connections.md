@@ -73,3 +73,10 @@ a green circular check icon; unavailable source is skipped, and failure or manua
 interruption is not marked complete. Only a successful executed assertion can
 complete the execution-verification item. This is model-assisted relevance review,
 not a proof of a globally shortest navigation path.
+
+Fine-grained action narration is kept under a collapsed “시나리오 작성” checklist
+item instead of separate chat bubbles. The final outcome remains a normal reply.
+Older checklist-associated replies are grouped for display without modifying the
+stored history. Every status uses the same 20px circular boundary; running phases
+use a rotating ring (respecting reduced-motion preferences). The checklist is
+published before source loading so its first phase can visibly show progress.

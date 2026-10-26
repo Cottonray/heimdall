@@ -33,7 +33,7 @@ export async function agent(s: Session, goal: string, ports?: AgentPorts) {
   const assertionAfter = s.steps.length;
   const checklist: ChatCheck[] = [
     { label: "소스코드 분석", status: "running" },
-    { label: "목표에 맞는 시나리오 작성", status: "pending" },
+    { label: "시나리오 작성", status: "pending" },
     { label: "불필요한 이동·중복 단계 검토", status: "pending" },
     { label: "화면 실행 및 기대 결과 검증", status: "pending" },
   ];
@@ -42,6 +42,7 @@ export async function agent(s: Session, goal: string, ports?: AgentPorts) {
     checklist[index]!.status = status;
     await persistSession(s);
   };
+  s.chat = [...(s.chat || []), progress].slice(-100);
   let rejectedAction = "";
   let rejectedCount = 0;
   let assertionRequired = false;
@@ -70,11 +71,11 @@ Return JSON {"execute":boolean,"analysis":{"evidence":[{"path":"relative path","
       );
       if (s.epoch !== epoch) return;
       if (intent.execute !== true) {
+        s.chat = (s.chat || []).filter(message => message !== progress);
         s.state = "paused";
         s.message = String(intent.message || "어떤 동작을 확인할지 알려주세요.").slice(0, 2000);
         return;
       }
-      s.chat = [...(s.chat || []), progress].slice(-100);
       await updateCheck(0, sourceReference?.repositories.some(repository => repository.files.length > 0) ? "done" : "skipped");
       await updateCheck(1, "running");
       s.message = "소스 분석을 바탕으로 시나리오를 작성하고 있어요";
@@ -136,7 +137,11 @@ Return JSON {"execute":boolean,"analysis":{"evidence":[{"path":"relative path","
           0,
           400,
         );
-        s.chat = [...(s.chat || []), { role: "assistant", text: s.message, at: Date.now() }].slice(-100);
+        if (!next.done && !next.human) {
+          const details = checklist[1]!.details ||= [];
+          if (details.at(-1) !== s.message) details.push(s.message);
+          await persistSession(s);
+        }
         if (next.done || next.human) {
           const last = s.steps.at(-1);
           const verified =
