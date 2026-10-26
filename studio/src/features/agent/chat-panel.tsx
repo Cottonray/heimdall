@@ -8,7 +8,7 @@ import type { Session } from "../../../../contracts/studio";
 export function ChatPanel({session,busy,onCommand}: {session:Session;busy:boolean;onCommand:(tool:"qa_agent"|"qa_pause",goal?:string)=>Promise<unknown>}) {
   const [draft,setDraft]=useState("");
   const end=useRef<HTMLDivElement>(null);
-  const messages=session.chat || [];
+  const messages=session.chat?.length ? session.chat : [{ role: "assistant" as const, text: "어떤 테스트를 만들까요? 확인할 동작과 기대 결과를 알려주세요.", at: 0 }];
   useEffect(()=>{end.current?.scrollIntoView({block:"nearest"});},[messages.length,session.ai]);
   useEffect(()=>setDraft(""),[session.id]);
   async function send(){
@@ -20,7 +20,6 @@ export function ChatPanel({session,busy,onCommand}: {session:Session;busy:boolea
   return <BottomPanel id={`session-chat-${session.id}`} storageKey={`heimdall:chat:${session.projectId}`} title="AI 채팅" toolbar={session.ai ? <Button size="sm" variant="ghost" disabled={busy} onClick={()=>void onCommand("qa_pause")}><Hand />중지</Button> : undefined}>
     <div className="flex h-full min-h-0 flex-col bg-background">
       <div role="log" aria-label="AI 대화" aria-live="polite" className="min-h-0 flex-1 space-y-3 overflow-y-auto p-4">
-        {!messages.length && <p className="text-sm text-muted-foreground">어떤 테스트를 만들까요? 확인할 동작과 기대 결과를 알려주세요.</p>}
         {messages.map((message,index)=><div key={`${message.at}-${index}`} className={message.role==="user"?"flex justify-end":"flex justify-start"}>
           <div className={message.role==="user"?"max-w-[85%] whitespace-pre-wrap break-words rounded-xl bg-primary/10 px-4 py-2 text-sm":"max-w-[85%] whitespace-pre-wrap break-words rounded-xl bg-muted px-4 py-2 text-sm"}>
             <p className="mb-1 text-xs text-muted-foreground">{message.role==="user"?"나":"AI"}</p>{message.text}
