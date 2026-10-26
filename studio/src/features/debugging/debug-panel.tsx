@@ -37,7 +37,7 @@ export function DebugPanel({ session, source, latestRun }: { session: Session; s
             { value: "results", label: "실행 결과", icon: <ListChecks /> },
           ]}
         />
-        <div className="min-h-0 flex-1 overflow-auto p-3">
+        <div className={tab === "code" ? "min-h-0 flex-1 overflow-hidden" : "min-h-0 flex-1 overflow-auto p-3"}>
           <TabsContent value="results" className="h-full">
             <div className="flex h-full min-h-0 flex-col gap-4" aria-live="polite">
               <div className="flex flex-wrap items-center gap-2">
@@ -108,8 +108,8 @@ export function DebugPanel({ session, source, latestRun }: { session: Session; s
               )}
             </div>
           </TabsContent>
-          <TabsContent value="code">
-            <CodeBlock code={script(session.execution?.actions ? { ...session, steps: session.execution.actions.map(action => ({ action })) } : session.execution && source ? { ...session, steps: source.steps } : session, { stepsOnly: true })} />
+          <TabsContent value="code" className="h-full min-h-0">
+            <CodeBlock fill code={script(session.execution?.actions ? { ...session, steps: session.execution.actions.map(action => ({ action })) } : session.execution && source ? { ...session, steps: source.steps } : session, { stepsOnly: true })} />
           </TabsContent>
         </div>
       </Tabs>

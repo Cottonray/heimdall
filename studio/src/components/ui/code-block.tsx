@@ -1,10 +1,11 @@
+import { cn } from "@/lib/utils";
 import { useMemo } from "react";
 
 // Match strings/comments first so their contents cannot be mistaken for code.
 const tokens =
   /(\/\*[\s\S]*?\*\/|\/\/[^\n]*|"(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*'|`(?:\\.|[^`\\])*`|\b(?:import|from|const|let|var|async|await|return|if|else|throw|new|try|catch|finally|for|of|true|false|null|undefined)\b|\b\d+(?:\.\d+)?\b)/g;
 
-export function CodeBlock({ code }: { code: string }) {
+export function CodeBlock({ code, fill = false }: { code: string; fill?: boolean }) {
   const parts = useMemo(() => {
     // Tokenize first so // inside selectors and URLs stays untouched.
     const source = code.split(tokens);
@@ -31,7 +32,7 @@ export function CodeBlock({ code }: { code: string }) {
     <pre
       data-selectable
       aria-label="테스트 코드"
-      className="test-code min-w-0 max-w-full whitespace-pre-wrap break-words rounded-lg bg-muted p-4 text-xs leading-5 [overflow-wrap:anywhere]"
+      className={cn("test-code min-w-0 max-w-full whitespace-pre-wrap break-words bg-muted p-4 text-xs leading-5 [overflow-wrap:anywhere]", fill ? "h-full w-full overflow-auto rounded-none" : "rounded-lg")}
     >
       <code>
         {parts.map((part, index) => {
