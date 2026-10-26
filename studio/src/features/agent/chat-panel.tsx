@@ -44,7 +44,7 @@ export function ChatPanel({session,busy,onCommand}: {session:Session;busy:boolea
       <div ref={log} onScroll={()=>{const el=log.current!;const away=el.scrollHeight-el.scrollTop-el.clientHeight>24;pinned.current=!away;setBelow(away);}} role="log" aria-label="AI 대화" aria-live="polite" className="min-h-0 flex-1 overflow-y-auto p-4">
         <div ref={content} className="space-y-3">
         {messages.map((message,index)=><div key={`${message.at}-${index}`} className={message.role==="user"?"flex justify-end":"flex justify-start"}>
-          <div className={message.role==="user"?"max-w-[85%] whitespace-pre-wrap break-words rounded-xl bg-primary px-4 py-2 text-sm text-primary-foreground":"max-w-[85%] whitespace-pre-wrap break-words rounded-xl border border-primary/20 bg-primary/10 px-4 py-2 text-sm"}>
+          <div className={message.role==="user"?"max-w-[85%] whitespace-pre-wrap break-words rounded-xl bg-primary px-4 py-2 text-sm text-primary-foreground":`${message.checklist ? "w-[30rem] min-w-0" : ""} max-w-[85%] whitespace-pre-wrap break-words rounded-xl border border-primary/20 bg-primary/10 px-4 py-2 text-sm`}>
             <p className={message.role==="user"?"mb-1 text-xs text-primary-foreground/80":"mb-1 text-xs text-primary"}>{message.role==="user"?"나":"AI"}</p>{message.role === "assistant" ? <ChatMarkdown>{message.text}</ChatMarkdown> : message.text}
             {message.checklist && <ChatChecklist items={message.checklist} />}
           </div>

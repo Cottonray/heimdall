@@ -98,3 +98,7 @@ Android/browser execution and exported scripts preserve this polarity. Android
 assertion lookups propagate transport failures rather than treating them as absence.
 Existing stored assertions retain their recorded meaning and must be regenerated
 when an earlier scenario incorrectly encoded disappearance as presence.
+
+Checklist message bubbles use a stable 30rem width capped at 85% of the chat
+viewport. Status text and expanded details wrap inside that width rather than
+resizing the bubble as content changes. Ordinary chat bubbles remain content-sized.
