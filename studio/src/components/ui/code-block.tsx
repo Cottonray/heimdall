@@ -32,7 +32,7 @@ export function CodeBlock({ code, fill = false }: { code: string; fill?: boolean
     <pre
       data-selectable
       aria-label="테스트 코드"
-      className={cn("test-code min-w-0 max-w-full whitespace-pre-wrap break-words bg-muted p-4 text-xs leading-5 [overflow-wrap:anywhere]", fill ? "h-full w-full overflow-auto rounded-none" : "rounded-lg")}
+      className={cn("dark test-code text-foreground min-w-0 max-w-full whitespace-pre-wrap break-words bg-muted p-4 text-xs leading-5 [overflow-wrap:anywhere]", fill ? "h-full w-full overflow-auto rounded-none" : "rounded-lg")}
     >
       <code>
         {parts.map((part, index) => {
