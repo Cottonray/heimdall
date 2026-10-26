@@ -65,6 +65,7 @@ export async function replay(source: PublicSession, options: RunOptions = {}) {
         }
       : {}),
     bindings: options.bindings || [],
+    actions: structuredClone(actions),
     total: actions.length,
     status: "running",
     started: Date.now(),

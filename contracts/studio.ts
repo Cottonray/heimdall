@@ -110,6 +110,7 @@ export type RunOptions = {
   bindings?: DataBinding[];
 };
 export type Execution = {
+  actions?: Action[];
   sourceId: string;
   sourceName: string;
   testDataId?: string;

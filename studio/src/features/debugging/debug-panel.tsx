@@ -11,7 +11,7 @@ import { evidenceUrl } from "@/lib/api";
 import { runStatus } from "@/lib/labels";
 
 import type { Session } from "../../../../contracts/studio";
-export function DebugPanel({ session }: { session: Session }) {
+export function DebugPanel({ session, source }: { session: Session; source?: Session }) {
   const [selected, setSelected] = useState<number | null>(null);
   useEffect(() => setSelected(null), [session.id]);
   const activeStep = session.steps.find(step => step.n === selected) || session.steps[0];
@@ -106,7 +106,7 @@ export function DebugPanel({ session }: { session: Session }) {
             </div>
           </TabsContent>
           <TabsContent value="code">
-            <CodeBlock code={script(session, { stepsOnly: true })} />
+            <CodeBlock code={script(session.execution?.actions ? { ...session, steps: session.execution.actions.map(action => ({ action })) } : session.execution && source ? { ...session, steps: source.steps } : session, { stepsOnly: true })} />
           </TabsContent>
         </div>
       </Tabs>

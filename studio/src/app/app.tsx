@@ -506,7 +506,7 @@ function SessionContent({
             className="flex w-7/10 min-w-0 shrink-0 flex-col"
           >
             <div className="min-h-0 flex-1 overflow-auto">
-              <DebugPanel key={"debug-" + s.id} session={s} />
+              <DebugPanel key={"debug-" + s.id} session={s} source={w.sessions.find(item => item.id === s.execution?.sourceId)} />
             </div>
           </aside>
         </div>
