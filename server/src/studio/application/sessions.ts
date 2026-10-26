@@ -128,6 +128,7 @@ async function openEnvironment(data: NewSession, restore?: PublicSession, takeov
     created: restore?.created || new Date().toISOString(),
     updated: Date.now(),
     steps: restore?.steps || [],
+    chat: restore?.chat || [],
     execution:
       restore?.execution?.status === "running"
         ? { ...restore.execution, status: "interrupted", finished: Date.now() }
