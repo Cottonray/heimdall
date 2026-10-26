@@ -7,15 +7,17 @@ import type { Session } from "../../../../contracts/studio";
 
 export function ChatPanel({session,busy,onCommand}: {session:Session;busy:boolean;onCommand:(tool:"qa_agent"|"qa_pause",goal?:string)=>Promise<unknown>}) {
   const [draft,setDraft]=useState("");
+  const sending=useRef(false);
   const end=useRef<HTMLDivElement>(null);
   const messages=session.chat?.length ? session.chat : [{ role: "assistant" as const, text: "어떤 테스트를 만들까요? 확인할 동작과 기대 결과를 알려주세요.", at: 0 }];
   useEffect(()=>{end.current?.scrollIntoView({block:"nearest"});},[messages.length,session.ai]);
   useEffect(()=>setDraft(""),[session.id]);
   async function send(){
     const text=draft.trim();
-    if(!text || busy || session.ai)return;
-    await onCommand("qa_agent",text);
+    if(!text || busy || session.ai || sending.current)return;
+    sending.current=true;
     setDraft("");
+    try { await onCommand("qa_agent",text); } finally { sending.current=false; }
   }
   return <BottomPanel id={`session-chat-${session.id}`} storageKey={`heimdall:chat:${session.projectId}`} title="AI 채팅" toolbar={session.ai ? <Button size="sm" variant="ghost" disabled={busy} onClick={()=>void onCommand("qa_pause")}><Hand />중지</Button> : undefined}>
     <div className="flex h-full min-h-0 flex-col bg-background">
@@ -29,7 +31,7 @@ export function ChatPanel({session,busy,onCommand}: {session:Session;busy:boolea
         <div ref={end} />
       </div>
       <form className="flex shrink-0 items-end gap-2 border-t p-3" onSubmit={event=>{event.preventDefault();void send();}}>
-        <Textarea aria-label="AI에게 메시지" placeholder="테스트 요청을 입력해 주세요" rows={2} maxLength={1500} value={draft} onChange={event=>setDraft(event.target.value)} disabled={busy||session.ai} onKeyDown={event=>{if(event.key==="Enter"&&!event.shiftKey&&!event.nativeEvent.isComposing){event.preventDefault();void send();}}} />
+        <Textarea aria-label="AI에게 메시지" placeholder="테스트 요청을 입력해 주세요" rows={2} maxLength={1500} value={draft} onChange={event=>setDraft(event.target.value)} onKeyDown={event=>{if(event.key==="Enter"&&!event.shiftKey&&!event.nativeEvent.isComposing){event.preventDefault();void send();}}} />
         <Button type="submit" disabled={busy||session.ai||!draft.trim()} aria-label="전송"><Send />전송</Button>
       </form>
     </div>
