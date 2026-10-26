@@ -13,7 +13,8 @@ function rawScript(source: ExportSource, options: { stepsOnly?: boolean } = {}) 
   if (source.engine === "android") return appiumScript(source, options.stepsOnly);
   const lines = options.stepsOnly ? [] : [
     `import { test, expect } from '@playwright/test';`,
-    `test(${q(source.name)}, async ({ page, request }) => {`,
+    `test(${q(source.name)}, async ({ page: browserPage, request }) => {`,
+    '  const page = Object.assign(browserPage, { text: (value, options = { exact: true }) => browserPage.getByText(value, options).first(), id: (value) => browserPage.locator("[id=" + JSON.stringify(value) + "]").first(), back: browserPage.goBack.bind(browserPage) });',
     ...(source.engine === "api"
       ? []
       : [`  await page.goto(${q(source.url)});`]),
@@ -21,8 +22,10 @@ function rawScript(source: ExportSource, options: { stepsOnly?: boolean } = {}) 
   for (const { action: a } of source.steps) {
     const start = lines.length;
     const loc = a.selector
-      ? `page.locator(${q(a.selector)}).first()`
-      : `page.getByText(${q(a.text)}, { exact: true }).first()`;
+      ? /^#[A-Za-z_][A-Za-z0-9_-]*$/.test(a.selector)
+        ? `page.id(${q(a.selector.slice(1))})`
+        : `page.locator(${q(a.selector)}).first()`
+      : `page.text(${q(a.text)})`;
     if (a.type === "click") lines.push(`  await ${loc}.click();`);
     if (a.type === "fill") lines.push(`  await ${loc}.fill(${q(a.value)});`);
     if (a.type === "type")
@@ -30,7 +33,7 @@ function rawScript(source: ExportSource, options: { stepsOnly?: boolean } = {}) 
     if (a.type === "point")
       lines.push(`  await page.mouse.click(${a.x}, ${a.y});`);
     if (a.type === "key")
-      lines.push(`  await page.keyboard.press(${q(a.key)});`);
+      lines.push(a.key === "Back" ? "  await page.back();" : `  await page.keyboard.press(${q(a.key)});`);
     if (a.type === "scroll")
       lines.push(
         `  await page.mouse.wheel(0, ${a.direction === "up" ? -550 : 550});`,
@@ -38,7 +41,7 @@ function rawScript(source: ExportSource, options: { stepsOnly?: boolean } = {}) 
     if (a.type === "goto") lines.push(`  await page.goto(${q(a.url)});`);
     if (a.type === "assert")
       lines.push(
-        `  await expect(${a.text ? `page.getByText(${q(a.text)}, { exact: false }).first()` : loc}).toBeVisible();`,
+        `  await expect(${a.text ? `page.text(${q(a.text)}, { exact: false })` : loc}).toBeVisible();`,
       );
     if (a.type === "api") {
       lines.push(
@@ -66,14 +69,14 @@ function appiumScript(source: ExportSource, stepsOnly = false) {
     "// Set APPIUM_URL and ANDROID_UDID for your test device.",
     'const endpoint = new URL(process.env.APPIUM_URL || "http://127.0.0.1:4723");',
     'const driver = await remote({ hostname: endpoint.hostname, port: Number(endpoint.port || 4723), path: endpoint.pathname, capabilities: { platformName: "Android", "appium:automationName": "UiAutomator2", "appium:udid": process.env.ANDROID_UDID, "appium:noReset": true } });',
-    'const page = Object.assign(driver.$.bind(driver), { text: (value) => driver.$("android=new UiSelector().text(" + JSON.stringify(value) + ")"), back: driver.back.bind(driver), keys: driver.keys.bind(driver), pressKeyCode: driver.pressKeyCode.bind(driver), execute: driver.execute.bind(driver), getWindowRect: driver.getWindowRect.bind(driver), activateApp: driver.activateApp.bind(driver), deleteSession: driver.deleteSession.bind(driver) });',
+    'const page = Object.assign(driver.$.bind(driver), { id: (value) => driver.$("id=" + value), text: (value) => driver.$("android=new UiSelector().text(" + JSON.stringify(value) + ")"), back: driver.back.bind(driver), keys: driver.keys.bind(driver), pressKeyCode: driver.pressKeyCode.bind(driver), execute: driver.execute.bind(driver), getWindowRect: driver.getWindowRect.bind(driver), activateApp: driver.activateApp.bind(driver), deleteSession: driver.deleteSession.bind(driver) });',
     "try {",
     ...(source.appPackage ? [`  await page.activateApp(${q(source.appPackage)});`] : []),
   ];
   for (const { action: a } of source.steps) {
     const start = lines.length;
     const el = a.selector
-      ? "page(" + q("id=" + a.selector) + ")"
+      ? "page.id(" + q(a.selector) + ")"
       : "page.text(" + q(a.text || "") + ")";
     if (a.type === "click") lines.push("  await " + el + ".click();");
     else if (a.type === "fill")

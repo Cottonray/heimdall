@@ -430,3 +430,5 @@ AI 채팅 답변은 Markdown/GFM으로 굵게·목록·코드·표·링크를 �
 Appium 표시·내보내기 코드는 요소 선택을 page(selector), 기기 동작을 page.back() 등으로 통일해요. 내보내기 준비 코드가 WebdriverIO 메서드를 원본 driver에 바인딩해 실행 호환성을 유지해요.
 
 Appium의 텍스트 선택은 page.text("표시 문구")로 표현하며, 내보내기 헬퍼가 문자열을 JSON 이스케이프해 UiSelector를 구성해요.
+
+Appium·Playwright 모두 page.text(), page.id(), page.back() 표기를 사용해요. 웹의 복합 CSS 선택자는 locator를 유지하고 텍스트 검증의 부분 일치 옵션도 보존해요.
