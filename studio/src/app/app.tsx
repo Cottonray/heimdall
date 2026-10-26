@@ -40,7 +40,7 @@ import { Dashboard } from "@/features/dashboard/dashboard";
 import { Settings } from "@/features/settings/settings";
 import { useTheme } from "@/features/settings/use-theme";
 import { LivePreview } from "@/features/execution/live-preview";
-import { CodexTerminal } from "@/features/agent/codex-terminal";
+import { ChatPanel } from "@/features/agent/chat-panel";
 import { DebugPanel } from "@/features/debugging/debug-panel";
 import { ExportDialog } from "@/features/scenarios/export-dialog";
 import { api } from "@/lib/api";
@@ -434,11 +434,7 @@ function SessionContent({
     return (
       <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
         <ScenarioPlanView session={s} />
-        <CodexTerminal
-          sessionId={s.id}
-          active={active}
-          projectId={s.projectId || "default"}
-        />
+        <ChatPanel session={s} busy={w.busy} onCommand={(tool, goal) => w.store.command(tool, goal)} />
       </div>
     );
   return (
@@ -510,11 +506,7 @@ function SessionContent({
             </div>
           </aside>
         </div>
-        <CodexTerminal
-          sessionId={s.id}
-          active={active}
-          projectId={s.projectId || "default"}
-        />
+        <ChatPanel session={s} busy={w.busy} onCommand={(tool, goal) => w.store.command(tool, goal)} />
       </div>
     </>
   );

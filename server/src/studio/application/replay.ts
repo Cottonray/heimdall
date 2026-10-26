@@ -70,6 +70,7 @@ export async function replay(source: PublicSession, options: RunOptions = {}) {
     status: "running",
     started: Date.now(),
   };
+  s.chat = structuredClone(source.chat || []);
   s.state = "replay";
   s.ai = true;
   const epoch = ++s.epoch;
