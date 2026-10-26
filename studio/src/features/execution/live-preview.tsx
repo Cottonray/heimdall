@@ -7,7 +7,6 @@ import {
   RefreshCw,
   Send,
   Monitor,
-  MousePointer2,
 } from "@/components/ui/material-icons";
 import {
   Card,
@@ -207,12 +206,7 @@ export function LivePreview({
                 </Button>
               </form>
             </div>
-            <p className="flex items-center gap-2 text-xs text-muted-foreground">
-              <MousePointer2 className="size-3" />
-              {session.ai
-                ? "사람 개입을 누르면 직접 조작할 수 있어요."
-                : "화면을 누르면 수행한 단계가 자동으로 기록돼요."}
-            </p>
+
           </div>
         </CardFooter>
       )}

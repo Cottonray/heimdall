@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Tabs, PanelTabsList, TabsContent } from "@/components/ui/tabs";
 import { script, actionComment } from "../../../../server/src/studio/domain/export";
+import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
 import { EvidencePreview } from "@/components/ui/evidence-preview";
 import { evidenceUrl } from "@/lib/api";
@@ -48,13 +49,14 @@ export function DebugPanel({ session, source }: { session: Session; source?: Ses
                     : `기록된 동작 ${session.steps.length}개`}
                 </span>
               </div>
-              <p className="text-sm text-muted-foreground">
+              {session.execution && <Progress value={session.execution.total > 0 ? session.steps.length / session.execution.total * 100 : 0} label="테스트 실행 진행률" />}
+              {status !== "통과" && <p className="text-sm text-muted-foreground">
                 {session.execution
                   ? session.message
                   : session.steps.length
                     ? "실행을 누르면 진행 상황과 단계별 결과가 여기에 표시돼요."
                     : "아직 실행할 동작이 없어요. 코덱스와 화면을 조작해 동작을 기록하면 실행할 수 있어요."}
-              </p>
+              </p>}
               {session.execution && (
                 <div className="grid min-h-0 flex-1 grid-cols-[minmax(8rem,1fr)_minmax(0,2fr)] gap-3">
                   <nav aria-label="실행 단계" className="min-h-0 overflow-y-auto border-r pr-3">
