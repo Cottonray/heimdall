@@ -222,7 +222,9 @@ export function App() {
         <main
           ref={mainRef}
           className={
-            w.sessions.some((session) => session.id === w.activeTab)
+            w.activeTab === "dashboard"
+              ? "relative min-h-0 flex-1 overflow-hidden p-4 md:p-6"
+              : w.sessions.some((session) => session.id === w.activeTab)
               ? "flex min-h-0 flex-1 flex-col overflow-hidden"
               : "min-h-0 flex-1 overflow-y-auto p-4 md:p-6"
           }
@@ -268,6 +270,8 @@ export function App() {
                 <TabsContent
                   key={w.store.terminalKeys.get(id) || id}
                   value={id}
+                  inert={id === "dashboard" ? true : undefined}
+                  aria-hidden={id === "dashboard" ? true : undefined}
                   className={
                     s
                       ? "flex min-h-0 flex-1 flex-col data-[state=inactive]:hidden"
@@ -396,6 +400,11 @@ export function App() {
                 </TabsContent>
               );
             })
+          )}
+          {w.activeTab === "dashboard" && (
+            <div className="dashboard-implementation-overlay" role="status">
+              <p>구현중</p>
+            </div>
           )}
         </main>
       </Tabs>
