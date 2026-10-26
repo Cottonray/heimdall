@@ -77,6 +77,13 @@ export async function listSessions(
       for (const row of pinned) if (!present.has(readSessionBody(row.body).id)) rows.push(row);
     }
   }
+  // Keep the latest run for each listed scenario even beyond the history window.
+  const sourceIds = rows.map(row => readSessionBody(row.body)).filter(s => !s.execution).map(s => s.id);
+  if (sourceIds.length) {
+    const latest = await db!`select distinct on (body->'execution'->>'sourceId') body from aiqa_studio where body->'execution'->>'sourceId' in ${db!(sourceIds)} order by body->'execution'->>'sourceId', (body->'execution'->>'started')::bigint desc`;
+    const present = new Set(rows.map(row => readSessionBody(row.body).id));
+    for (const row of latest) if (!present.has(readSessionBody(row.body).id)) rows.push(row);
+  }
   return rows.map((row) => {
     const body = readSessionBody(row.body);
     return compact(
