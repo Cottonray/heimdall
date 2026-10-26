@@ -127,6 +127,7 @@ An explicit scenario or project package still takes precedence. Observation
 includes the foreground package as well as the configured target, so a system
 screen or another app opened during inspection does not produce an empty tree.
 
-The WebView inspector also offers **새 창** after connection. Opening it unloads
-the embedded client to avoid two DevTools clients controlling the same target.
-Keep the remote-device window open to retain the existing device lease.
+The WebView inspector stays inside the remote-device page beside the device
+screen. The device lease is retained while inspecting. Screen recordings target
+30 fps; Android streaming defaults to a 60 fps ceiling, configurable through
+`AIQA_STREAM_MAX_FPS`. Actual frame rate depends on device and network capacity.
