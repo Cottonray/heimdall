@@ -62,3 +62,5 @@ node --experimental-strip-types build.ts
 화면 빌드 결과는 `web/studio/`에 생성돼요. 화면 빌드만으로 서버나 기기 실행 환경이 시작되지는 않아요. 전체 실행에는 PostgreSQL, 인증·실행기 설정과 테스트 대상에 맞는 브라우저 또는 기기 연결이 필요해요. 배포 설정은 [호스팅 설정 안내](docs/hosting.md)를 참고해 주세요.
 
 화면 구조와 API 경로는 [Studio 안내](studio/README.md), UI 규격은 [디자인 기준](studio/DESIGN.md)에서 확인할 수 있어요.
+
+Browser concurrency follows the worker memory limit: 512 MiB is reserved for Chromium and each context is budgeted at 256 MiB (minimum one). The Studio reads the worker capacity from `/healthz`; these are capacity estimates, not guaranteed per-page memory usage.

@@ -1,4 +1,5 @@
 import http from "node:http";
+import { totalmem } from "node:os";
 import { chromium, type BrowserContext } from "playwright";
 import { readFile } from "node:fs/promises";
 import { sessions, get } from "./sessions.ts";
@@ -6,6 +7,13 @@ import { checkUrl, configureOrigins } from "./policy.ts";
 import { observe } from "./observe.ts";
 import { operate, targetRect } from "./actions.ts";
 const browser = await chromium.launch({ headless: true });
+// Reserve 512 MiB for Chromium and 256 MiB per isolated context.
+let memoryLimit = totalmem();
+for (const path of ["/sys/fs/cgroup/memory.max", "/sys/fs/cgroup/memory/memory.limit_in_bytes"]) {
+  const value = Number(await readFile(path, "utf8").catch(() => ""));
+  if (Number.isFinite(value) && value > 0) memoryLimit = Math.min(memoryLimit, value);
+}
+const capacity = Math.max(1, Math.floor((memoryLimit / 1024 / 1024 - 512) / 256));
 let opening = 0;
 const server = http.createServer(async (req, res) => {
   const url = new URL(req.url || "/", "http://localhost");
@@ -18,7 +26,7 @@ const server = http.createServer(async (req, res) => {
       return reply(200, {
         ok: browser.isConnected(),
         active: sessions.size,
-        capacity: 2,
+        capacity,
       });
     if (url.pathname === "/demo/api/accounts")
       return reply(200, {
@@ -58,8 +66,8 @@ const server = http.createServer(async (req, res) => {
       return reply(200, { ok: true });
     }
     if (url.pathname === "/open") {
-      if (sessions.size + opening >= 2)
-        throw new Error("브라우저 워커 두 개가 사용 중이에요");
+      if (sessions.size + opening >= capacity)
+        throw new Error(`브라우저 ${capacity}개가 사용 중이에요. 사용하지 않는 테스트를 닫아 주세요`);
       if (sessions.has(data.id)) throw new Error("이미 열린 세션이에요");
       const target = checkUrl(data.url || "http://127.0.0.1:8081/demo/");
       opening++;

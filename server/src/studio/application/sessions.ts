@@ -77,6 +77,7 @@ async function openEnvironment(data: NewSession, restore?: PublicSession, takeov
   if (engine !== "android")
     await prepareTestTarget(String(data.url || "http://127.0.0.1:8081/demo/"));
   if (engine === "android" && takeover) await prepareDeviceTakeover(device.target());
+  const browserCapacity = engine === "android" ? 0 : (await worker<{ capacity: number }>("/healthz")).capacity;
   // Reclaim only unattended, idle environments. Running tests and other viewers stay connected.
   for (const old of sessions.values()) {
     const full =
@@ -84,7 +85,7 @@ async function openEnvironment(data: NewSession, restore?: PublicSession, takeov
         ? mobileReserved
         : [...sessions.values()].filter(
             (s) => s.engine !== "android" && s.state !== "closed",
-          ).length >= 2;
+          ).length >= browserCapacity;
     if (!full) break;
     if (
       old.state !== "closed" &&
@@ -107,10 +108,10 @@ async function openEnvironment(data: NewSession, restore?: PublicSession, takeov
     engine !== "android" &&
     [...sessions.values()].filter(
       (s) => s.engine !== "android" && s.state !== "closed",
-    ).length >= 2
+    ).length >= browserCapacity
   )
     throw new Error(
-      "다른 테스트 두 개가 실행 중이에요. 실행이 끝나면 다시 연결해 주세요",
+      `브라우저 ${browserCapacity}개가 실행 중이에요. 사용하지 않는 테스트를 닫아 주세요`,
     );
   if (engine === "android") {
     mobileReserved = true;
