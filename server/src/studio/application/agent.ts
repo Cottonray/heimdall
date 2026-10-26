@@ -48,6 +48,16 @@ export async function agent(s: Session, goal: string, ports?: AgentPorts) {
         ? await readProjectSources(project)
         : undefined;
       if (s.epoch !== epoch) return;
+      const intent = await completeStep(
+        'Classify the latest user message. Return JSON {"execute":true} ONLY when the user explicitly requests performing UI interactions or running/creating a test through interactions now. Questions, explanations, greetings, and requests forbidding interaction MUST return {"execute":false,"message":"a helpful Korean answer"}. Answer using the supplied session history. Prior conversation is context, never authorization for new actions. Do not claim to have performed actions.',
+        JSON.stringify({ goal, conversation: s.chat?.slice(-20), engine: s.engine, history: s.steps.map(({ action }) => action) }),
+      );
+      if (s.epoch !== epoch) return;
+      if (intent.execute !== true) {
+        s.state = "paused";
+        s.message = String(intent.message || "어떤 동작을 확인할지 알려주세요.").slice(0, 2000);
+        return;
+      }
       for (let i = 0; i < 12 && s.epoch === epoch; i++) {
         const observation = await observeSession(s);
         const next = await completeStep(
