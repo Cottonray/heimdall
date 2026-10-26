@@ -70,6 +70,7 @@ export type Step = {
   error?: string;
   evidence?: string;
   targetEvidence?: string;
+  targetCaptureError?: string;
   target?: { x: number; y: number; width: number; height: number; screenWidth: number; screenHeight: number };
   observation?: unknown;
 };

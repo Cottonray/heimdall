@@ -1,5 +1,6 @@
 import * as appium from "../../appium.ts";
 import * as device from "../../device.ts";
+import { targetFrame } from "../engines/evidence-frame.ts";
 import { prepareTestTarget } from "../infrastructure/domains.ts";
 import { mkdir, writeFile } from "node:fs/promises";
 import path from "node:path";
@@ -44,11 +45,11 @@ export async function action(s: Session, input: Action, actor: string) {
         if (target && Object.values(target).every(Number.isFinite) && target.width > 0 && target.height > 0) {
           await mkdir(path.join(DIR, s.id), { recursive: true });
           const file = `${1000 + step.n}.jpg`;
-          await writeFile(path.join(DIR, s.id, file), await frame(s));
+          await writeFile(path.join(DIR, s.id, file), await targetFrame(s));
           step.target = target;
           step.targetEvidence = file;
         }
-      } catch { /* Missing bounds must not block the actual action. */ }
+      } catch { step.targetCaptureError = "조작 직전 화면을 확보하지 못해 실행 후 증적을 표시해요."; }
     }
     try {
       if (s.engine !== "android" && ["goto", "api"].includes(a.type) && a.url)
