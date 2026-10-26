@@ -109,7 +109,7 @@ export function DebugPanel({ session, source, latestRun }: { session: Session; s
             </div>
           </TabsContent>
           <TabsContent value="code" className="h-full min-h-0">
-            <CodeBlock fill code={script(session.execution?.actions ? { ...session, steps: session.execution.actions.map(action => ({ action })) } : session.execution && source ? { ...session, steps: source.steps } : session, { stepsOnly: true })} />
+            <CodeBlock fill code={script(session, { stepsOnly: true })} />
           </TabsContent>
         </div>
       </Tabs>

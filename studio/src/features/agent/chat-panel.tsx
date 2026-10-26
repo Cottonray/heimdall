@@ -6,7 +6,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Send, Hand } from "@/components/ui/material-icons";
 import type { Session } from "../../../../contracts/studio";
 
-export function ChatPanel({session,busy,onCommand}: {session:Session;busy:boolean;onCommand:(tool:"qa_agent"|"qa_pause",goal?:string)=>Promise<unknown>}) {
+export function ChatPanel({session,busy,onCommand}: {session:Session;busy:boolean;onCommand:(tool:"qa_agent"|"qa_pause"|"qa_replay",goal?:string)=>Promise<unknown>}) {
   const [draft,setDraft]=useState("");
   const sending=useRef(false);
   const end=useRef<HTMLDivElement>(null);
@@ -28,7 +28,11 @@ export function ChatPanel({session,busy,onCommand}: {session:Session;busy:boolea
             <p className={message.role==="user"?"mb-1 text-xs text-primary-foreground/80":"mb-1 text-xs text-primary"}>{message.role==="user"?"나":"AI"}</p>{message.role === "assistant" ? <ChatMarkdown>{message.text}</ChatMarkdown> : message.text}
           </div>
         </div>)}
-        {session.ai && <p role="status" className="text-sm text-muted-foreground">화면을 확인하고 있어요…</p>}
+        {session.ai && <p role="status" className="text-sm text-muted-foreground">{session.message || "화면을 확인하고 있어요…"}</p>}
+        {!session.ai && session.verificationPending && <div className="flex items-center gap-3">
+          <p className="text-sm text-muted-foreground">작성한 시나리오를 처음부터 실행해 검증할까요?</p>
+          <Button size="sm" disabled={busy || session.working} onClick={()=>void onCommand("qa_replay")}>실행</Button>
+        </div>}
         <div ref={end} />
       </div>
       <form className="flex shrink-0 items-end gap-2 border-t p-3" onSubmit={event=>{event.preventDefault();void send();}}>

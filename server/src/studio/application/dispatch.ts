@@ -1,3 +1,4 @@
+import { scenarioActions } from "../domain/scenario-actions.ts";
 import type { ToolArguments } from "../domain/types.ts";
 import { get, publicSession, sessions } from "../domain/session.ts";
 import { listSessions, saved } from "../infrastructure/repository.ts";
@@ -15,7 +16,7 @@ export async function dispatch(name: string, a: ToolArguments) {
     return {
       session: s,
       code: script(s),
-      jsonl: s.steps.map((x) => JSON.stringify(x)).join("\n"),
+      jsonl: scenarioActions(s).map((action, index) => JSON.stringify({ n: index + 1, action })).join("\n"),
     };
   }
   if (name === "qa_run") {

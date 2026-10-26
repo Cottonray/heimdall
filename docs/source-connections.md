@@ -45,3 +45,11 @@ human-only challenges, external permission or essential unrecoverable facts.
 Bounded source excerpts are not a claim of exhaustive analysis. The action loop
 retains an explicit 48-step execution budget and requires a successful assertion
 before reporting completion.
+
+Chat-authored or manually edited actions now offer an explicit verification run
+in the chat panel. This starts a fresh replay of the currently displayed scenario,
+not its older parent. Code display, exports and replay share the execution action
+snapshot, including steps not reached by a failed run. New recorded edits replace
+that snapshot with the updated recorded sequence; previous run records are kept.
+The confirmation is a verification run, not a claim that drafting already proved
+repeatability. A failed earlier step can still prevent later steps from running.

@@ -133,6 +133,7 @@ export type ScenarioPlan = {
   branches: { title: string; expected: string; source: string }[];
 };
 export type Session = {
+  verificationPending?: boolean;
   chat?: { role: "user" | "assistant"; text: string; at: number }[];
   appPackage?: string;
   plan?: ScenarioPlan;

@@ -463,10 +463,7 @@ export class WorkspaceStore {
   ) =>
     this.run(async () => {
       const previousId = this.value.selectedId;
-      const sourceId = tool === "qa_replay"
-        ? this.value.sessions.find((session) => session.id === previousId)?.execution?.sourceId || previousId
-        : previousId;
-      const s = await api.call(tool, { id: sourceId, goal });
+      const s = await api.call(tool, { id: previousId, goal });
       this.update(s);
       if (tool === "qa_replay") {
         this.terminalKeys.set(s.id, this.terminalKeys.get(previousId) || previousId);

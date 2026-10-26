@@ -1,5 +1,7 @@
+import { scenarioActions } from "./scenario-actions.ts";
 import type { Action, ScenarioPlan } from "../../../../contracts/studio.ts";
 type ExportSource = {
+  execution?: { actions?: Action[] };
   appPackage?: string;
   plan?: ScenarioPlan;
   engine: string;
@@ -131,7 +133,7 @@ export function actionComment(a: Action) {
   return String(a.comment || descriptions[a.type] || "테스트 동작 수행").replace(/[\r\n\u2028\u2029]/g, " ").slice(0, 300);
 }
 export function script(source: ExportSource, options: { stepsOnly?: boolean } = {}) {
-  return rawScript(source, options).split("\n").map(line => {
+  return rawScript({ ...source, steps: scenarioActions(source).map(action => ({ action })) }, options).split("\n").map(line => {
     if (!line.trim() || line.trim().startsWith("//") || line.includes(" // ")) return line;
     const note = line.includes("import ") ? "테스트 라이브러리 불러오기" : line.includes("deleteSession") ? "기기 연결 정리" : line.includes("activateApp") ? "테스트 앱 실행" : line.includes("page.goto") ? "시작 화면 열기" : line.includes("remote(") || line.includes("endpoint =") ? "테스트 기기 연결 설정" : "테스트 실행 범위 구성";
     return line + " // " + note;

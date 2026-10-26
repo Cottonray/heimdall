@@ -1,3 +1,4 @@
+import { scenarioActions } from "../domain/scenario-actions.ts";
 import type { PublicSession } from "../domain/types.ts";
 import type { RunOptions, Execution } from "../../../../contracts/studio.ts";
 import { get, publicSession } from "../domain/session.ts";
@@ -10,7 +11,8 @@ import { open } from "./sessions.ts";
 import { action } from "./actions.ts";
 export async function replay(source: PublicSession, options: RunOptions = {}) {
   if (source.plan) throw new Error("앱 연결과 화면 요소 확인이 필요한 시나리오 초안이에요.");
-  if (!source.steps.length || source.steps.length > 80)
+  const recordedActions = scenarioActions(source);
+  if (!recordedActions.length || recordedActions.length > 80)
     throw new Error("실행할 동작이 1~80개인 시나리오를 선택해 주세요.");
   if (
     options.sourceUpdated !== undefined &&
@@ -31,10 +33,10 @@ export async function replay(source: PublicSession, options: RunOptions = {}) {
   if (!data && options.bindings?.length)
     throw new Error("적용할 테스트데이터를 선택해 주세요.");
   const prepared = data
-    ? bindActions(source, data, options.bindings || [])
+    ? bindActions({ ...source, steps: recordedActions.map((action, index) => ({ n: index + 1, action, actor: "Scenario", at: source.created, ok: false, ms: 0 })) }, data, options.bindings || [])
     : {
         url: source.url,
-        actions: source.steps.map((step) => structuredClone(step.action)),
+        actions: structuredClone(recordedActions),
       };
   const actions = prepared.actions.map(validateAction);
   if (source.engine !== "android") {

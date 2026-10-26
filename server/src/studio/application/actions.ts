@@ -82,6 +82,13 @@ export async function action(s: Session, input: Action, actor: string) {
     }
     step.ms = Date.now() - t;
     s.steps.push(step);
+    if (["AI", "Codex", "Human"].includes(actor)) {
+      if (s.execution) {
+        s.execution.actions = s.steps.map(record => structuredClone(record.action));
+        s.execution.total = s.execution.actions.length;
+      }
+      s.verificationPending = true;
+    }
     s.working = false;
     if (actor === "Human" && step.ok && ["assert", "api"].includes(a.type)) {
       s.state = "passed";
