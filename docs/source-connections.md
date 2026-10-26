@@ -80,3 +80,7 @@ Older checklist-associated replies are grouped for display without modifying the
 stored history. Every status uses the same 20px circular boundary; running phases
 use a rotating ring (respecting reduced-motion preferences). The checklist is
 published before source loading so its first phase can visibly show progress.
+
+Checklist rows share four aligned columns for the status icon, label, status text
+and disclosure control. Rows have a consistent minimum height; expanded details
+start beneath the label and wrap within the message bubble.
