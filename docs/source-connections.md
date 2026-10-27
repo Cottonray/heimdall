@@ -120,3 +120,14 @@ as completion evidence, not old chat claims. Confirmed product discrepancies,
 human-only blockers and exhausted recovery are reported distinctly. Agent runs
 do not offer the generic replay-confirmation prompt after completion or failure;
 manually edited scenarios retain that control.
+
+When a new Android session has no configured package, it attaches to the app
+already open on the connected device and saves that package for reconnection.
+An explicit scenario or project package still takes precedence. Observation
+includes the foreground package as well as the configured target, so a system
+screen or another app opened during inspection does not produce an empty tree.
+
+The WebView inspector stays inside the remote-device page beside the device
+screen. The device lease is retained while inspecting. Screen recordings target
+30 fps; Android streaming defaults to a 60 fps ceiling, configurable through
+`AIQA_STREAM_MAX_FPS`. Actual frame rate depends on device and network capacity.

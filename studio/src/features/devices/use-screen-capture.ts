@@ -49,10 +49,10 @@ export function useScreenCapture(
         "video/mp4",
       ].find((type) => MediaRecorder.isTypeSupported(type));
       if (!mimeType) throw new Error("녹화를 지원하지 않는 브라우저예요.");
-      const stream = target.captureStream(15);
+      const stream = target.captureStream(30);
       const next = new MediaRecorder(stream, {
         mimeType,
-        videoBitsPerSecond: 2500000,
+        videoBitsPerSecond: 4000000,
       });
       const chunks: Blob[] = [];
       let bytes = 0;
@@ -62,7 +62,7 @@ export function useScreenCapture(
           target
             .getContext("2d")!
             .drawImage(source, 0, 0, target.width, target.height);
-      }, 67);
+      }, 1000 / 30);
       const limit = setTimeout(() => next.stop(), 180000);
       cleanup.current = () => {
         clearInterval(draw);

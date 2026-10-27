@@ -125,7 +125,7 @@ services:
       AIQA_RUNS_KEEP: ${AIQA_RUNS_KEEP:-30}
       # 영상 길(server/src/stream.ts). 긴 변 상한·fps·비트레이트, 그리고 지연을 가를 때 켜는 시각 기록
       AIQA_STREAM_MAX_SIZE: ${AIQA_STREAM_MAX_SIZE:-1600}
-      AIQA_STREAM_MAX_FPS: ${AIQA_STREAM_MAX_FPS:-24}
+      AIQA_STREAM_MAX_FPS: ${AIQA_STREAM_MAX_FPS:-60}
       AIQA_STREAM_BIT_RATE: ${AIQA_STREAM_BIT_RATE:-2500000}
       AIQA_STREAM_DEBUG: ${AIQA_STREAM_DEBUG:-0}
       AIQA_STREAM_CODEC_OPTIONS: ${AIQA_STREAM_CODEC_OPTIONS:-latency:int=0,priority:int=0,i-frame-interval:int=1}

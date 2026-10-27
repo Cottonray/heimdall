@@ -25,6 +25,14 @@ export async function stop() {
   stopInspector();
   video.stop();
   await hid.stop();
+  if (session) {
+    const ownedSession = session;
+    session = "";
+    size = undefined;
+    await fetch(appium + "/session/" + encodeURIComponent(ownedSession), {
+      method: "DELETE", signal: AbortSignal.timeout(10000),
+    }).catch(() => undefined);
+  }
 }
 let commands = Promise.resolve<unknown>(undefined);
 async function request(path: string, body?: unknown) {
@@ -48,7 +56,7 @@ async function request(path: string, body?: unknown) {
 async function prepare() {
   if (!session) {
     starting ??= (async () => {
-      const value = await request("/session", {
+      const createSession = () => request("/session", {
         capabilities: {
           alwaysMatch: {
             platformName: "iOS",
@@ -59,13 +67,14 @@ async function prepare() {
             "appium:noReset": true,
             "appium:newCommandTimeout": 0,
             "appium:wdaLocalPort": 8115,
+            "appium:wdaStartupRetries": 1,
+            "appium:wdaLaunchTimeout": 60000,
             "appium:mjpegServerPort": 9115,
             "appium:waitForIdleTimeout": 0,
             "appium:webviewConnectTimeout": 3000,
             "appium:includeSafariInWebviews": true,
             "appium:additionalWebviewBundleIds": ["*"],
             "appium:webviewConnectRetries": 2,
-            "appium:webkitResponseTimeout": 5000,
             "appium:settings": {
               animationCoolOffTimeout: 0,
               mjpegServerFramerate: 15,
@@ -75,6 +84,17 @@ async function prepare() {
           },
         },
       });
+      let value;
+      try {
+        value = await createSession();
+      } catch (error) {
+        // A terminated XCTest run can leave its runner alive without a WDA listener.
+        // Recover only this simulator's runner, and only after a WDA startup failure.
+        if (!(error instanceof Error) || !/Unable to (?:start|launch) WebDriverAgent/.test(error.message)) throw error;
+        console.warn("iOS 제어기 시작 실패: 해당 시뮬레이터의 남은 WDA를 정리하고 한 번 재시도해요");
+        await exec("xcrun", ["simctl", "terminate", udid!, "com.facebook.WebDriverAgentRunner.xctrunner"], { timeout: 10000 }).catch(() => undefined);
+        value = await createSession();
+      }
       session = value.sessionId;
     })().finally(() => {
       starting = undefined;

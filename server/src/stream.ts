@@ -35,7 +35,7 @@ const VERSION = process.env.AIQA_SCRCPY_VERSION ?? '4.1'
 const PORT = Number(process.env.AIQA_SCRCPY_PORT ?? 27183)
 /** 긴 변의 상한. 에뮬레이터(720x1600)는 그대로 가고, 실기기(1080x2400)만 줄어든다 */
 const MAX_SIZE = Number(process.env.AIQA_STREAM_MAX_SIZE ?? 1600)
-const MAX_FPS = Number(process.env.AIQA_STREAM_MAX_FPS ?? 24)
+const MAX_FPS = Number(process.env.AIQA_STREAM_MAX_FPS ?? 60)
 const BIT_RATE = Number(process.env.AIQA_STREAM_BIT_RATE ?? 2_500_000)
 /**
  * MediaCodec 에 그대로 넘기는 인코더 옵션 (scrcpy `video_codec_options`, `키:타입=값,…`).
