@@ -69,12 +69,15 @@ export function TcGeneration({ projectId }: { projectId: string }) {
 
   return (
     <div className="space-y-6">
-      <PageHeader title="TC 생성" />
+      <PageHeader
+        title="TC 생성"
+        description="요구사항을 붙여 넣으면 시험해 볼 목록(테스트케이스)을 만들어 줘요. 정상으로 될 때, 막혀야 할 때, 한도 같은 기준값의 바로 위아래까지 빠짐없이 뽑아요."
+      />
       <Tabs value={view} onValueChange={(v) => setView(v as View)}>
         <TabsList aria-label="TC 생성 방식">
-          <TabsTrigger value="requirement">요구사항 기반</TabsTrigger>
-          <TabsTrigger value="pattern">상품 패턴</TabsTrigger>
-          <TabsTrigger value="history">생성 기록</TabsTrigger>
+          <TabsTrigger value="requirement">요구사항으로 만들기</TabsTrigger>
+          <TabsTrigger value="pattern">상품 규칙으로 만들기</TabsTrigger>
+          <TabsTrigger value="history">만든 목록</TabsTrigger>
         </TabsList>
         <TabsContent value="requirement" className="space-y-4 pt-4">
           <form
@@ -90,22 +93,22 @@ export function TcGeneration({ projectId }: { projectId: string }) {
                 id="tc-title"
                 value={title}
                 maxLength={80}
-                placeholder="비우면 첫 요구사항으로 정해요"
+                placeholder="나중에 찾을 이름 (비우면 첫 줄로 정해요)"
                 onChange={(e) => setTitle(e.target.value)}
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="tc-text">요구사항·SR 명세</Label>
+              <Label htmlFor="tc-text">요구사항</Label>
               <Textarea
                 id="tc-text"
                 rows={14}
                 value={text}
                 maxLength={20000}
-                placeholder={"한 줄에 요구사항 하나씩 적어요. SR-1234처럼 번호를 붙이면 그대로 매핑해요.\n# 으로 시작하는 줄은 화면·업무 구분 제목이에요."}
+                placeholder={"한 줄에 하나씩 적어요. 예)\nSR-2101 1회 이체 금액은 최소 1원, 최대 500만원까지 입력할 수 있다\n\n앞에 SR-2101 같은 번호를 붙이면 결과에서 어느 요구사항의 시험인지 그 번호로 보여 줘요."}
                 onChange={(e) => setText(e.target.value)}
               />
               <p className="text-xs text-muted-foreground">
-                {text.length.toLocaleString()} / 20,000자 · 주민번호·계좌·카드·전화번호는 마스킹한 뒤 AI에 보내고, 원문은 저장하지 않아요.
+                {text.length.toLocaleString()} / 20,000자 · 주민번호·계좌·전화번호 같은 개인정보는 가린 뒤 AI에 보내고, 붙여 넣은 원문은 저장하지 않아요.
               </p>
             </div>
             {error && (
@@ -115,7 +118,7 @@ export function TcGeneration({ projectId }: { projectId: string }) {
             )}
             <div className="flex flex-wrap gap-2">
               <Button type="submit" disabled={busy || !text.trim()}>
-                {busy ? "시작하는 중" : "TC 생성"}
+                {busy ? "시작하는 중" : "테스트케이스 만들기"}
               </Button>
               <Button
                 type="button"

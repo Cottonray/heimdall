@@ -30,6 +30,10 @@ rm -rf "$payload/aiqa/browser-worker/node_modules" "$payload/aiqa/browser-worker
 cp "$here/tools/yarn-4.18.0.cjs" "$payload/aiqa/yarn.cjs"
 rm -rf "$payload/aiqa/sample-app/.gradle" "$payload/aiqa/sample-app/build" "$payload/aiqa/sample-app/app/build"
 
+# 컨테이너 사용자가 읽을 수 있어야 한다. 배포하는 셸의 umask 가 077 이면 전부 600 으로 나가
+# 서버가 entrypoint.sh 를 못 열고 재시작을 반복했다 (2026-11-12, 약 5분 중단).
+chmod -R a+rX "$payload/aiqa"
+
 [[ -f "$env_file" ]] || { echo "Environment file not found" >&2; exit 1; }
 umask 077
 cp "$env_file" "$payload/aiqa/.env"

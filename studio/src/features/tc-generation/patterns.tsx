@@ -111,6 +111,9 @@ export function TcPatterns({ projectId, onRun }: { projectId: string; onRun: (ru
 
   return (
     <div className="space-y-4">
+      <p className="text-sm text-muted-foreground">
+        대출 거절 기준(신용점수 600점 미만이면 거절 등)이나 가입 화면이 갈리는 조건을 상품별로 등록해 두면, 기준마다 &lsquo;거절되는 값&rsquo;과 &lsquo;바로 통과하는 값&rsquo;을 빠짐없이 시험 목록으로 만들어요. 이름을 누르면 바로 만들어요.
+      </p>
       <div className="flex flex-wrap gap-2">
         <Button
           onClick={() => {
@@ -118,7 +121,7 @@ export function TcPatterns({ projectId, onRun }: { projectId: string; onRun: (ru
             setExtracting(true);
           }}
         >
-          명세에서 패턴 추출
+          상품 설명에서 규칙 뽑기
         </Button>
         <Button
           variant="outline"
@@ -128,7 +131,7 @@ export function TcPatterns({ projectId, onRun }: { projectId: string; onRun: (ru
             setEditing({ builtIn: false, json: TEMPLATE });
           }}
         >
-          패턴 직접 등록
+          규칙 직접 입력
         </Button>
       </div>
       {error && (
@@ -146,7 +149,7 @@ export function TcPatterns({ projectId, onRun }: { projectId: string; onRun: (ru
         searchPlaceholder="패턴 이름 검색"
         emptyMessage="등록된 패턴이 없어요."
         rowActions={(p) => [
-          { label: "TC 전개", onSelect: () => void expand(p), disabled: busy },
+          { label: "테스트케이스 만들기", onSelect: () => void expand(p), disabled: busy },
           { label: p.builtIn ? "보기" : "수정", onSelect: () => (setDialogError(""), setValid(true), setEditing({ id: p.builtIn ? undefined : p.id, builtIn: p.builtIn, json: editable(p) })) },
           { label: "복제해서 등록", onSelect: () => (setDialogError(""), setValid(true), setEditing({ builtIn: false, json: editable({ ...p, name: `${p.name} 사본` }) })) },
           ...(p.builtIn
@@ -191,7 +194,7 @@ export function TcPatterns({ projectId, onRun }: { projectId: string; onRun: (ru
       <Dialog open={extracting} onOpenChange={(open) => !busy && setExtracting(open)}>
         <DialogContent variant="download">
           <DialogHeader>
-            <DialogTitle>명세에서 패턴 추출</DialogTitle>
+            <DialogTitle>상품 설명에서 규칙 뽑기</DialogTitle>
             <DialogDescription>상품 설명서·심사 기준 문장에서 입력 항목, 화면 분기, 부결 룰을 뽑아 패턴 초안을 만들어요.</DialogDescription>
           </DialogHeader>
           <form
