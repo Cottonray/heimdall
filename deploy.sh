@@ -24,7 +24,7 @@ trap 'rm -rf "$payload"' EXIT
 
 mkdir -p "$payload/aiqa"
 cp -R "$here/server" "$here/web" "$here/flows" "$here/sample-app" "$here/browser-worker" "$here/contracts" "$payload/aiqa/"
-cp "$here/Dockerfile" "$here/docker-compose.yml" "$here/entrypoint.sh" "$payload/aiqa/"
+cp "$here/Dockerfile" "$here/docker-compose.yml" "$here/entrypoint.sh" "$here/.dockerignore" "$payload/aiqa/"
 rm -rf "$payload/aiqa/server/node_modules" "$payload/aiqa/server/.yarn"
 rm -rf "$payload/aiqa/browser-worker/node_modules" "$payload/aiqa/browser-worker/.yarn"
 cp "$here/tools/yarn-4.18.0.cjs" "$payload/aiqa/yarn.cjs"

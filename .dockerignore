@@ -1,0 +1,9 @@
+# 서버의 ~/aiqa 가 빌드 컨텍스트다. 실행 데이터·비밀은 이미지에 들어가지 않게 뺀다.
+# (2026-11-12: runs/.terminal-key 를 읽지 못해 aiqa-browser 빌드가 멈췄다)
+runs
+runs-*.json
+terminal-runtime
+.env
+db.env
+**/node_modules
+**/.yarn
