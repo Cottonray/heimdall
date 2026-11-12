@@ -179,8 +179,8 @@ export async function removeRun(projectId: string, id: unknown, user: User) {
 const cell = (v: string) => `"${v.replace(/"/g, '""')}"`;
 export async function exportRun(projectId: string, id: string, user: User) {
   const run = await readRun(projectId, id, user, "내보내기");
-  const type = { normal: "정상", exception: "예외", boundary: "경계" };
-  const origin = { ai: "AI", rule: "코드 규칙", pattern: "상품 패턴" };
+  const type = { normal: "정상 흐름", exception: "오류 상황", boundary: "기준값" };
+  const origin = { ai: "AI 작성", rule: "자동 계산", pattern: "상품 패턴" };
   const rows = [
     ["TC ID", "유형", "제목", "요구사항", "조건", "사전조건", "단계", "입력", "기대결과", "근거", "출처"],
     ...run.cases.map((c) => [
@@ -301,9 +301,9 @@ export async function startRequirementRun(data: { projectId?: unknown; title?: u
     calls: [{ stage: "normalize", ms: 0, inputChars: (data.text as string).length, outputCount: normalized.requirements.length, ok: true }],
   };
   if (normalized.blocked.length)
-    b.issues.push({ level: "warning", code: "injection", message: `모델에 대한 지시로 보이는 문장 ${normalized.blocked.length}개를 입력에서 뺐어요.` });
+    b.issues.push({ level: "warning", code: "injection", message: `AI에게 시키는 말로 보이는 문장 ${normalized.blocked.length}개를 입력에서 뺐어요.` });
   if (normalized.sensitive.length)
-    b.issues.push({ level: "info", code: "masked", message: `민감정보 ${normalized.sensitive.reduce((n, t) => n + t.count, 0)}건을 마스킹한 뒤 처리했어요. 원문은 저장하지 않아요.` });
+    b.issues.push({ level: "info", code: "masked", message: `주민번호·연락처 같은 민감정보 ${normalized.sensitive.reduce((n, t) => n + t.count, 0)}건을 가린 뒤 처리했어요. 원문은 저장하지 않아요.` });
   await save(b);
   await access(b.id, user, "생성");
   running.set(b.id, b);
@@ -352,7 +352,7 @@ async function runRequirement(b: Body) {
     const candidates: Omit<TestCase, "id">[] = [];
     results.forEach((r, i) => {
       if (r.status === "fulfilled") candidates.push(...r.value);
-      else b.issues.push({ level: "error", code: "generate-failed", message: `${batches[i]!.join(", ")} 묶음의 생성이 실패했어요. 해당 요구사항은 코드 경계값만 남아요.` });
+      else b.issues.push({ level: "error", code: "generate-failed", message: `${batches[i]!.join(", ")}의 테스트케이스를 AI가 만들지 못했어요. 자동 계산한 기준값 케이스만 남아요.` });
     });
     if (results.every((r) => r.status === "rejected")) throw new Error("테스트케이스 생성 호출이 모두 실패했어요.");
 

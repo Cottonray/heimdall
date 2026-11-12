@@ -1,17 +1,17 @@
 import type { TcCondition, TcIssue, TcOrigin, TcRun, TcStage, TcType } from "../../../../contracts/studio";
 
-export const typeLabel: Record<TcType, string> = { normal: "정상", exception: "예외", boundary: "경계" };
-export const originLabel: Record<TcOrigin, string> = { ai: "AI", rule: "코드 규칙", pattern: "상품 패턴" };
-export const kindLabel: Record<TcCondition["kind"], string> = { input: "입력", branch: "분기", boundary: "경계", rule: "업무 규칙" };
+export const typeLabel: Record<TcType, string> = { normal: "정상 흐름", exception: "오류 상황", boundary: "기준값" };
+export const originLabel: Record<TcOrigin, string> = { ai: "AI 작성", rule: "자동 계산", pattern: "상품 패턴" };
+export const kindLabel: Record<TcCondition["kind"], string> = { input: "입력값", branch: "조건별 갈림", boundary: "기준값", rule: "업무 규칙" };
 export const levelLabel: Record<TcIssue["level"], string> = { error: "오류", warning: "주의", info: "참고" };
 export const stageLabel: Record<TcStage, string> = {
-  normalize: "정규화·마스킹",
-  extract: "조건·경계 추출",
-  generate: "TC 생성",
-  verify: "검증·매핑",
+  normalize: "명세 정리",
+  extract: "확인할 조건 찾기",
+  generate: "테스트케이스 작성",
+  verify: "점검·요구사항 연결",
 };
 export const stages: TcStage[] = ["normalize", "extract", "generate", "verify"];
-export const statusLabel: Record<TcRun["status"], string> = { running: "생성 중", done: "완료", failed: "실패" };
+export const statusLabel: Record<TcRun["status"], string> = { running: "생성 중", done: "생성 완료", failed: "실패" };
 export const domainLabel = { deposit: "수신", loan: "여신" } as const;
 export const errorText = (e: unknown) =>
   (e instanceof Error ? e.message : "요청을 처리하지 못했어요").replace(/^Error:\s*/, "");

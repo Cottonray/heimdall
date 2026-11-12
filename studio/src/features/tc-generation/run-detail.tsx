@@ -45,7 +45,7 @@ function StageStrip({ run }: { run: TcRun }) {
         return (
           <li key={stage} className="flex items-center gap-2 text-sm">
             <span className="text-muted-foreground">{index + 1}</span>
-            {run.kind === "pattern" && stage === "generate" ? "패턴 전개" : stageLabel[stage]}
+            {run.kind === "pattern" && stage === "generate" ? "패턴에서 케이스 펼치기" : stageLabel[stage]}
             <Badge
               variant={state === "done" ? "success" : state === "failed" ? "destructive" : state === "running" ? "secondary" : "outline"}
             >
@@ -136,15 +136,22 @@ export function TcRunDetail({ projectId, runId, onBack }: { projectId: string; r
         <Badge variant={run.status === "done" ? "success" : run.status === "failed" ? "destructive" : "secondary"}>
           {statusLabel[run.status]}
         </Badge>
-        <Badge variant="outline">요구사항 {run.requirements.length}</Badge>
-        <Badge variant="outline">조건 {run.conditions.length}</Badge>
-        <Badge variant="outline">
-          TC {run.cases.length} · 정상 {count("normal")} · 예외 {count("exception")} · 경계 {count("boundary")}
+        <Badge variant="outline" title="입력한 명세에서 찾은 요구사항 줄 수">요구사항 {run.requirements.length}개</Badge>
+        <Badge variant="outline" title="요구사항에서 뽑아낸, 테스트로 확인해야 할 조건 수">확인할 조건 {run.conditions.length}개</Badge>
+        <Badge variant="outline" title="정상 흐름: 시킨 대로 했을 때 / 오류 상황: 잘못 입력하거나 막혀야 할 때 / 기준값: 한도·자릿수 같은 기준의 바로 위아래">
+          테스트케이스 {run.cases.length}개 · 정상 흐름 {count("normal")} · 오류 상황 {count("exception")} · 기준값 {count("boundary")}
         </Badge>
         {run.status !== "running" && (
-          <Badge variant={run.integrity ? "success" : "destructive"}>{run.integrity ? "무결성 확인" : "무결성 불일치"}</Badge>
+          <Badge
+            variant={run.integrity ? "success" : "destructive"}
+            title="저장할 때 남긴 지문과 지금 내용을 비교해요. 누가 DB에서 몰래 고치면 '변조 의심'으로 바뀌어요."
+          >
+            {run.integrity ? "저장 후 바뀐 곳 없음" : "변조 의심 — 저장 후 내용이 바뀜"}
+          </Badge>
         )}
-        <Badge variant="offline">암호화 저장 · 보관 {run.retentionDays}일</Badge>
+        <Badge variant="offline" title="결과는 암호화해 저장하고, 보관 기간이 지나면 자동으로 지워요.">
+          암호화 저장 · {run.retentionDays}일 보관
+        </Badge>
       </div>
       {error && (
         <p role="alert" className="text-sm text-destructive">
@@ -154,13 +161,16 @@ export function TcRunDetail({ projectId, runId, onBack }: { projectId: string; r
       <Tabs defaultValue="cases">
         <TabsList aria-label="생성 결과">
           <TabsTrigger value="cases">테스트케이스</TabsTrigger>
-          <TabsTrigger value="trace">요구사항·매핑</TabsTrigger>
-          <TabsTrigger value="conditions">조건·경계</TabsTrigger>
-          <TabsTrigger value="issues">검증 결과 {problems ? `(${problems})` : ""}</TabsTrigger>
-          <TabsTrigger value="log">처리 기록</TabsTrigger>
+          <TabsTrigger value="trace">요구사항별 개수</TabsTrigger>
+          <TabsTrigger value="conditions">확인할 조건</TabsTrigger>
+          <TabsTrigger value="issues">{problems ? `확인 필요 ${problems}건` : "점검 결과"}</TabsTrigger>
+          <TabsTrigger value="log">만든 과정</TabsTrigger>
         </TabsList>
 
-        <TabsContent value="cases" className="pt-4">
+        <TabsContent value="cases" className="space-y-3 pt-4">
+          <p className="text-sm text-muted-foreground">
+            실제로 해 볼 시험 목록이에요. 줄을 누르면 순서·입력값·기대결과가 열려요. 기대결과가 &lsquo;요구사항에 명시 없음&rsquo;이면 명세에 결과가 안 적혀 있다는 뜻이라 담당자 확인이 필요해요.
+          </p>
           <DataTable
             data={run.cases}
             caption="생성된 테스트케이스"
@@ -200,39 +210,42 @@ export function TcRunDetail({ projectId, runId, onBack }: { projectId: string; r
         </TabsContent>
 
         <TabsContent value="trace" className="space-y-6 pt-4">
+          <p className="text-sm text-muted-foreground">
+            요구사항 한 줄마다 테스트케이스가 몇 개 붙었는지 보여 줘요. &lsquo;빠짐&rsquo;이 있으면 그 요구사항은 아직 시험이 없어요.
+          </p>
           {(run.sensitive.length > 0 || run.blocked.length > 0 || run.corrections.length > 0) && (
             <section className="space-y-3">
-              <h2 className="text-lg font-semibold">입력 정리</h2>
+              <h2 className="text-lg font-semibold">입력을 이렇게 정리했어요</h2>
               <div className="flex flex-wrap gap-2">
                 {run.sensitive.map((t) => (
                   <Badge key={t.type} variant="outline">
-                    마스킹 · {t.label} {t.count}건
+                    가림 처리 · {t.label} {t.count}건
                   </Badge>
                 ))}
                 {run.corrections.map((c) => (
                   <Badge key={c} variant="secondary">
-                    정리 · {c}
+                    고침 · {c}
                   </Badge>
                 ))}
               </div>
               {run.blocked.map((line) => (
                 <p key={line} className="text-sm text-destructive">
-                  지시문으로 보여 뺀 문장: {line}
+                  AI에게 시키는 말로 보여 뺀 문장: {line}
                 </p>
               ))}
             </section>
           )}
           <section className="space-y-3">
-            <h2 className="text-lg font-semibold">요구사항–TC 매핑</h2>
+            <h2 className="text-lg font-semibold">요구사항별 테스트케이스</h2>
             <Table variant="bordered">
               <TableHeader>
                 <TableRow variant="static">
                   <TableHead>요구사항</TableHead>
                   <TableHead>내용</TableHead>
-                  <TableHead>정상</TableHead>
-                  <TableHead>예외</TableHead>
-                  <TableHead>경계</TableHead>
-                  <TableHead>TC</TableHead>
+                  <TableHead>정상 흐름</TableHead>
+                  <TableHead>오류 상황</TableHead>
+                  <TableHead>기준값</TableHead>
+                  <TableHead>테스트케이스</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -253,7 +266,7 @@ export function TcRunDetail({ projectId, runId, onBack }: { projectId: string; r
                         {linked.length ? (
                           <span className="whitespace-normal">{linked.map((c) => c.id).join(", ")}</span>
                         ) : (
-                          <Badge variant="destructive">미커버</Badge>
+                          <Badge variant="destructive">빠짐</Badge>
                         )}
                       </TableCell>
                     </TableRow>
@@ -264,7 +277,10 @@ export function TcRunDetail({ projectId, runId, onBack }: { projectId: string; r
           </section>
         </TabsContent>
 
-        <TabsContent value="conditions" className="pt-4">
+        <TabsContent value="conditions" className="space-y-3 pt-4">
+          <p className="text-sm text-muted-foreground">
+            테스트케이스를 만들기 전에 요구사항에서 뽑은 &lsquo;무엇을 확인해야 하나&rsquo; 목록이에요. 근거가 &lsquo;원문에 있음&rsquo;이면 명세 문장에서 그대로 찾은 것이고, &lsquo;원문에서 못 찾음&rsquo;이면 AI가 지어냈을 수 있으니 확인하세요.
+          </p>
           <DataTable
             data={run.conditions}
             caption="테스트 조건·경계 항목"
@@ -286,7 +302,7 @@ export function TcRunDetail({ projectId, runId, onBack }: { projectId: string; r
                 defaultWidth: 280,
                 cell: (c) => (
                   <div className="space-y-1 whitespace-normal">
-                    <Badge variant={c.grounded ? "success" : "destructive"}>{c.grounded ? "원문 확인" : "원문 없음"}</Badge>
+                    <Badge variant={c.grounded ? "success" : "destructive"}>{c.grounded ? "원문에 있음" : "원문에서 못 찾음"}</Badge>
                     <p className="text-xs text-muted-foreground">{c.evidence || "—"}</p>
                   </div>
                 ),
@@ -296,7 +312,10 @@ export function TcRunDetail({ projectId, runId, onBack }: { projectId: string; r
           />
         </TabsContent>
 
-        <TabsContent value="issues" className="pt-4">
+        <TabsContent value="issues" className="space-y-3 pt-4">
+          <p className="text-sm text-muted-foreground">
+            만든 결과를 자동으로 점검한 내용이에요. &lsquo;오류&rsquo;·&lsquo;주의&rsquo;는 사람이 한 번 봐야 하고, &lsquo;참고&rsquo;는 자동으로 처리된 내역이에요.
+          </p>
           {run.issues.length ? (
             <ul className="space-y-2">
               {run.issues.map((issue, index) => (
@@ -314,6 +333,9 @@ export function TcRunDetail({ projectId, runId, onBack }: { projectId: string; r
         </TabsContent>
 
         <TabsContent value="log" className="space-y-6 pt-4">
+          <p className="text-sm text-muted-foreground">
+            어떤 AI 모델로 언제 누가 만들었는지, 단계마다 얼마나 걸렸는지, 누가 열어 봤는지를 남긴 기록이에요.
+          </p>
           <section className="space-y-2 text-sm">
             <p>
               <span className="text-muted-foreground">모델 · </span>
@@ -324,7 +346,7 @@ export function TcRunDetail({ projectId, runId, onBack }: { projectId: string; r
               {run.createdBy} · {when(run.created)}
             </p>
             <p className="break-all">
-              <span className="text-muted-foreground">SHA-256 · </span>
+              <span className="text-muted-foreground">저장 지문(SHA-256) · </span>
               {run.hash}
             </p>
           </section>
@@ -334,9 +356,9 @@ export function TcRunDetail({ projectId, runId, onBack }: { projectId: string; r
               <TableHeader>
                 <TableRow variant="static">
                   <TableHead>단계</TableHead>
-                  <TableHead>소요</TableHead>
-                  <TableHead>입력 크기</TableHead>
-                  <TableHead>산출</TableHead>
+                  <TableHead>걸린 시간</TableHead>
+                  <TableHead>보낸 글자 수</TableHead>
+                  <TableHead>나온 개수</TableHead>
                   <TableHead>결과</TableHead>
                 </TableRow>
               </TableHeader>
@@ -354,7 +376,7 @@ export function TcRunDetail({ projectId, runId, onBack }: { projectId: string; r
             </Table>
           </section>
           <section className="space-y-3">
-            <h2 className="text-lg font-semibold">접근 기록</h2>
+            <h2 className="text-lg font-semibold">열람 기록</h2>
             <Table variant="bordered">
               <TableHeader>
                 <TableRow variant="static">

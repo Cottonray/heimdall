@@ -341,11 +341,11 @@ export function verifyCases(
     const fromConditions = conditionIds.flatMap((id) => condById.get(id)!.requirementIds);
     const requirementIds = [...new Set([...c.requirementIds.filter((id) => reqIds.has(id)), ...fromConditions])];
     if (!requirementIds.length) {
-      issues.push({ level: "warning", code: "unmapped", message: `요구사항에 연결되지 않아 제외: ${c.title}` });
+      issues.push({ level: "warning", code: "unmapped", message: `어느 요구사항에도 연결되지 않아 뺐어요: ${c.title}` });
       continue;
     }
     if (c.requirementIds.some((id) => !reqIds.has(id)))
-      issues.push({ level: "info", code: "unknown-requirement", message: `없는 요구사항 번호를 지움: ${c.title}` });
+      issues.push({ level: "info", code: "unknown-requirement", message: `명세에 없는 요구사항 번호가 붙어 있어 지웠어요: ${c.title}` });
     // 입력값이 다르면 다른 시험이다(경계값 9,999원과 10,000원). 입력이 같고 기대결과가
     // 거의 같을 때만, 입력이 둘 다 없으면 제목까지 비교해 중복으로 본다.
     const twin = kept.find(
@@ -358,11 +358,11 @@ export function verifyCases(
       // 지운 쪽이 가리키던 요구사항·조건은 남긴 쪽이 이어받는다 (추적이 끊기지 않게)
       twin.requirementIds = [...new Set([...twin.requirementIds, ...requirementIds])];
       twin.conditionIds = [...new Set([...twin.conditionIds, ...conditionIds])];
-      issues.push({ level: "info", code: "duplicate", message: `중복 병합: "${c.title}" → "${twin.title}"` });
+      issues.push({ level: "info", code: "duplicate", message: `같은 시험이라 하나로 합쳤어요: "${c.title}" → "${twin.title}"` });
       continue;
     }
     if (c.type !== "normal" && !c.input)
-      issues.push({ level: "warning", code: "no-input", message: `${c.type === "boundary" ? "경계" : "예외"} 케이스에 입력값이 없어요: ${c.title}` });
+      issues.push({ level: "warning", code: "no-input", message: `${c.type === "boundary" ? "기준값" : "오류 상황"} 시험인데 넣을 값이 안 적혀 있어요: ${c.title}` });
     kept.push({ ...c, requirementIds, conditionIds });
   }
   // 코드가 계산한 경계값이 TC 입력에 하나도 안 나오면 코드가 직접 채운다
@@ -386,22 +386,22 @@ export function verifyCases(
         rationale: `요구사항 원문 "${b.evidence}"에서 코드가 계산한 경계값`,
         origin: "rule",
       });
-      issues.push({ level: "info", code: "boundary-filled", message: `빠진 경계값 ${b.subject} ${shown}을(를) 코드가 보충` });
+      issues.push({ level: "info", code: "boundary-filled", message: `AI가 빠뜨린 기준값 시험(${b.subject} ${shown})을 자동으로 채웠어요` });
     }
   }
   for (const cond of conditions) {
     if (!cond.grounded)
-      issues.push({ level: "warning", code: "ungrounded", message: `원문에서 근거 문장을 찾지 못한 조건: ${cond.description}`, targetId: cond.id });
+      issues.push({ level: "warning", code: "ungrounded", message: `명세 원문에서 근거를 못 찾은 조건이에요. AI가 지어냈을 수 있어요: ${cond.description}`, targetId: cond.id });
     const linked = kept.filter((k) => k.conditionIds.includes(cond.id));
     if (!linked.length)
-      issues.push({ level: "warning", code: "uncovered-condition", message: `TC가 없는 조건: ${cond.description}`, targetId: cond.id });
+      issues.push({ level: "warning", code: "uncovered-condition", message: `이 조건을 확인하는 테스트케이스가 없어요: ${cond.description}`, targetId: cond.id });
     else if (cond.origin === "ai" && !linked.some((k) => k.type !== "normal"))
-      issues.push({ level: "warning", code: "no-negative", message: `예외·경계 TC가 없는 조건: ${cond.description}`, targetId: cond.id });
+      issues.push({ level: "warning", code: "no-negative", message: `정상 흐름만 있고 오류 상황·기준값 시험이 없어요: ${cond.description}`, targetId: cond.id });
   }
   for (const req of requirements) {
     const linked = kept.filter((k) => k.requirementIds.includes(req.id));
     if (!linked.length)
-      issues.push({ level: "error", code: "uncovered-requirement", message: `TC가 하나도 없는 요구사항: ${req.id}`, targetId: req.id });
+      issues.push({ level: "error", code: "uncovered-requirement", message: `테스트케이스가 하나도 없는 요구사항이에요: ${req.id}`, targetId: req.id });
   }
   const order: Record<TcType, number> = { normal: 0, exception: 1, boundary: 2 };
   const firstReq = (c: Omit<TestCase, "id">) => requirements.findIndex((r) => r.id === c.requirementIds[0]);
