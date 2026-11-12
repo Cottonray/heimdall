@@ -1,5 +1,13 @@
 import { aiConnection } from "./ai-model.ts";
-export async function complete(system: string, content: string, maxTokens = 1200) {
+type CompleteOptions = { maxTokens?: number; timeoutMs?: number; temperature?: number };
+// 셋째 인자는 기존 호출처럼 최대 토큰 수(숫자)이거나, TC 생성처럼 옵션 묶음이다.
+export async function complete(
+  system: string,
+  content: string,
+  settings: number | CompleteOptions = {},
+) {
+  const options: CompleteOptions =
+    typeof settings === "number" ? { maxTokens: Math.min(4000, Math.max(1200, settings)) } : settings;
   const connection = await aiConnection();
   if (connection.provider === "openrouter" && !connection.apiKey)
     throw new Error("OpenRouter 키가 설정되지 않았어요");
@@ -18,14 +26,14 @@ export async function complete(system: string, content: string, maxTokens = 1200
       ...(connection.provider === "openrouter"
         ? { reasoning: { enabled: false } }
         : {}),
-      temperature: 0.1,
-      max_tokens: Math.min(4000, Math.max(1200, maxTokens)),
+      temperature: options.temperature ?? 0.1,
+      max_tokens: options.maxTokens ?? 1200,
       messages: [
         { role: "system", content: system },
         { role: "user", content },
       ],
     }),
-    signal: AbortSignal.timeout(45000),
+    signal: AbortSignal.timeout(options.timeoutMs ?? 45000),
   });
   if (!r.ok)
     throw new Error(

@@ -7,6 +7,7 @@ import {
   Users,
   Play,
   Database,
+  Sparkles,
   ListChecks,
   Folder,
   Smartphone,
@@ -111,6 +112,7 @@ export function SessionSidebar({
                 },
                 { page: "dashboard", label: "대시보드", icon: LayoutDashboard },
                 { page: "test-data", label: "테스트데이터", icon: Database },
+                { page: "tc-generation", label: "TC 생성", icon: Sparkles },
                 { page: "scenarios", label: "시나리오", icon: ListChecks },
                 { page: "execution", label: "테스트 실행", icon: Play },
                 { page: "history", label: "테스트 기록", icon: History },
@@ -261,6 +263,15 @@ export function SessionSidebar({
               >
                 <Database />
                 테스트데이터
+              </Button>
+              <Button
+                variant={active === "tc-generation" ? "secondary" : "ghost"}
+                aria-current={active === "tc-generation" ? "page" : undefined}
+                onClick={() => onNavigate("tc-generation")}
+                className="justify-start"
+              >
+                <Sparkles />
+                TC 생성
               </Button>
               <Button
                 variant={active === "scenarios" ? "secondary" : "ghost"}

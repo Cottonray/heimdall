@@ -9,6 +9,7 @@ export const pages = [
   "execution",
   "board",
   "test-data",
+  "tc-generation",
   "scenarios",
   "settings",
   "project-settings",

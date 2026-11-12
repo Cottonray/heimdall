@@ -29,6 +29,17 @@ import {
 import { handleAgent } from "../infrastructure/agent-registry.ts";
 import { listTestData, saveTestData } from "../infrastructure/test-data.ts";
 import {
+  exportRun,
+  extractPattern,
+  listPatterns,
+  listRuns,
+  readRun,
+  removeRun,
+  savePattern,
+  startPatternRun,
+  startRequirementRun,
+} from "../infrastructure/tc-generation.ts";
+import {
   notifications,
   readNotifications,
 } from "../infrastructure/notifications.ts";
@@ -325,6 +336,7 @@ export async function handle(
     if (
       (route.startsWith("/api/studio/profile") ||
         route.startsWith("/api/studio/notifications") ||
+        route.startsWith("/api/studio/tc/") ||
         route === "/api/studio/test-data") &&
       !auth
     ) {
@@ -348,6 +360,24 @@ export async function handle(
     }
     if (route === "/api/studio/test-data" && req.method === "GET") {
       send(200, await listTestData(url.searchParams.get("projectId") || ""));
+      return true;
+    }
+    if (route.startsWith("/api/studio/tc/") && req.method === "GET") {
+      const projectId = url.searchParams.get("projectId") || "";
+      const runId = url.searchParams.get("id") || "";
+      if (route === "/api/studio/tc/runs") send(200, await listRuns(projectId));
+      else if (route === "/api/studio/tc/run")
+        send(200, await readRun(projectId, runId, auth!.user, url.searchParams.get("poll") ? "" : "열람"));
+      else if (route === "/api/studio/tc/patterns") send(200, await listPatterns(projectId));
+      else if (route === "/api/studio/tc/export") {
+        const file = await exportRun(projectId, runId, auth!.user);
+        res.writeHead(200, {
+          "content-type": "text/csv; charset=utf-8",
+          "content-disposition": `attachment; filename="tc.csv"; filename*=UTF-8''${encodeURIComponent(file.name)}`,
+          "cache-control": "private, no-store",
+        });
+        res.end(file.csv);
+      } else send(404, { error: "없는 경로예요" });
       return true;
     }
     if (
@@ -502,7 +532,9 @@ export async function handle(
     const bodyLimit =
       route === "/api/studio/profile" || route === "/api/studio/camera"
         ? Math.ceil(MAX_AVATAR_BYTES / 3) * 4 + 1024
-        : 64000;
+        : route.startsWith("/api/studio/tc/")
+          ? 200000
+          : 64000;
     for await (const chunk of req) {
       body += chunk;
       if (Buffer.byteLength(body) > bodyLimit)
@@ -613,6 +645,27 @@ export async function handle(
     if (route === "/api/studio/admin/device-metadata") {
       await saveDeviceMetadata(data);
       send(200, { ok: true });
+      return true;
+    }
+    if (route === "/api/studio/tc/runs") {
+      send(200, await startRequirementRun(data, auth!.user));
+      return true;
+    }
+    if (route === "/api/studio/tc/pattern-runs") {
+      send(200, await startPatternRun(data, auth!.user));
+      return true;
+    }
+    if (route === "/api/studio/tc/runs/delete") {
+      await removeRun(String(data.projectId || ""), data.id, auth!.user);
+      send(200, { ok: true });
+      return true;
+    }
+    if (route === "/api/studio/tc/patterns") {
+      send(200, await savePattern(data));
+      return true;
+    }
+    if (route === "/api/studio/tc/patterns/extract") {
+      send(200, await extractPattern(data));
       return true;
     }
     if (route === "/api/studio/test-data") {

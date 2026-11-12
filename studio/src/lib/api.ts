@@ -7,6 +7,10 @@ import type {
   Session,
   User,
   TestDataEntry,
+  TcPattern,
+  TcRun,
+  TcRunSummary,
+  TcSensitiveTag,
 } from "../../../contracts/studio";
 export const API = "/aiqa/api/studio";
 export type ProfileActionResult = { ok: boolean; error?: string };
@@ -39,7 +43,29 @@ async function post<T>(path: string, body: unknown): Promise<T> {
     body: JSON.stringify(body),
   }).then(json<T>);
 }
+const query = (path: string, params: Record<string, string>) =>
+  API + path + "?" + new URLSearchParams(params);
 export const api = {
+  tcRuns: (projectId: string, signal?: AbortSignal) =>
+    fetch(query("/tc/runs", { projectId }), { signal }).then(json<TcRunSummary[]>),
+  tcRun: (projectId: string, id: string, poll = false, signal?: AbortSignal) =>
+    fetch(query("/tc/run", { projectId, id, ...(poll ? { poll: "1" } : {}) }), { signal }).then(json<TcRun>),
+  tcExportUrl: (projectId: string, id: string) => query("/tc/export", { projectId, id }),
+  startTcRun: (projectId: string, title: string, text: string) =>
+    post<{ id: string }>("/tc/runs", { projectId, title, text }),
+  startTcPatternRun: (projectId: string, patternId: string) =>
+    post<{ id: string }>("/tc/pattern-runs", { projectId, patternId }),
+  removeTcRun: (projectId: string, id: string) =>
+    post<{ ok: true }>("/tc/runs/delete", { projectId, id }),
+  tcPatterns: (projectId: string, signal?: AbortSignal) =>
+    fetch(query("/tc/patterns", { projectId }), { signal }).then(json<TcPattern[]>),
+  saveTcPattern: (projectId: string, pattern: unknown, id?: string, remove = false) =>
+    post<{ id: string } | null>("/tc/patterns", { projectId, pattern, id, remove }),
+  extractTcPattern: (projectId: string, text: string, domain: TcPattern["domain"]) =>
+    post<{ pattern: Omit<TcPattern, "id" | "builtIn" | "updated">; blocked: string[]; sensitive: TcSensitiveTag[]; ungrounded: number; dropped: string[] }>(
+      "/tc/patterns/extract",
+      { projectId, text, domain },
+    ),
   testData: (projectId: string, signal?: AbortSignal) =>
     fetch(API + "/test-data?" + new URLSearchParams({ projectId }), {
       signal,

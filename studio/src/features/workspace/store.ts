@@ -32,6 +32,7 @@ const projectPages = new Set([
   "execution",
   "board",
   "test-data",
+  "tc-generation",
   "scenarios",
   "project-settings",
 ]);

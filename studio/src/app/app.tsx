@@ -6,6 +6,7 @@ import { Community } from "@/features/community/community";
 import { SortableTabsList } from "@/components/ui/sortable-tabs-list";
 import { UserAdmin } from "@/features/auth/user-admin";
 import { ProjectTestData } from "@/features/projects/test-data";
+import { TcGeneration } from "@/features/tc-generation/tc-generation";
 import { ScenarioList } from "@/features/scenarios/scenario-list";
 import { NotificationInbox } from "@/features/auth/notification-inbox";
 import { ProjectSettings } from "@/features/projects/project-settings";
@@ -163,6 +164,8 @@ export function App() {
                               ? "사용자 관리"
                               : id === "test-data"
                                 ? "테스트데이터"
+                                : id === "tc-generation"
+                                ? "TC 생성"
                                 : id === "scenarios"
                                   ? "시나리오"
                                   : id === "board"
@@ -340,6 +343,8 @@ export function App() {
                       key={w.projectId}
                       projectId={w.projectId}
                     />
+                  ) : id === "tc-generation" ? (
+                    <TcGeneration key={w.projectId} projectId={w.projectId} />
                   ) : id === "scenarios" ? (
                     <ScenarioList
                       onDelete={w.store.removeSessions}

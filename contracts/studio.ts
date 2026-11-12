@@ -228,3 +228,119 @@ export type StudioNotification = {
   at: string;
   read: boolean;
 };
+
+// ── TC 자동 생성 (요구사항 기반 · 상품 패턴) ─────────────────────────────
+export type TcType = "normal" | "exception" | "boundary";
+export type TcOrigin = "ai" | "rule" | "pattern";
+export type TcRequirement = { id: string; text: string; section?: string };
+export type TcSensitiveTag = { type: string; label: string; count: number };
+export type TcCondition = {
+  id: string;
+  requirementIds: string[];
+  kind: "input" | "branch" | "boundary" | "rule";
+  subject: string;
+  description: string;
+  values: string[];
+  evidence: string;
+  grounded: boolean;
+  origin: TcOrigin;
+};
+export type TestCase = {
+  id: string;
+  title: string;
+  type: TcType;
+  requirementIds: string[];
+  conditionIds: string[];
+  preconditions: string[];
+  steps: string[];
+  input: string;
+  expected: string;
+  rationale: string;
+  origin: TcOrigin;
+};
+export type TcIssue = {
+  level: "error" | "warning" | "info";
+  code: string;
+  message: string;
+  targetId?: string;
+};
+export type TcStage = "normalize" | "extract" | "generate" | "verify";
+export type TcCall = {
+  stage: TcStage;
+  ms: number;
+  inputChars: number;
+  outputCount: number;
+  ok: boolean;
+  error?: string;
+};
+export type TcAccess = { user: string; action: string; at: number };
+export type TcRun = {
+  id: string;
+  projectId: string;
+  title: string;
+  kind: "requirement" | "pattern";
+  patternId?: string;
+  status: "running" | "done" | "failed";
+  stage: TcStage;
+  message: string;
+  createdBy: string;
+  created: number;
+  updated: number;
+  normalized: string;
+  corrections: string[];
+  requirements: TcRequirement[];
+  sensitive: TcSensitiveTag[];
+  blocked: string[];
+  conditions: TcCondition[];
+  cases: TestCase[];
+  issues: TcIssue[];
+  model: string;
+  calls: TcCall[];
+  hash: string;
+  integrity: boolean;
+  encrypted: boolean;
+  retentionDays: number;
+  access: TcAccess[];
+};
+export type TcRunSummary = Pick<
+  TcRun,
+  "id" | "title" | "kind" | "status" | "stage" | "createdBy" | "created"
+> & { cases: number; requirements: number };
+export type TcPatternField = {
+  key: string;
+  label: string;
+  type: "number" | "choice";
+  unit?: string;
+  min?: number;
+  max?: number;
+  step?: number;
+  options?: string[];
+  sample: string;
+};
+export type TcPatternBranch = {
+  id: string;
+  label: string;
+  field: string;
+  equals: string;
+  screen: string;
+  source?: string;
+};
+export type TcPatternRule = {
+  code: string;
+  reason: string;
+  field: string;
+  op: "<" | "<=" | ">" | ">=" | "=";
+  value: string;
+  source?: string;
+};
+export type TcPattern = {
+  id: string;
+  domain: "deposit" | "loan";
+  name: string;
+  description: string;
+  fields: TcPatternField[];
+  branches: TcPatternBranch[];
+  rules: TcPatternRule[];
+  builtIn: boolean;
+  updated: number;
+};
