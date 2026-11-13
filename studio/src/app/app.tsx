@@ -51,7 +51,8 @@ import type { Session, SessionExport } from "../../../contracts/studio";
 export function App() {
   const w = useWorkspace();
   const { theme, resolvedTheme, setTheme, toggleTheme } = useTheme();
-  const [communityRevision, setCommunityRevision] = useState(0);
+  // 사이드바에서 메뉴를 누르면 그 화면을 처음 연 것처럼 다시 그린다 (2026-11-13).
+  const [pageRevisions, setPageRevisions] = useState<Record<string, number>>({});
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [exported, setExported] = useState<SessionExport | null>(null);
   const [remoteDevice] = useState(
@@ -133,10 +134,8 @@ export function App() {
           admin={w.user?.role === "admin"}
           active={w.activeTab}
           onNavigate={(page) => {
-            if (page === "community") {
-              setCommunityRevision((revision) => revision + 1);
-              mainRef.current?.scrollTo({ top: 0 });
-            }
+            setPageRevisions((revisions) => ({ ...revisions, [page]: (revisions[page] || 0) + 1 }));
+            mainRef.current?.scrollTo({ top: 0 });
             w.store.navigate(page);
           }}
           theme={theme}
@@ -165,7 +164,7 @@ export function App() {
                               : id === "test-data"
                                 ? "테스트데이터"
                                 : id === "tc-generation"
-                                ? "TC 생성"
+                                ? "테스트케이스 관리"
                                 : id === "scenarios"
                                   ? "시나리오"
                                   : id === "board"
@@ -272,7 +271,7 @@ export function App() {
               const s = w.sessions.find((session) => session.id === id);
               return (
                 <TabsContent
-                  key={w.store.terminalKeys.get(id) || id}
+                  key={(w.store.terminalKeys.get(id) || id) + ":" + (pageRevisions[id] || 0)}
                   value={id}
                   className={
                     s
@@ -294,7 +293,6 @@ export function App() {
                     />
                   ) : id === "community" ? (
                     <Community
-                      key={communityRevision}
                       user={w.user!}
                       active={w.activeTab === id}
                     />

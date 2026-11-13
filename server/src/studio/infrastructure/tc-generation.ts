@@ -182,7 +182,7 @@ export async function exportRun(projectId: string, id: string, user: User) {
   const type = { normal: "정상 흐름", exception: "오류 상황", boundary: "기준값" };
   const origin = { ai: "AI 작성", rule: "자동 계산", pattern: "상품 패턴" };
   const rows = [
-    ["TC ID", "유형", "제목", "요구사항", "조건", "사전조건", "단계", "입력", "기대결과", "근거", "출처"],
+    ["테스트케이스 ID", "유형", "제목", "요구사항", "조건", "사전조건", "단계", "입력", "기대결과", "근거", "출처"],
     ...run.cases.map((c) => [
       c.id,
       type[c.type],
@@ -197,7 +197,7 @@ export async function exportRun(projectId: string, id: string, user: User) {
       origin[c.origin],
     ]),
   ];
-  return { name: `${run.title.replace(/[\\/:*?"<>|]/g, "_")}-TC.csv`, csv: "﻿" + rows.map((r) => r.map(cell).join(",")).join("\r\n") };
+  return { name: `${run.title.replace(/[\\/:*?"<>|]/g, "_")}-테스트케이스.csv`, csv: "﻿" + rows.map((r) => r.map(cell).join(",")).join("\r\n") };
 }
 
 // ── 1.1.1 요구사항 → TC ─────────────────────────────────────────────────

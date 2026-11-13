@@ -178,11 +178,11 @@ export function TcRunDetail({ projectId, runId, onBack }: { projectId: string; r
             getRowId={(c) => c.id}
             getRowLabel={(c) => c.title}
             searchText={(c) => `${c.id} ${c.title} ${c.requirementIds.join(" ")} ${c.input} ${c.expected}`}
-            searchPlaceholder="TC·요구사항 번호, 제목, 입력, 기대결과 검색"
+            searchPlaceholder="테스트케이스·요구사항 번호, 제목, 입력, 기대결과 검색"
             emptyMessage={run.status === "running" ? "생성 중이에요." : "생성된 테스트케이스가 없어요."}
             onRowClick={setOpened}
             columns={[
-              { id: "id", header: "TC", defaultWidth: 120, sortValue: (c) => c.id, cell: (c) => c.id },
+              { id: "id", header: "테스트케이스", defaultWidth: 120, sortValue: (c) => c.id, cell: (c) => c.id },
               {
                 id: "type",
                 header: "유형",
